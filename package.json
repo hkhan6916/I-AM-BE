@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "start": "npm run build"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
