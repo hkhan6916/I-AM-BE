@@ -2,28 +2,27 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { v4: uuid } = require('uuid');
-const { S3 } = require('aws-sdk');
 const User = require('../../models/user/User');
 const { validateEmail } = require('../../helpers');
+const { uploadProfileVideo } = require('../../helpers');
 
-const awsConnection = new S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: 'us-east-2',
-});
-const Bucket = 'chat-app-for-learning';
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
-  // const user = await User.findOne({ email }).lean();
-
+  // For some reason the $or operator is really slow so have to make two queries
+  // const emailExists = await User.findOne({ email: identifier });
+  // const usernameExists = await User.findOne({ username: identifier });
   const user = await User.findOne({
     $or:
      [{ email: identifier }, { username: identifier }],
   }).lean();
-
   if (!user) {
-    throw new Error('user could not be found');
+    const error = new Error('an account with that email does not exist');
+    error.exists = true;
+    throw error;
   }
+  // if (emailExists || usernameExists) {
+  //   throw new Error('user could not be found');
+  // }
 
   if (await bcrypt.compare(password, user.password)) {
     const token = jwt.sign(
@@ -43,16 +42,9 @@ const loginUser = async (identifier, password) => {
 const registerUser = async ({
   username, email, plainTextPassword, firstName, lastName, file,
 }) => {
-  //   if (!file) {
-  //     throw new Error('No video profile provided');
-  //   }
-  const re = /(?:\.([^.]+))?$/;
-  //   const fileExtension = re.exec(file.originalname)[1];
-  //   const params = {
-  //     Bucket,
-  //     Key: `${uuid()}.${fileExtension}`,
-  //     Body: file.buffer,
-  //   };
+  if (!file) {
+    throw new Error('No video profile provided');
+  }
 
   const validEmail = validateEmail(email);
 
@@ -63,10 +55,15 @@ const registerUser = async ({
   if (!email || !validEmail || typeof email !== 'string') {
     throw new Error('Email is missing or invalid');
   }
-  // const exists = await User.exists({ email });
-  const exists = await User.findOne({ $or: [{ email }, { username }] });
+
+  // const emailExists = await User.findOne({ email });
+  // const usernameExists = await User.findOne({ username });
+  const exists = await User.findOne({
+    $or:
+     [{ email }, { username }],
+  });
   if (exists) {
-    const error = new Error('an account with that email already exists');
+    const error = new Error('an account with that email and username combination already exists');
     error.exists = true;
     throw error;
   }
@@ -81,25 +78,21 @@ const registerUser = async ({
 
   const password = await bcrypt.hash(plainTextPassword, 10);
 
-  //   awsConnection.putObject(params, (AWSErr, pres) => {
-  //     if (AWSErr) {
-  //       throw new Error(AWSErr);
-  //     }
-  //   });
-  //   const profileVideoUrl = awsConnection.getSignedUrl('getObject', { Bucket: params.Bucket, Key: params.Key });
-  //   if (profileVideoUrl) {
+  const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+
+  if (!profileVideoUrl || !profileGifUrl) {
+    throw new Error('Profile video not uploaded');
+  }
   await User.create({
     username,
     email,
     password,
     firstName,
     lastName,
-    profileVideoUrl: 'ddd',
+    profileVideoUrl,
+    profileGifUrl,
   });
   return { registered: true };
-  //   }
-
-  throw new Error('Profile video url could not be generated');
 };
 
 const resetUserPassword = async (req, res) => {

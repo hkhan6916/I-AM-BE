@@ -1,5 +1,25 @@
 const User = require('../../models/user/User');
 
+const searchUser = async (username, offset) => {
+  const users = await User.find({ username: { $regex: username, $options: 'i' } }, 'username firstName lastName profileVideoUrl profileGifUrl').skip(offset).limit(5);
+  // const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+  if (!users.length) {
+    throw new Error('no users found');
+  }
+
+  return users;
+};
+
+const getSingleUser = async (id) => {
+  const user = await User.findById(id);
+  // const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+  if (!user) {
+    throw new Error('no user found');
+  }
+
+  return user;
+};
+
 const sendFriendRequest = async (userId, recipientId) => {
   const recipient = await User.findById(recipientId);
   if (!recipient) {
@@ -7,10 +27,8 @@ const sendFriendRequest = async (userId, recipientId) => {
   }
 
   if (recipient.friendRequests.includes(recipientId)) {
-    console.log(recipient);
     throw new Error('Request already sent');
   }
-  console.log(recipient);
 
   recipient.friendRequests = ([...recipient.friendRequests, userId]);
 
@@ -37,12 +55,13 @@ const acceptFriendRequest = async (userId, requesterId) => {
 
   user.save();
   requester.save();
-  console.log(requester, user);
 
   return 'request accepted';
 };
 
 module.exports = {
+  searchUser,
+  getSingleUser,
   sendFriendRequest,
   acceptFriendRequest,
 };
