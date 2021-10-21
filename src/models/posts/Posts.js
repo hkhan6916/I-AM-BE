@@ -7,6 +7,15 @@ const PostsSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  mediaMimeType: {
+    type: String,
+  },
+  mediaType: {
+    type: String,
+  },
+  mediaOrientation: {
+    type: String,
+  },
   userId: {
     type: Schema.Types.ObjectId,
     required: true,

@@ -8,21 +8,16 @@ const { uploadProfileVideo } = require('../../helpers');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
-  // For some reason the $or operator is really slow so have to make two queries
-  // const emailExists = await User.findOne({ email: identifier });
-  // const usernameExists = await User.findOne({ username: identifier });
   const user = await User.findOne({
     $or:
      [{ email: identifier }, { username: identifier }],
-  }).lean();
+  });
+
   if (!user) {
     const error = new Error('an account with that email does not exist');
     error.exists = true;
     throw error;
   }
-  // if (emailExists || usernameExists) {
-  //   throw new Error('user could not be found');
-  // }
 
   if (await bcrypt.compare(password, user.password)) {
     const token = jwt.sign(
@@ -55,14 +50,11 @@ const registerUser = async ({
   if (!email || !validEmail || typeof email !== 'string') {
     throw new Error('Email is missing or invalid');
   }
+  // $or is unreliable so need to make two queries
+  const emailExists = await User.findOne({ email });
+  const usernameExists = await User.findOne({ username });
 
-  // const emailExists = await User.findOne({ email });
-  // const usernameExists = await User.findOne({ username });
-  const exists = await User.findOne({
-    $or:
-     [{ email }, { username }],
-  });
-  if (exists) {
+  if (emailExists || usernameExists) {
     const error = new Error('an account with that email and username combination already exists');
     error.exists = true;
     throw error;

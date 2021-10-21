@@ -9,6 +9,7 @@ const {
 } = require('../services/User/User');
 const { sendFriendRequest, acceptFriendRequest, searchUser } = require('../services/User/Connections');
 const { getUserFeed } = require('../services/User/Feed');
+const { getUserPosts } = require('../services/User/Posts');
 const verifyAuth = require('../middleware/auth');
 const { tmpCleanup } = require('../helpers');
 
@@ -140,7 +141,6 @@ router.get('/user/friend/accept/:requesterId', verifyAuth, async (req, res) => {
   let message = 'Friend Request accepted.';
   let data = {};
   try {
-    console.log(req.user.id);
     data = await acceptFriendRequest(req.user.id, req.params.requesterId);
   } catch (e) {
     success = false;
@@ -153,4 +153,23 @@ router.get('/user/friend/accept/:requesterId', verifyAuth, async (req, res) => {
     data,
   });
 });
+
+router.get('/user/posts', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User posts fetched.';
+  let data = {};
+  try {
+    data = await getUserPosts(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 module.exports = router;
