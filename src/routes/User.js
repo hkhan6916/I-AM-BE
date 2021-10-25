@@ -5,9 +5,13 @@ const multer = require('multer');
 const { v4: uuid } = require('uuid');
 
 const {
-  registerUser, createUserPasswordReset, resetUserPassword, loginUser,
+  registerUser, createUserPasswordReset, resetUserPassword, loginUser, getUserData,
 } = require('../services/User/User');
-const { sendFriendRequest, acceptFriendRequest, searchUser } = require('../services/User/Connections');
+const {
+  sendFriendRequest, recallFriendRequest, acceptFriendRequest,
+  rejectFriendRequest, removeConnection, searchUser, getUserFriends, resetUserFriendsList,
+  getUserFriendRequests,
+} = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts } = require('../services/User/Posts');
 const verifyAuth = require('../middleware/auth');
@@ -79,6 +83,25 @@ router.post('/user/register', multer({
   });
 });
 
+router.get('/user/data', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User data fetched.';
+  let data = {};
+  console.log(req.user);
+  try {
+    data = await getUserData(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 router.post('/users/password/:email', async (req, res) => createUserPasswordReset(req, res));
 router.post('/user/password', async (req, res) => resetUserPassword(req, res));
 router.get('/user/feed', verifyAuth, async (req, res) => {
@@ -118,7 +141,25 @@ router.get('/user/search/:username', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/friend/request/:userId', verifyAuth, async (req, res) => {
+router.get('/user/friend/fetch/all', verifyAuth, async (req, res) => {
+  let success = true;
+  // this message looks sad :(
+  let message = 'Friends fetched.';
+  let data = {};
+  try {
+    data = await getUserFriends(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.get('/user/friend/request/send/:userId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Friend Request sent.';
   let data = {};
@@ -136,12 +177,102 @@ router.get('/user/friend/request/:userId', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/friend/accept/:requesterId', verifyAuth, async (req, res) => {
+router.get('/user/friend/request/recall/:recipientId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Friend Request recalled.';
+  let data = {};
+  try {
+    data = await recallFriendRequest(req.user.id, req.params.recipientId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/friend/request/reject/:requesterId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Friend Request rejected.';
+  let data = {};
+  try {
+    data = await rejectFriendRequest(req.user.id, req.params.requesterId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/friend/request/accept/:requesterId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Friend Request accepted.';
   let data = {};
   try {
     data = await acceptFriendRequest(req.user.id, req.params.requesterId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/friend/requests', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Friend Requests fetched.';
+  let data = {};
+  try {
+    data = await getUserFriendRequests(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/friend/remove/:friendId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Connection removed.';
+  let data = {};
+  try {
+    data = await removeConnection(req.user.id, req.params.friendId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/friend/reset/:id', async (req, res) => {
+  let success = true;
+  let message = 'Friend List Reset.';
+  let data = {};
+  try {
+    data = await resetUserFriendsList(req.params.id);
   } catch (e) {
     success = false;
     message = e.message;

@@ -31,6 +31,9 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
+  jobTitle: {
+    jobTitle: String,
+  },
   verified: {
     type: Boolean,
     default: false,
@@ -49,7 +52,11 @@ const UserSchema = new Schema({
     type: Array,
     default: [],
   },
-  friendRequests: {
+  friendRequestsReceived: {
+    type: Array,
+    default: [],
+  },
+  friendRequestsSent: {
     type: Array,
     default: [],
   },

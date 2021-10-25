@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
+const jobs = require('./src/routes/Jobs');
 
 const port = process.env.PORT || 5000;
 
@@ -22,6 +23,6 @@ app.use(express.json());
 
 app.use(cors({ origin: '*' }));
 
-app.use(user, posts);
+app.use(user, posts, jobs);
 
 server.listen(port, () => console.log(`Listening on port ${port}`));

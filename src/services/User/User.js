@@ -14,7 +14,7 @@ const loginUser = async (identifier, password) => {
   });
 
   if (!user) {
-    const error = new Error('an account with that email does not exist');
+    const error = new Error('An account with that identifier does not exist');
     error.exists = true;
     throw error;
   }
@@ -210,9 +210,20 @@ const createUserPasswordReset = async (req, res) => {
   }
 };
 
+const getUserData = async (userId) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
+
+  return user;
+};
+
 module.exports = {
   loginUser,
   registerUser,
   resetUserPassword,
   createUserPasswordReset,
+  getUserData,
 };
