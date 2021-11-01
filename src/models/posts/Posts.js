@@ -16,6 +16,9 @@ const PostsSchema = new Schema({
   mediaOrientation: {
     type: String,
   },
+  mediaIsSelfie: {
+    type: Boolean,
+  },
   userId: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -26,6 +29,9 @@ const PostsSchema = new Schema({
   },
   private: {
     type: Boolean,
+  },
+  age: {
+    type: Object,
   },
 },
 { timestamps: true });

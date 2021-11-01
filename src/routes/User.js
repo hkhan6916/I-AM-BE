@@ -9,7 +9,8 @@ const {
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
-  rejectFriendRequest, removeConnection, searchUser, getUserFriends, resetUserFriendsList,
+  rejectFriendRequest, removeConnection, searchUser, getUserFriends,
+  resetUserFriendsList, getSingleUser,
   getUserFriendRequests,
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
@@ -87,7 +88,6 @@ router.get('/user/data', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'User data fetched.';
   let data = {};
-  console.log(req.user);
   try {
     data = await getUserData(req.user.id);
   } catch (e) {
@@ -104,12 +104,15 @@ router.get('/user/data', verifyAuth, async (req, res) => {
 
 router.post('/users/password/:email', async (req, res) => createUserPasswordReset(req, res));
 router.post('/user/password', async (req, res) => resetUserPassword(req, res));
-router.get('/user/feed', verifyAuth, async (req, res) => {
+router.get('/user/feed/:offset', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'User feed fetched.';
   let data = {};
+
+  const { offset } = req.params;
+
   try {
-    data = await getUserFeed(req.user);
+    data = await getUserFeed(req.user.id, offset);
   } catch (e) {
     success = false;
     message = e.message;
@@ -159,6 +162,27 @@ router.get('/user/friend/fetch/all', verifyAuth, async (req, res) => {
     data,
   });
 });
+
+router.get('/user/:userId', verifyAuth, async (req, res) => {
+  let success = true;
+  // this message looks sad :(
+  let message = 'Friends fetched.';
+  let data = {};
+  const { userId } = req.params;
+  try {
+    data = await getSingleUser(userId, req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 router.get('/user/friend/request/send/:userId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Friend Request sent.';
@@ -285,12 +309,13 @@ router.get('/user/friend/reset/:id', async (req, res) => {
   });
 });
 
-router.get('/user/posts', verifyAuth, async (req, res) => {
+router.get('/user/posts/:offset', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'User posts fetched.';
   let data = {};
+  const { offset } = req.params;
   try {
-    data = await getUserPosts(req.user.id);
+    data = await getUserPosts(req.user.id, offset);
   } catch (e) {
     success = false;
     message = e.message;

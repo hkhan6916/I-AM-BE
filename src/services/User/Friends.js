@@ -11,8 +11,8 @@ const resetUserFriendsList = async (id) => {
 };
 
 const searchUser = async (username, offset) => {
-  const users = await User.find({ username: { $regex: username, $options: 'i' } }, 'username firstName lastName profileVideoUrl profileGifUrl').skip(offset).limit(5);
-  // const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+  const users = await User.find({ username: { $regex: username, $options: 'i' } },
+    'username firstName lastName profileVideoUrl profileGifUrl').skip(offset).limit(5);
   if (!users.length) {
     throw new Error('no users found');
   }
@@ -20,13 +20,14 @@ const searchUser = async (username, offset) => {
   return users;
 };
 
-const getSingleUser = async (id) => {
-  const user = await User.findById(id);
-  if (!user) {
+const getSingleUser = async (otherUserId, userId) => {
+  const otherUser = await User.findById(otherUserId);
+  const user = await User.findById(userId);
+  if (!otherUser) {
     throw new Error('no user found');
   }
 
-  return user;
+  return { otherUser, user };
 };
 
 const getUserFriends = async (userId) => {
@@ -84,7 +85,9 @@ const sendFriendRequest = async (userId, recipientId) => {
   if (!recipient || !user) {
     throw new Error('User does not exist.');
   }
-
+  if (user.friendRequestsReceived.includes(recipientId)) {
+    return user;
+  }
   if (recipient.friendRequestsReceived.includes(userId)) {
     throw new Error('Request already sent');
   }
@@ -163,7 +166,7 @@ const recallFriendRequest = async (userId, recipientId) => {
   }
 
   if (user.connections.includes(recipientId)) {
-    throw new Error('Request already accepted.');
+    return user;
   }
 
   if (!user.friendRequestsSent.includes(recipientId)) {

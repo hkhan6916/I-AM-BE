@@ -1,6 +1,7 @@
 const { S3 } = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const tmpCleanup = require('./tmpCleanup');
 
 module.exports = async (file) => {
@@ -8,7 +9,6 @@ module.exports = async (file) => {
   const region = 'eu-west-2';
 
   const inFilePath = `tmp/uploads/${file.filename}`;
-
   const awsConnection = new S3({
     accessKeyId: process.env.AWS_ACCESS_KEY,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -16,6 +16,13 @@ module.exports = async (file) => {
   });
 
   const absoluteFilePath = path.join(__dirname, '..', '..', inFilePath);
+
+  // const imageTypes = ['jpg', 'jpeg', 'png'];
+  // console.log(file.filename.split('.')[1]);
+  // if (imageTypes.includes(file.filename.split('.')[1])) {
+  //   sharp(absoluteFilePath)
+  //     .png({ quality: 10, compressionLevel: 8 });
+  // }
 
   const fileBuffer = fs.readFileSync(absoluteFilePath);
   const fileParams = {

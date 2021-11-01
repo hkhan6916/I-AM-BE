@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 });
 const verifyAuth = require('../middleware/auth');
 
-const { createPost } = require('../services/Posts/Post');
+const { createPost, addLikeToPost, removeLikeFromPost } = require('../services/Posts/Post');
 
 router.post('/posts/new', [verifyAuth, multer({
   storage,
@@ -25,11 +25,53 @@ router.post('/posts/new', [verifyAuth, multer({
   let success = true;
   let message = 'Post created.';
   let data = {};
-  const { postBody, mediaOrientation } = req.body;
+  const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
   try {
     data = await createPost({
-      user: req.user, file: req.file, body: postBody, mediaOrientation,
+      user: req.user, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie,
     });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/like/add/:postId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post liked.';
+  let data = {};
+  const { postId } = req.params;
+  try {
+    data = await addLikeToPost(
+      postId, req.user.id,
+    );
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/like/remove/:postId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post liked.';
+  let data = {};
+  const { postId } = req.params;
+  try {
+    data = await removeLikeFromPost(
+      postId, req.user.id,
+    );
   } catch (e) {
     success = false;
     message = e.message;

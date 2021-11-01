@@ -8,7 +8,7 @@ module.exports = async () => {
     if (err) throw err;
     files.forEach((tmpFile) => {
       fs.unlink(path.join(uploadsDir, tmpFile), (delErr) => {
-        if (delErr) throw delErr;
+        if (delErr) (console.log(delErr));
       });
     });
   });
