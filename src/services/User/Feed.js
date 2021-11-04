@@ -10,17 +10,31 @@ const getUserFeed = async (userId, offset) => {
   }
 
   const offsetInt = parseInt(offset, 10);
-
   const feed = await Posts.aggregate([
     {
       $match: {
         userId: { $in: user.connections.map((id) => ObjectId(id)) },
       },
     },
-    { $sort: { createdAt: 1 } },
+    { $sort: { createdAt: -1 } },
     { $limit: 10 },
     { $skip: offsetInt },
     {
+      $lookup: {
+        from: 'posts',
+        let: { id: '$repostPostId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', { $toObjectId: '$$id' }],
+              },
+            },
+          },
+        ],
+        as: 'repostPostObj',
+      },
+    }, {
       $lookup: {
         from: 'users',
         let: { id: '$userId' },
@@ -52,7 +66,14 @@ const getUserFeed = async (userId, offset) => {
       },
     },
     { $unwind: '$postAuthor' },
-    { $unwind: '$liked' },
+    // { $unwind: '$liked' },
+    {
+      $unwind:
+       {
+         path: '$repostPostObj',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
     {
       $project: {
         _id: 1,
@@ -62,10 +83,13 @@ const getUserFeed = async (userId, offset) => {
         mediaType: 1,
         mediaOrientation: 1,
         mediaIsSelfie: 1,
+        repostPostId: 1,
+        repostPostObj: 1,
         userId: 1,
         likes: 1,
         private: 1,
         postAuthor: 1,
+        createdAt: 1,
         liked: {
           $cond: {
             if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },

@@ -19,6 +19,12 @@ const PostsSchema = new Schema({
   mediaIsSelfie: {
     type: Boolean,
   },
+  repostPostId: {
+    type: String,
+  },
+  repostPostObj: {
+    type: Object,
+  },
   userId: {
     type: Schema.Types.ObjectId,
     required: true,

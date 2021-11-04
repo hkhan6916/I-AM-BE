@@ -17,7 +17,9 @@ const storage = multer.diskStorage({
 });
 const verifyAuth = require('../middleware/auth');
 
-const { createPost, addLikeToPost, removeLikeFromPost } = require('../services/Posts/Post');
+const {
+  createPost, addLikeToPost, removeLikeFromPost, repostPost,
+} = require('../services/Posts/Post');
 
 router.post('/posts/new', [verifyAuth, multer({
   storage,
@@ -29,6 +31,28 @@ router.post('/posts/new', [verifyAuth, multer({
   try {
     data = await createPost({
       user: req.user, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/posts/repost/:postId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post reposted.';
+  let data = {};
+  const { postId } = req.params;
+  const { body } = req.body;
+  try {
+    data = await repostPost({
+      userId: req.user.id, postId, body,
     });
   } catch (e) {
     success = false;
