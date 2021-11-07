@@ -17,6 +17,57 @@ const getUserFeed = async (userId, offset) => {
   //       userId: { $in: user.connections.map((id) => ObjectId(id)) },
   //     },
   //   },
+  //   // {
+  //   //   $lookup: {
+  //   //     from: 'userlikes',
+  //   //     pipeline: [
+  //   //       {
+  //   //         $match: {
+  //   //           likedBy: { $in: user.connections.map((id) => id) },
+  //   //         },
+  //   //       },
+  //   //       {
+  //   //         $lookup: {
+  //   //           from: 'posts',
+  //   //           let: { postsArray: '$posts', friendLiked: '$likedBy' },
+  //   //           pipeline: [
+  //   //             {
+  //   //               $match: {
+  //   //                 $expr: {
+  //   //                   $in: [{ $toString: '$_id' }, '$$postsArray'],
+  //   //                 },
+  //   //               },
+  //   //             },
+  //   //             {
+  //   //               $lookup: {
+  //   //                 from: 'users',
+  //   //                 let: { postsArray: '$posts', friendToFind: '$$friendLiked' },
+  //   //                 pipeline: [
+  //   //                   {
+  //   //                     $match: {
+  //   //                       $expr: {
+  //   //                         $eq: ['$_id', { $toObjectId: '$$friendToFind' }],
+  //   //                       },
+  //   //                     },
+  //   //                   },
+  //   //                 ],
+  //   //                 as: 'likedByFriend',
+  //   //               },
+  //   //             },
+  //   //             { $unwind: '$likedByFriend' },
+  //   //             { $replaceRoot: { newRoot: '$$ROOT' } },
+  //   //           ],
+  //   //           as: 'FriendsLiked',
+  //   //         },
+  //   //       },
+  //   //       {
+  //   //         $project: { FriendsLiked: 1 },
+  //   //       },
+  //   //       { $replaceRoot: { newRoot: '$$ROOT' } },
+  //   //     ],
+  //   //     as: 'friendsLiked',
+  //   //   },
+  //   // },
   //   { $sort: { createdAt: -1 } },
   //   { $limit: 10 },
   //   { $skip: offsetInt },
@@ -81,7 +132,7 @@ const getUserFeed = async (userId, offset) => {
   //   {
   //     $lookup: {
   //       from: 'userlikes',
-  //       let: { id: $userId }, // changed this and added $toUserId
+  //       let: { id: userId }, // change this to $userId
   //       pipeline: [
   //         { $match: { $expr: { $eq: ['$likedBy', '$$id'] } } },
   //         {
@@ -140,7 +191,7 @@ const getUserFeed = async (userId, offset) => {
     {
       $lookup: {
         from: 'posts',
-        let: { postsArray: '$posts' },
+        let: { postsArray: '$posts', friendLiked: '$likedBy' },
         pipeline: [
           {
             $match: {
@@ -149,20 +200,39 @@ const getUserFeed = async (userId, offset) => {
               },
             },
           },
+          {
+            $lookup: {
+              from: 'users',
+              let: { postsArray: '$posts', friendToFind: '$$friendLiked' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: ['$_id', { $toObjectId: '$$friendToFind' }],
+                    },
+                  },
+                },
+              ],
+              as: 'post',
+            },
+          },
+          { $unwind: '$post' },
+          { $replaceRoot: { newRoot: '$$ROOT' } },
         ],
-        as: 'friendLikedPostsone',
+        as: 'likeByFriends',
       },
     },
-    // {
-    //   $unwind: '$postAuthor',
-    // },
-
-    // {
-    //   $project: {
-    //     _id: 1,
-    //     // friendLikedPostsone: 1,
-    //   },
-    // },
+    {
+      $unwind:
+       {
+         path: '$likeByFriends',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $project: { likeByFriends: 1 },
+    },
+    { $replaceRoot: { newRoot: '$$ROOT' } },
   ]);
 
   if (feed.length) {

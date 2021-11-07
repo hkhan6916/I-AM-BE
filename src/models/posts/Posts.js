@@ -39,6 +39,9 @@ const PostsSchema = new Schema({
   age: {
     type: Object,
   },
+  likedByFriend: {
+    type: Object,
+  },
 },
 { timestamps: true });
 module.exports = model('Posts', PostsSchema);
