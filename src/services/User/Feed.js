@@ -31,6 +31,34 @@ const getUserFeed = async (userId, offset) => {
               },
             },
           },
+          {
+            $lookup: {
+              from: 'users',
+              let: { id: '$userId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: ['$_id', '$$id'],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    profileGifUrl: 1,
+                    firstName: 1,
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: 'postAuthor',
+            },
+          },
+          {
+            $unwind: '$postAuthor',
+          },
         ],
         as: 'repostPostObj',
       },
@@ -66,7 +94,7 @@ const getUserFeed = async (userId, offset) => {
       },
     },
     { $unwind: '$postAuthor' },
-    // { $unwind: '$liked' },
+    { $unwind: '$liked' },
     {
       $unwind:
        {
@@ -85,6 +113,7 @@ const getUserFeed = async (userId, offset) => {
         mediaIsSelfie: 1,
         repostPostId: 1,
         repostPostObj: 1,
+        repostPostObjUser: 1,
         userId: 1,
         likes: 1,
         private: 1,
