@@ -9,6 +9,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   if (!user) {
     throw new Error('User could not be found.');
   }
+  console.log(feedTimelineOffset, friendsInterestsOffset);
 
   const friendsPostsBasedFeed = await Posts.aggregate([
     {
@@ -18,6 +19,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     },
     { $sort: { createdAt: -1 } },
     { $skip: feedTimelineOffset || 0 },
+    { $limit: 2 },
     {
       $lookup: {
         from: 'posts',
@@ -293,6 +295,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
              },
           },
           { $skip: friendsInterestsOffset || 0 },
+          { $limit: 2 },
         ],
         as: 'friendsInterestsBasedPost',
       },

@@ -144,6 +144,7 @@ router.post('/user/feed', verifyAuth, async (req, res) => {
   }
 
   res.status(200).json({
+    length: data.length,
     success,
     message,
     data,
