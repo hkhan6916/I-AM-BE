@@ -9,7 +9,6 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   if (!user) {
     throw new Error('User could not be found.');
   }
-  console.log(feedTimelineOffset, friendsInterestsOffset);
 
   const friendsPostsBasedFeed = await Posts.aggregate([
     {
@@ -19,7 +18,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     },
     { $sort: { createdAt: -1 } },
     { $skip: feedTimelineOffset || 0 },
-    { $limit: 2 },
+    { $limit: 5 },
     {
       $lookup: {
         from: 'posts',
@@ -295,7 +294,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
              },
           },
           { $skip: friendsInterestsOffset || 0 },
-          { $limit: 2 },
+          { $limit: 5 },
         ],
         as: 'friendsInterestsBasedPost',
       },
@@ -307,7 +306,17 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
          preserveNullAndEmptyArrays: true,
        },
     },
-    { $replaceRoot: { newRoot: '$friendsInterestsBasedPost' } },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $cond: {
+            if: { $ne: [{ $type: '$friendsInterestsBasedPost' }, 'missing'] },
+            then: '$friendsInterestsBasedPost',
+            else: {},
+          },
+        },
+      },
+    },
     {
       $project: {
         _id: 1,
@@ -328,10 +337,25 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
         likedBy: 1,
         liked: {
           $cond: {
-            if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },
-            then: true,
-            else: false,
+            if: { $ne: [{ $type: '$liked' }, 'missing'] },
+            then: {
+              $cond: {
+                if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },
+                then: true,
+                else: false,
+              },
+            },
+            else: null,
           },
+        },
+      },
+    },
+    {
+      $redact: {
+        $cond: {
+          if: { $eq: ['$liked', null] },
+          then: '$$PRUNE',
+          else: '$$DESCEND',
         },
       },
     },
@@ -340,8 +364,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const removeDuplicatePosts = (posts) => Array.from(new Set(posts.map((a) => a._id)))
     .map((id) => posts.find((a) => a._id === id));
 
-  // const feed = removeDuplicatePosts([...friendsPostsBasedFeed, ...friendsInterestsBasedFeed]);
-  const feed = [...friendsPostsBasedFeed, ...friendsInterestsBasedFeed];
+  const feed = removeDuplicatePosts([...friendsPostsBasedFeed, ...friendsInterestsBasedFeed]);
   console.log(friendsPostsBasedFeed.length, friendsInterestsBasedFeed.length);
   const shuffle = (array) => {
     for (let i = array.length - 1; i > 0; i -= 1) {
