@@ -104,15 +104,40 @@ router.get('/user/data', verifyAuth, async (req, res) => {
 
 router.post('/users/password/:email', async (req, res) => createUserPasswordReset(req, res));
 router.post('/user/password', async (req, res) => resetUserPassword(req, res));
-router.get('/user/feed/:offset', verifyAuth, async (req, res) => {
+// router.get('/user/feed/:offset', verifyAuth, async (req, res) => {
+//   let success = true;
+//   let message = 'User feed fetched.';
+//   let data = {};
+
+//   const { offset } = req.params;
+
+//   try {
+//     data = await getUserFeed(req.user.id, offset);
+//   } catch (e) {
+//     success = false;
+//     message = e.message;
+//   }
+
+//   res.status(200).json({
+//     success,
+//     message,
+//     data,
+//   });
+// });
+
+router.post('/user/feed', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'User feed fetched.';
   let data = {};
 
-  const { offset } = req.params;
+  const { feedTimelineOffset, friendsInterestsOffset } = req.body;
 
   try {
-    data = await getUserFeed(req.user.id, offset);
+    data = await getUserFeed({
+      userId: req.user.id,
+      feedTimelineOffset,
+      friendsInterestsOffset,
+    });
   } catch (e) {
     success = false;
     message = e.message;

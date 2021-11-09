@@ -69,6 +69,11 @@ const addLikeToPost = async (postId, userId) => {
   if (!post) {
     throw new Error('Post does not exist.');
   }
+
+  if (post.userId === userId) {
+    throw new Error('Cannot like this post as it belongs to the same user.');
+  }
+
   const likedPosts = await UserLikes.findOne({ likedBy: userId });
 
   // First time liking a post
