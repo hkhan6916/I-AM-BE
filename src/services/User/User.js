@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { v4: uuid } = require('uuid');
 const User = require('../../models/user/User');
 const { validateEmail } = require('../../helpers');
 const { uploadProfileVideo } = require('../../helpers');

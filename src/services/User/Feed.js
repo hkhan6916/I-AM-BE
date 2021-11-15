@@ -10,6 +10,16 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     throw new Error('User could not be found.');
   }
 
+  /**
+   * Gets the feed based on what a user's friends have posted.
+   *
+   * 1. Gets all posts using userId by looping through connections/friends list.
+   * 2. Gets any post using the repostPostId in case the post is a repost.
+   * 3. Also gets the user as for the repost.
+   * 4. Also gets the user for the current parent post.
+   * 5. Goes through the current user's userLikes record and checks if they've liked this parent
+   *    post. returns true or false for the liked field
+   */
   const friendsPostsBasedFeed = await Posts.aggregate([
     {
       $match: {
@@ -135,6 +145,18 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     ids.push(i._id.toString());
   });
 
+  /**
+   * Gets the feed based on what a user's friends have liked.
+   *
+   * 1. Goes through the userlikes records for all the friends of a user
+   * 2. Using the friend's userlikes records, it gets all posts the friends have liked
+   * 3. Gets any child posts incase the posts are reposts of existing posts.
+   * 4. Gets the postAuthor for the child posts.
+   * 5. Gets data about the friend who liked the parent post.
+   * 6. Checks if the user has liked the post already.
+   * 7. Gets the postAuthor for this parent post
+   *
+   */
   const friendsInterestsBasedFeed = await UserLikes.aggregate([
     {
       $match: {
@@ -155,7 +177,6 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
                   then: null,
                   else: { $in: [{ $toString: '$_id' }, '$$postsArray'] },
                 },
-                // $in: [{ $toString: '$_id' }, '$$postsArray'],
               },
             },
           },
@@ -364,24 +385,18 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const removeDuplicatePosts = (posts) => Array.from(new Set(posts.map((a) => a._id)))
     .map((id) => posts.find((a) => a._id === id));
 
-  const feed = removeDuplicatePosts([...friendsPostsBasedFeed, ...friendsInterestsBasedFeed]);
-  console.log(friendsPostsBasedFeed.length, friendsInterestsBasedFeed.length);
-  const shuffle = (array) => {
-    for (let i = array.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const temp = array[i];
-      array[i] = array[j];
-      array[j] = temp;
-    }
-    return array;
-  };
+  const sortByDate = (posts) => posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const feed = sortByDate(removeDuplicatePosts(
+    [...friendsPostsBasedFeed, ...friendsInterestsBasedFeed],
+  ));
 
   if (feed.length) {
     feed.forEach((post) => {
       getPostAge(post);
     });
   }
-  return shuffle(feed);
+  return feed;
 };
 
 module.exports = {
