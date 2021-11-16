@@ -9,14 +9,6 @@ const CommentSchema = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
-  firstName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
   body: {
     type: String,
     required: true,
@@ -32,16 +24,19 @@ const CommentSchema = new Schema({
     type: Number,
     default: 0,
   },
-  replyingTo: [{
-    username: {
-      type: String,
-      required: true,
-    },
-    replyId: {
-      type: Schema.Types.ObjectId,
-      required: true,
-    },
-  }],
+  replyingToId: {
+    type: Schema.Types.ObjectId,
+  },
+  // replyingTo: [{
+  //   userId: {
+  //     type: Schema.Types.ObjectId,
+  //     required: true,
+  //   },
+  //   replyId: {
+  //     type: Schema.Types.ObjectId,
+  //     required: true,
+  //   },
+  // }],
 },
 { timestamps: true });
 module.exports = model('Comment', CommentSchema);

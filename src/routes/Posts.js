@@ -8,7 +8,9 @@ const {
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
-const { getPostComments, addComment } = require('../services/Posts/Comment');
+const {
+  getPostComments, addComment, getCommentReplies, replyToComment,
+} = require('../services/Posts/Comment');
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
@@ -23,6 +25,7 @@ const storage = multer.diskStorage({
 });
 const verifyAuth = require('../middleware/auth');
 
+// Posts
 router.post('/posts/new', [verifyAuth, multer({
   storage,
 }).single('file')], async (req, res) => {
@@ -46,6 +49,7 @@ router.post('/posts/new', [verifyAuth, multer({
   });
 });
 
+// Reposts
 router.post('/posts/repost/:postId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post reposted.';
@@ -68,6 +72,7 @@ router.post('/posts/repost/:postId', verifyAuth, async (req, res) => {
   });
 });
 
+// Likes
 router.get('/posts/like/add/:postId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post liked.';
@@ -110,6 +115,26 @@ router.get('/posts/like/remove/:postId', verifyAuth, async (req, res) => {
   });
 });
 
+// Comments
+router.post('/posts/comments/add', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment added.';
+  let data = {};
+  const { postId, body } = req.body;
+  try {
+    data = await addComment({ postId, userId: req.user.id, body });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 router.get('/posts/comments/:postId/:offset', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post comments fetched.';
@@ -130,13 +155,33 @@ router.get('/posts/comments/:postId/:offset', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/posts/comments/add', verifyAuth, async (req, res) => {
+router.post('/posts/comments/replies/add', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Comment added.';
+  let message = 'Reply added.';
   let data = {};
-  const { postId, body } = req.body;
+  const { commentId, body } = req.body;
   try {
-    data = await addComment({ postId, userId: req.user.id, body });
+    data = await replyToComment({ commentId, userId: req.user.id, body });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/comments/replies/:commentId/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment replies fetched.';
+  let data = {};
+  const { commentId, offset } = req.params;
+  const offsetInt = parseInt(offset, 10);
+  try {
+    data = await getCommentReplies(commentId, offsetInt);
   } catch (e) {
     success = false;
     message = e.message;
