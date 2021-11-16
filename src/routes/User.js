@@ -104,26 +104,6 @@ router.get('/user/data', verifyAuth, async (req, res) => {
 
 router.post('/users/password/:email', async (req, res) => createUserPasswordReset(req, res));
 router.post('/user/password', async (req, res) => resetUserPassword(req, res));
-// router.get('/user/feed/:offset', verifyAuth, async (req, res) => {
-//   let success = true;
-//   let message = 'User feed fetched.';
-//   let data = {};
-
-//   const { offset } = req.params;
-
-//   try {
-//     data = await getUserFeed(req.user.id, offset);
-//   } catch (e) {
-//     success = false;
-//     message = e.message;
-//   }
-
-//   res.status(200).json({
-//     success,
-//     message,
-//     data,
-//   });
-// });
 
 router.post('/user/feed', verifyAuth, async (req, res) => {
   let success = true;
@@ -316,6 +296,7 @@ router.get('/user/friend/remove/:friendId', verifyAuth, async (req, res) => {
   });
 });
 
+// TODO: delete this when no longer needed.
 router.get('/user/friend/reset/:id', async (req, res) => {
   let success = true;
   let message = 'Friend List Reset.';
