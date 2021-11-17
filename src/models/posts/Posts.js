@@ -20,7 +20,7 @@ const PostsSchema = new Schema({
     type: Boolean,
   },
   repostPostId: {
-    type: String,
+    type: Schema.Types.ObjectId,
   },
   repostPostObj: {
     type: Object,

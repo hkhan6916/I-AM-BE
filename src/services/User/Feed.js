@@ -1,6 +1,6 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
-const UserLikes = require('../../models/user/Likes');
+const PostLikes = require('../../models/user/PostLikes');
 const User = require('../../models/user/User');
 const getPostAge = require('../../helpers/getPostAge');
 
@@ -17,7 +17,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
    * 2. Gets any post using the repostPostId in case the post is a repost.
    * 3. Also gets the user as for the repost.
    * 4. Also gets the user for the current parent post.
-   * 5. Goes through the current user's userLikes record and checks if they've liked this parent
+   * 5. Goes through the current user's PostLikes record and checks if they've liked this parent
    *    post. returns true or false for the liked field
    */
   const friendsPostsBasedFeed = await Posts.aggregate([
@@ -89,14 +89,13 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     },
     {
       $lookup: {
-        from: 'userlikes',
-        let: { id: userId },
+        from: 'postlikes',
+        let: { likedBy: ObjectId(userId) },
         pipeline: [
-          { $match: { $expr: { $eq: ['$likedBy', '$$id'] } } },
+          { $match: { $expr: { $eq: ['$likedBy', '$$likedBy'] } } },
           {
             $project: {
               _id: 1,
-              posts: 1,
             },
           },
         ],
@@ -148,8 +147,8 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   /**
    * Gets the feed based on what a user's friends have liked.
    *
-   * 1. Goes through the userlikes records for all the friends of a user
-   * 2. Using the friend's userlikes records, it gets all posts the friends have liked
+   * 1. Goes through the PostLikes records for all the friends of a user
+   * 2. Using the friend's PostLikes records, it gets all posts the friends have liked
    * 3. Gets any child posts incase the posts are reposts of existing posts.
    * 4. Gets the postAuthor for the child posts.
    * 5. Gets data about the friend who liked the parent post.
@@ -157,7 +156,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
    * 7. Gets the postAuthor for this parent post
    *
    */
-  const friendsInterestsBasedFeed = await UserLikes.aggregate([
+  const friendsInterestsBasedFeed = await PostLikes.aggregate([
     {
       $match: {
         likedBy: { $in: user.connections.map((id) => id) },
@@ -254,8 +253,8 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
           },
           {
             $lookup: {
-              from: 'userlikes',
-              let: { id: userId },
+              from: 'postlikes',
+              let: { id: ObjectId(userId) },
               pipeline: [
                 { $match: { $expr: { $eq: ['$likedBy', '$$id'] } } },
                 {

@@ -1,10 +1,15 @@
 const Posts = require('../../models/posts/Posts');
-const UserLikes = require('../../models/user/Likes');
+const PostLikes = require('../../models/user/PostLikes');
 
 /**
 ########## => Like System
 */
 const addLikeToPost = async (postId, userId) => {
+  const likedPost = await PostLikes.findOneAndDelete({ likedBy: userId, postId });
+  if (likedPost) {
+    throw new Error('User has already liked this post.');
+  }
+
   const post = await Posts.findById(postId);
   if (!post) {
     throw new Error('Post does not exist.');
@@ -14,46 +19,28 @@ const addLikeToPost = async (postId, userId) => {
     throw new Error('Cannot like this post as it belongs to the same user.');
   }
 
-  const likedPosts = await UserLikes.findOne({ likedBy: userId });
+  const like = new PostLikes({
+    likedBy: userId,
+    postId,
+  });
 
-  // First time liking a post
-  if (!likedPosts) {
-    const newLikedPosts = new UserLikes();
-    newLikedPosts.posts = [postId];
-    newLikedPosts.likedBy = userId;
-    post.likes += 1;
-
-    newLikedPosts.save();
-    post.save();
-    return 'Post has been liked.';
-  }
-
-  if (likedPosts.posts.length && likedPosts.posts.includes(postId)) {
-    throw new Error('Already liked this post.');
-  }
-
-  likedPosts.posts.push(postId);
   post.likes += 1;
-  likedPosts.save();
+  like.save();
   post.save();
   return 'Post has been liked';
 };
 
 const removeLikeFromPost = async (postId, userId) => {
-  const likedPosts = await UserLikes.findOne({ likedBy: userId });
-  if (!likedPosts.posts.includes(postId)) {
-    throw new Error('User has not liked this post yet.');
-  }
   const post = await Posts.findById(postId);
   if (!post) {
     throw new Error('Post does not exist.');
   }
-  const likeIndex = likedPosts.posts.indexOf(postId);
-
-  likedPosts.posts.splice(likeIndex);
+  const likedPost = await PostLikes.findOneAndDelete({ likedBy: userId, postId });
+  if (!likedPost) {
+    throw new Error('User has not liked this post yet.');
+  }
 
   post.likes -= 1;
-  likedPosts.save();
   post.save();
   return 'Post like has been removed';
 };

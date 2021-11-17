@@ -1,5 +1,4 @@
 const Posts = require('../../models/posts/Posts');
-const UserLikes = require('../../models/user/Likes');
 
 const { uploadFile } = require('../../helpers');
 
