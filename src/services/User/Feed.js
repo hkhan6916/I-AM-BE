@@ -90,12 +90,13 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     {
       $lookup: {
         from: 'postlikes',
-        let: { likedBy: ObjectId(userId) },
+        let: { likedBy: ObjectId(userId), postId: '$_id' },
         pipeline: [
-          { $match: { $expr: { $eq: ['$likedBy', '$$likedBy'] } } },
+          { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', { $toObjectId: '$$postId' }] }] } } },
           {
             $project: {
               _id: 1,
+              likedBy: 1,
             },
           },
         ],
@@ -103,7 +104,13 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
       },
     },
     { $unwind: '$postAuthor' },
-    { $unwind: '$liked' },
+    {
+      $unwind:
+       {
+         path: '$liked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
     {
       $unwind:
        {
@@ -130,7 +137,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
         createdAt: 1,
         liked: {
           $cond: {
-            if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },
+            if: { $ne: [{ $type: '$liked' }, 'missing'] },
             then: true,
             else: false,
           },
@@ -156,230 +163,231 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
    * 7. Gets the postAuthor for this parent post
    *
    */
-  const friendsInterestsBasedFeed = await PostLikes.aggregate([
-    {
-      $match: {
-        likedBy: { $in: user.connections.map((id) => id) },
-      },
-    },
-    { $sort: { createdAt: -1 } },
-    {
-      $lookup: {
-        from: 'posts',
-        let: { likedBy: '$likedBy', postsArray: '$posts' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $cond: {
-                  if: { $in: [{ $toString: '$_id' }, ids] },
-                  then: null,
-                  else: { $in: [{ $toString: '$_id' }, '$$postsArray'] },
-                },
-              },
-            },
-          },
-          {
-            $lookup: {
-              from: 'posts',
-              let: { id: '$repostPostId' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $eq: ['$_id', { $toObjectId: '$$id' }],
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: 'users',
-                    let: { id: '$userId' },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $eq: ['$_id', '$$id'],
-                          },
-                        },
-                      },
-                      {
-                        $project: {
-                          _id: 1,
-                          username: 1,
-                          profileGifUrl: 1,
-                          firstName: 1,
-                          lastName: 1,
-                        },
-                      },
-                    ],
-                    as: 'postAuthor',
-                  },
-                },
-                {
-                  $unwind: '$postAuthor',
-                },
-              ],
-              as: 'repostPostObj',
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              let: { friendToFind: '$$likedBy' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $cond: {
-                        if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
-                        then: { $eq: ['$_id', { $toObjectId: '$$friendToFind' }] },
-                        else: {},
-                      },
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    username: 1,
-                    firstName: 1,
-                    lastName: 1,
-                    profileGifUrl: 1,
-                  },
-                },
-              ],
-              as: 'likedBy',
-            },
-          },
-          {
-            $lookup: {
-              from: 'postlikes',
-              let: { id: ObjectId(userId) },
-              pipeline: [
-                { $match: { $expr: { $eq: ['$likedBy', '$$id'] } } },
-                {
-                  $project: {
-                    _id: 1,
-                    posts: 1,
-                  },
-                },
-              ],
-              as: 'liked',
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              let: { id: '$userId' },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $eq: ['$_id', '$$id'],
-                    },
-                  },
-                },
-                {
-                  $project: {
-                    _id: 1,
-                    username: 1,
-                    profileGifUrl: 1,
-                    firstName: 1,
-                    lastName: 1,
-                  },
-                },
-              ],
-              as: 'postAuthor',
-            },
-          },
-          {
-            $unwind:
-             {
-               path: '$postAuthor',
-               preserveNullAndEmptyArrays: true,
-             },
-          },
-          {
-            $unwind:
-             {
-               path: '$likedBy',
-               preserveNullAndEmptyArrays: true,
-             },
-          },
-          {
-            $unwind:
-             {
-               path: '$repostPostObj',
-               preserveNullAndEmptyArrays: true,
-             },
-          },
-          { $skip: friendsInterestsOffset || 0 },
-          { $limit: 5 },
-        ],
-        as: 'friendsInterestsBasedPost',
-      },
-    },
-    {
-      $unwind:
-       {
-         path: '$friendsInterestsBasedPost',
-         preserveNullAndEmptyArrays: true,
-       },
-    },
-    {
-      $replaceRoot: {
-        newRoot: {
-          $cond: {
-            if: { $ne: [{ $type: '$friendsInterestsBasedPost' }, 'missing'] },
-            then: '$friendsInterestsBasedPost',
-            else: {},
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        body: 1,
-        mediaUrl: 1,
-        mediaMimeType: 1,
-        mediaType: 1,
-        mediaOrientation: 1,
-        mediaIsSelfie: 1,
-        repostPostId: 1,
-        repostPostObj: 1,
-        repostPostObjUser: 1,
-        userId: 1,
-        likes: 1,
-        private: 1,
-        postAuthor: 1,
-        createdAt: 1,
-        likedBy: 1,
-        liked: {
-          $cond: {
-            if: { $ne: [{ $type: '$liked' }, 'missing'] },
-            then: {
-              $cond: {
-                if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },
-                then: true,
-                else: false,
-              },
-            },
-            else: null,
-          },
-        },
-      },
-    },
-    {
-      $redact: {
-        $cond: {
-          if: { $eq: ['$liked', null] },
-          then: '$$PRUNE',
-          else: '$$DESCEND',
-        },
-      },
-    },
-  ]);
+  const friendsInterestsBasedFeed = [];
+  // await PostLikes.aggregate([
+  //   {
+  //     $match: {
+  //       likedBy: { $in: user.connections.map((id) => id) },
+  //     },
+  //   },
+  //   { $sort: { createdAt: -1 } },
+  //   {
+  //     $lookup: {
+  //       from: 'posts',
+  //       let: { likedBy: '$likedBy', postsArray: '$posts' },
+  //       pipeline: [
+  //         {
+  //           $match: {
+  //             $expr: {
+  //               $cond: {
+  //                 if: { $in: [{ $toString: '$_id' }, ids] },
+  //                 then: null,
+  //                 else: { $in: [{ $toString: '$_id' }, '$$postsArray'] },
+  //               },
+  //             },
+  //           },
+  //         },
+  //         {
+  //           $lookup: {
+  //             from: 'posts',
+  //             let: { id: '$repostPostId' },
+  //             pipeline: [
+  //               {
+  //                 $match: {
+  //                   $expr: {
+  //                     $eq: ['$_id', { $toObjectId: '$$id' }],
+  //                   },
+  //                 },
+  //               },
+  //               {
+  //                 $lookup: {
+  //                   from: 'users',
+  //                   let: { id: '$userId' },
+  //                   pipeline: [
+  //                     {
+  //                       $match: {
+  //                         $expr: {
+  //                           $eq: ['$_id', '$$id'],
+  //                         },
+  //                       },
+  //                     },
+  //                     {
+  //                       $project: {
+  //                         _id: 1,
+  //                         username: 1,
+  //                         profileGifUrl: 1,
+  //                         firstName: 1,
+  //                         lastName: 1,
+  //                       },
+  //                     },
+  //                   ],
+  //                   as: 'postAuthor',
+  //                 },
+  //               },
+  //               {
+  //                 $unwind: '$postAuthor',
+  //               },
+  //             ],
+  //             as: 'repostPostObj',
+  //           },
+  //         },
+  //         {
+  //           $lookup: {
+  //             from: 'users',
+  //             let: { friendToFind: '$$likedBy' },
+  //             pipeline: [
+  //               {
+  //                 $match: {
+  //                   $expr: {
+  //                     $cond: {
+  //                       if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
+  //                       then: { $eq: ['$_id', { $toObjectId: '$$friendToFind' }] },
+  //                       else: {},
+  //                     },
+  //                   },
+  //                 },
+  //               },
+  //               {
+  //                 $project: {
+  //                   username: 1,
+  //                   firstName: 1,
+  //                   lastName: 1,
+  //                   profileGifUrl: 1,
+  //                 },
+  //               },
+  //             ],
+  //             as: 'likedBy',
+  //           },
+  //         },
+  //         {
+  //           $lookup: {
+  //             from: 'postlikes',
+  //             let: { id: ObjectId(userId) },
+  //             pipeline: [
+  //               { $match: { $expr: { $eq: ['$likedBy', '$$id'] } } },
+  //               {
+  //                 $project: {
+  //                   _id: 1,
+  //                   posts: 1,
+  //                 },
+  //               },
+  //             ],
+  //             as: 'liked',
+  //           },
+  //         },
+  //         {
+  //           $lookup: {
+  //             from: 'users',
+  //             let: { id: '$userId' },
+  //             pipeline: [
+  //               {
+  //                 $match: {
+  //                   $expr: {
+  //                     $eq: ['$_id', '$$id'],
+  //                   },
+  //                 },
+  //               },
+  //               {
+  //                 $project: {
+  //                   _id: 1,
+  //                   username: 1,
+  //                   profileGifUrl: 1,
+  //                   firstName: 1,
+  //                   lastName: 1,
+  //                 },
+  //               },
+  //             ],
+  //             as: 'postAuthor',
+  //           },
+  //         },
+  //         {
+  //           $unwind:
+  //            {
+  //              path: '$postAuthor',
+  //              preserveNullAndEmptyArrays: true,
+  //            },
+  //         },
+  //         {
+  //           $unwind:
+  //            {
+  //              path: '$likedBy',
+  //              preserveNullAndEmptyArrays: true,
+  //            },
+  //         },
+  //         {
+  //           $unwind:
+  //            {
+  //              path: '$repostPostObj',
+  //              preserveNullAndEmptyArrays: true,
+  //            },
+  //         },
+  //         { $skip: friendsInterestsOffset || 0 },
+  //         { $limit: 5 },
+  //       ],
+  //       as: 'friendsInterestsBasedPost',
+  //     },
+  //   },
+  //   {
+  //     $unwind:
+  //      {
+  //        path: '$friendsInterestsBasedPost',
+  //        preserveNullAndEmptyArrays: true,
+  //      },
+  //   },
+  //   {
+  //     $replaceRoot: {
+  //       newRoot: {
+  //         $cond: {
+  //           if: { $ne: [{ $type: '$friendsInterestsBasedPost' }, 'missing'] },
+  //           then: '$friendsInterestsBasedPost',
+  //           else: {},
+  //         },
+  //       },
+  //     },
+  //   },
+  //   {
+  //     $project: {
+  //       _id: 1,
+  //       body: 1,
+  //       mediaUrl: 1,
+  //       mediaMimeType: 1,
+  //       mediaType: 1,
+  //       mediaOrientation: 1,
+  //       mediaIsSelfie: 1,
+  //       repostPostId: 1,
+  //       repostPostObj: 1,
+  //       repostPostObjUser: 1,
+  //       userId: 1,
+  //       likes: 1,
+  //       private: 1,
+  //       postAuthor: 1,
+  //       createdAt: 1,
+  //       likedBy: 1,
+  //       liked: {
+  //         $cond: {
+  //           if: { $ne: [{ $type: '$liked' }, 'missing'] },
+  //           then: {
+  //             $cond: {
+  //               if: { $in: [{ $toString: '$_id' }, '$liked.posts'] },
+  //               then: true,
+  //               else: false,
+  //             },
+  //           },
+  //           else: null,
+  //         },
+  //       },
+  //     },
+  //   },
+  //   {
+  //     $redact: {
+  //       $cond: {
+  //         if: { $eq: ['$liked', null] },
+  //         then: '$$PRUNE',
+  //         else: '$$DESCEND',
+  //       },
+  //     },
+  //   },
+  // ]);
 
   const removeDuplicatePosts = (posts) => Array.from(new Set(posts.map((a) => a._id)))
     .map((id) => posts.find((a) => a._id === id));
