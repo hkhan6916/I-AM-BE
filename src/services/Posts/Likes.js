@@ -5,7 +5,7 @@ const PostLikes = require('../../models/user/PostLikes');
 ########## => Like System
 */
 const addLikeToPost = async (postId, userId) => {
-  const likedPost = await PostLikes.findOneAndDelete({ likedBy: userId, postId });
+  const likedPost = await PostLikes.findOne({ likedBy: userId, postId });
   if (likedPost) {
     throw new Error('User has already liked this post.');
   }
