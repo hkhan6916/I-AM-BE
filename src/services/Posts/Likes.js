@@ -5,11 +5,6 @@ const PostLikes = require('../../models/user/PostLikes');
 ########## => Like System
 */
 const addLikeToPost = async (postId, userId) => {
-  const likedPost = await PostLikes.findOne({ likedBy: userId, postId });
-  if (likedPost) {
-    throw new Error('User has already liked this post.');
-  }
-
   const post = await Posts.findById(postId);
   if (!post) {
     throw new Error('Post does not exist.');
@@ -17,6 +12,11 @@ const addLikeToPost = async (postId, userId) => {
 
   if (post.userId === userId) {
     throw new Error('Cannot like this post as it belongs to the same user.');
+  }
+
+  const likedPost = await PostLikes.findOne({ likedBy: userId, postId });
+  if (likedPost) {
+    throw new Error('User has already liked this post.');
   }
 
   const like = new PostLikes({

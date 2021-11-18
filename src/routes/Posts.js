@@ -9,7 +9,12 @@ const {
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
 const {
-  getPostComments, addComment, getCommentReplies, replyToComment,
+  getPostComments,
+  addComment,
+  getCommentReplies,
+  replyToComment,
+  addLikeToComment,
+  removeLikeFromComment,
 } = require('../services/Posts/Comment');
 
 const storage = multer.diskStorage({
@@ -142,7 +147,7 @@ router.get('/posts/comments/:postId/:offset', verifyAuth, async (req, res) => {
   const { postId, offset } = req.params;
   const offsetInt = parseInt(offset, 10);
   try {
-    data = await getPostComments(postId, offsetInt);
+    data = await getPostComments({ postId, userId: req.user.id, offsetInt });
   } catch (e) {
     success = false;
     message = e.message;
@@ -181,7 +186,47 @@ router.get('/posts/comments/replies/:commentId/:offset', verifyAuth, async (req,
   const { commentId, offset } = req.params;
   const offsetInt = parseInt(offset, 10);
   try {
-    data = await getCommentReplies(commentId, offsetInt);
+    data = await getCommentReplies({ commentId, offset: offsetInt, userId: req.user.id });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/comment/like/add/:commentId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment liked.';
+  let data = {};
+  const { commentId } = req.params;
+  try {
+    data = await addLikeToComment(commentId, req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/comment/like/remove/:commentId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment like removed.';
+  let data = {};
+  const { commentId } = req.params;
+  try {
+    data = await removeLikeFromComment(
+      commentId, req.user.id,
+    );
   } catch (e) {
     success = false;
     message = e.message;

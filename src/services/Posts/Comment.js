@@ -2,6 +2,7 @@ const { ObjectId } = require('mongoose').Types;
 const Comment = require('../../models/posts/Comment');
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
+const CommentLikes = require('../../models/posts/CommentLikes');
 
 const addComment = async ({ postId, userId, body }) => {
   const post = await Posts.findById(postId);
@@ -31,7 +32,7 @@ const addComment = async ({ postId, userId, body }) => {
   return 'Comment posted.';
 };
 
-const getPostComments = async (postId, offset) => {
+const getPostComments = async ({ postId, userId, offset }) => {
   const comments = await Comment.aggregate([
     {
       $match: {
@@ -39,7 +40,7 @@ const getPostComments = async (postId, offset) => {
       },
     },
     { $sort: { likes: -1 } },
-    { $skip: offset },
+    { $skip: offset || 0 },
     { $limit: 10 },
     {
       $lookup: {
@@ -48,6 +49,43 @@ const getPostComments = async (postId, offset) => {
         foreignField: '_id',
         as: 'commentAuthor',
       },
+    },
+    {
+      $lookup: {
+        from: 'commentlikes',
+        let: { likedBy: ObjectId(userId), commentId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$likedBy', '$$likedBy'] },
+                  { $eq: ['$commentId', '$$commentId'] }],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              likedBy: 1,
+            },
+          },
+        ],
+        as: 'liked',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$commentAuthor',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $unwind:
+       {
+         path: '$liked',
+         preserveNullAndEmptyArrays: true,
+       },
     },
     {
       $project: {
@@ -59,6 +97,13 @@ const getPostComments = async (postId, offset) => {
         body: 1,
         likes: 1,
         replyingToId: 1,
+        liked: {
+          $cond: {
+            if: { $ne: [{ $type: '$liked' }, 'missing'] },
+            then: true,
+            else: false,
+          },
+        },
         commentAuthor: {
           firstName: 1,
           lastName: 1,
@@ -114,7 +159,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
   return 'Replied to reply';
 };
 
-const getCommentReplies = async (commentId, offset) => {
+const getCommentReplies = async ({ commentId, userId, offset }) => {
   if (!commentId) {
     throw new Error('Id for comment is required.');
   }
@@ -144,6 +189,36 @@ const getCommentReplies = async (commentId, offset) => {
       },
     },
     {
+      $lookup: {
+        from: 'commentlikes',
+        let: { likedBy: ObjectId(userId), commentId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$likedBy', '$$likedBy'] },
+                  { $eq: ['$commentId', '$$commentId'] }],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              likedBy: 1,
+            },
+          },
+        ],
+        as: 'liked',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$liked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
       $project: {
         _id: 1,
         postId: 1,
@@ -152,6 +227,13 @@ const getCommentReplies = async (commentId, offset) => {
         lastName: 1,
         body: 1,
         likes: 1,
+        liked: {
+          $cond: {
+            if: { $ne: [{ $type: '$liked' }, 'missing'] },
+            then: true,
+            else: false,
+          },
+        },
         replyingToId: 1,
         replyingToObj: {
           firstName: 1,
@@ -171,9 +253,54 @@ const getCommentReplies = async (commentId, offset) => {
   return replies;
 };
 
+const addLikeToComment = async (commentId, userId) => {
+  const comment = await Comment.findById(commentId);
+
+  if (!comment) {
+    throw new Error('Comment does not exist.');
+  }
+
+  if (comment.userId === userId) {
+    throw new Error('Cannot like this comment as it belongs to the same user.');
+  }
+
+  const likedComment = await CommentLikes.findOne({ likedBy: userId, commentId });
+
+  if (likedComment) {
+    throw new Error('User has already liked this comment.');
+  }
+
+  const like = new CommentLikes({
+    likedBy: userId,
+    commentId,
+  });
+
+  comment.likes += 1;
+  like.save();
+  comment.save();
+  return 'Comment has been liked';
+};
+
+const removeLikeFromComment = async (commentId, userId) => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new Error('Comment does not exist.');
+  }
+  const likedComment = await CommentLikes.findOneAndDelete({ likedBy: userId, commentId });
+  if (!likedComment) {
+    throw new Error('User has not liked this post yet.');
+  }
+
+  comment.likes -= 1;
+  comment.save();
+  return 'Comment like has been removed';
+};
+
 module.exports = {
   addComment,
   getPostComments,
   replyToComment,
   getCommentReplies,
+  addLikeToComment,
+  removeLikeFromComment,
 };

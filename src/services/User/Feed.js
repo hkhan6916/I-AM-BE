@@ -20,132 +20,131 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
    * 5. Goes through the current user's PostLikes record and checks if they've liked this parent
    *    post. returns true or false for the liked field
    */
-  const friendsPostsBasedFeed = [];
-  // const friendsPostsBasedFeed = await Posts.aggregate([
-  //   {
-  //     $match: {
-  //       userId: { $in: user.connections.map((id) => ObjectId(id)) },
-  //     },
-  //   },
-  //   { $sort: { createdAt: -1 } },
-  //   { $skip: feedTimelineOffset || 0 },
-  //   { $limit: 5 },
-  //   {
-  //     $lookup: {
-  //       from: 'posts',
-  //       let: { id: '$repostPostId' },
-  //       pipeline: [
-  //         {
-  //           $match: {
-  //             $expr: {
-  //               $eq: ['$_id', { $toObjectId: '$$id' }],
-  //             },
-  //           },
-  //         },
-  //         {
-  //           $lookup: {
-  //             from: 'users',
-  //             let: { id: '$userId' },
-  //             pipeline: [
-  //               {
-  //                 $match: {
-  //                   $expr: {
-  //                     $eq: ['$_id', '$$id'],
-  //                   },
-  //                 },
-  //               },
-  //               {
-  //                 $project: {
-  //                   _id: 1,
-  //                   username: 1,
-  //                   profileGifUrl: 1,
-  //                   firstName: 1,
-  //                   lastName: 1,
-  //                 },
-  //               },
-  //             ],
-  //             as: 'postAuthor',
-  //           },
-  //         },
-  //         {
-  //           $unwind: '$postAuthor',
-  //         },
-  //       ],
-  //       as: 'repostPostObj',
-  //     },
-  //   }, {
-  //     $lookup: {
-  //       from: 'users',
-  //       let: { id: '$userId' },
-  //       pipeline: [
-  //         { $match: { $expr: { $eq: ['$_id', '$$id'] } } },
-  //         {
-  //           $project: {
-  //             profileGifUrl: 1, username: 1, firstName: 1, lastName: 1,
-  //           },
-  //         },
-  //       ],
-  //       as: 'postAuthor',
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: 'postlikes',
-  //       let: { likedBy: ObjectId(userId), postId: '$_id' },
-  //       pipeline: [
-  //         { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', { $toObjectId: '$$postId' }] }] } } },
-  //         {
-  //           $project: {
-  //             _id: 1,
-  //             likedBy: 1,
-  //           },
-  //         },
-  //       ],
-  //       as: 'liked',
-  //     },
-  //   },
-  //   { $unwind: '$postAuthor' },
-  //   {
-  //     $unwind:
-  //      {
-  //        path: '$liked',
-  //        preserveNullAndEmptyArrays: true,
-  //      },
-  //   },
-  //   {
-  //     $unwind:
-  //      {
-  //        path: '$repostPostObj',
-  //        preserveNullAndEmptyArrays: true,
-  //      },
-  //   },
-  //   {
-  //     $project: {
-  //       _id: 1,
-  //       body: 1,
-  //       mediaUrl: 1,
-  //       mediaMimeType: 1,
-  //       mediaType: 1,
-  //       mediaOrientation: 1,
-  //       mediaIsSelfie: 1,
-  //       repostPostId: 1,
-  //       repostPostObj: 1,
-  //       repostPostObjUser: 1,
-  //       userId: 1,
-  //       likes: 1,
-  //       private: 1,
-  //       postAuthor: 1,
-  //       createdAt: 1,
-  //       liked: {
-  //         $cond: {
-  //           if: { $ne: [{ $type: '$liked' }, 'missing'] },
-  //           then: true,
-  //           else: false,
-  //         },
-  //       },
-  //     },
-  //   },
-  // ]);
+  const friendsPostsBasedFeed = await Posts.aggregate([
+    {
+      $match: {
+        userId: { $in: user.connections.map((id) => ObjectId(id)) },
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    { $skip: feedTimelineOffset || 0 },
+    { $limit: 5 },
+    {
+      $lookup: {
+        from: 'posts',
+        let: { id: '$repostPostId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$id'],
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: 'users',
+              let: { id: '$userId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: ['$_id', '$$id'],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    profileGifUrl: 1,
+                    firstName: 1,
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: 'postAuthor',
+            },
+          },
+          {
+            $unwind: '$postAuthor',
+          },
+        ],
+        as: 'repostPostObj',
+      },
+    }, {
+      $lookup: {
+        from: 'users',
+        let: { id: '$userId' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$id'] } } },
+          {
+            $project: {
+              profileGifUrl: 1, username: 1, firstName: 1, lastName: 1,
+            },
+          },
+        ],
+        as: 'postAuthor',
+      },
+    },
+    {
+      $lookup: {
+        from: 'postlikes',
+        let: { likedBy: ObjectId(userId), postId: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', '$$postId'] }] } } },
+          {
+            $project: {
+              _id: 1,
+              likedBy: 1,
+            },
+          },
+        ],
+        as: 'liked',
+      },
+    },
+    { $unwind: '$postAuthor' },
+    {
+      $unwind:
+       {
+         path: '$liked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $unwind:
+       {
+         path: '$repostPostObj',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $project: {
+        _id: 1,
+        body: 1,
+        mediaUrl: 1,
+        mediaMimeType: 1,
+        mediaType: 1,
+        mediaOrientation: 1,
+        mediaIsSelfie: 1,
+        repostPostId: 1,
+        repostPostObj: 1,
+        repostPostObjUser: 1,
+        userId: 1,
+        likes: 1,
+        private: 1,
+        postAuthor: 1,
+        createdAt: 1,
+        liked: {
+          $cond: {
+            if: { $ne: [{ $type: '$liked' }, 'missing'] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+  ]);
 
   const ids = [];
   friendsPostsBasedFeed.forEach((i) => {
@@ -196,7 +195,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
                 {
                   $match: {
                     $expr: {
-                      $eq: ['$_id', { $toObjectId: '$$id' }],
+                      $eq: ['$_id', '$$id'],
                     },
                   },
                 },
@@ -242,7 +241,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
                     $expr: {
                       $cond: {
                         if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
-                        then: { $eq: ['$_id', { $toObjectId: '$$friendToFind' }] },
+                        then: { $eq: ['$_id', '$$friendToFind'] },
                         else: {},
                       },
                     },
