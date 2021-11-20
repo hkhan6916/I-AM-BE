@@ -32,6 +32,21 @@ const addComment = async ({ postId, userId, body }) => {
   return 'Comment posted.';
 };
 
+const removeComment = async (commentId, userId) => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new Error('Comment does not exist.');
+  }
+
+  if (comment.userId.toString() !== userId) {
+    throw new Error('Comment does not belong to this user.');
+  }
+
+  await Comment.findByIdAndDelete(commentId);
+
+  return 'Comment has been removed';
+};
+
 const getPostComments = async ({ postId, userId, offset }) => {
   const comments = await Comment.aggregate([
     {
@@ -55,6 +70,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
         from: 'commentlikes',
         let: { likedBy: ObjectId(userId), commentId: '$_id' },
         pipeline: [
+          { $limit: 1 },
           {
             $match: {
               $expr: {
@@ -193,6 +209,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         from: 'commentlikes',
         let: { likedBy: ObjectId(userId), commentId: '$_id' },
         pipeline: [
+          { $limit: 1 },
           {
             $match: {
               $expr: {
@@ -260,7 +277,7 @@ const addLikeToComment = async (commentId, userId) => {
     throw new Error('Comment does not exist.');
   }
 
-  if (comment.userId === userId) {
+  if (comment.userId.toString() === userId) {
     throw new Error('Cannot like this comment as it belongs to the same user.');
   }
 
@@ -298,6 +315,7 @@ const removeLikeFromComment = async (commentId, userId) => {
 
 module.exports = {
   addComment,
+  removeComment,
   getPostComments,
   replyToComment,
   getCommentReplies,

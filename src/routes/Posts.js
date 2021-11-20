@@ -11,6 +11,7 @@ const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes')
 const {
   getPostComments,
   addComment,
+  removeComment,
   getCommentReplies,
   replyToComment,
   addLikeToComment,
@@ -128,6 +129,25 @@ router.post('/posts/comments/add', verifyAuth, async (req, res) => {
   const { postId, body } = req.body;
   try {
     data = await addComment({ postId, userId: req.user.id, body });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.delete('/posts/comments/remove/:commentId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment removed.';
+  let data = {};
+  const { commentId } = req.params;
+  try {
+    data = await removeComment(commentId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

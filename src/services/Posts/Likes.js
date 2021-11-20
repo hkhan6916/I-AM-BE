@@ -10,7 +10,7 @@ const addLikeToPost = async (postId, userId) => {
     throw new Error('Post does not exist.');
   }
 
-  if (post.userId === userId) {
+  if (post.userId.toString() === userId) {
     throw new Error('Cannot like this post as it belongs to the same user.');
   }
 
@@ -27,6 +27,7 @@ const addLikeToPost = async (postId, userId) => {
   post.likes += 1;
   like.save();
   post.save();
+
   return 'Post has been liked';
 };
 

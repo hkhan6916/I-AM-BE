@@ -93,6 +93,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
         let: { likedBy: ObjectId(userId), postId: '$_id' },
         pipeline: [
           { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', '$$postId'] }] } } },
+          { $limit: 1 },
           {
             $project: {
               _id: 1,
@@ -265,6 +266,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
               let: { likedBy: ObjectId(userId) },
               pipeline: [
                 { $match: { $expr: { $eq: ['$likedBy', '$$likedBy'] } } },
+                { $limit: 1 },
                 {
                   $project: {
                     _id: 1,
