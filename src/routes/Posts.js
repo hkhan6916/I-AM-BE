@@ -167,7 +167,7 @@ router.get('/posts/comments/:postId/:offset', verifyAuth, async (req, res) => {
   const { postId, offset } = req.params;
   const offsetInt = parseInt(offset, 10);
   try {
-    data = await getPostComments({ postId, userId: req.user.id, offsetInt });
+    data = await getPostComments({ postId, userId: req.user.id, offset: offsetInt });
   } catch (e) {
     success = false;
     message = e.message;

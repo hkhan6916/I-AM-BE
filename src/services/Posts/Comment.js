@@ -23,13 +23,20 @@ const addComment = async ({ postId, userId, body }) => {
   const comment = new Comment({
     postId,
     userId,
-    firstName: user.firstName,
-    lastName: user.lastName,
     body,
   });
 
   comment.save();
-  return 'Comment posted.';
+  return {
+    postId,
+    userId,
+    body,
+    commentAuthor: {
+      profileGifUrl: user.profileGifUrl,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+  };
 };
 
 const removeComment = async (commentId, userId) => {
@@ -54,7 +61,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
         postId: ObjectId(postId),
       },
     },
-    { $sort: { likes: -1 } },
+    { $sort: { likes: -1, _id: 1 } },
     { $skip: offset || 0 },
     { $limit: 10 },
     {
@@ -129,8 +136,10 @@ const getPostComments = async ({ postId, userId, offset }) => {
       },
     },
   ]);
+  const removeDuplicatePosts = (posts) => Array.from(new Set(posts.map((a) => a._id)))
+    .map((id) => posts.find((a) => a._id === id));
 
-  return comments;
+  return removeDuplicatePosts(comments);
 };
 
 const replyToComment = async ({ commentId, body, userId }) => {
@@ -159,7 +168,17 @@ const replyToComment = async ({ commentId, body, userId }) => {
 
     reply.save();
 
-    return 'Replied to comment.';
+    return {
+      postId: comment.postId,
+      parentCommentId: comment._id,
+      userId,
+      body,
+      commentAuthor: {
+        profileGifUrl: user.profileGifUrl,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+    };
   }
 
   const reply = new Comment({
@@ -172,7 +191,18 @@ const replyToComment = async ({ commentId, body, userId }) => {
 
   reply.save();
 
-  return 'Replied to reply';
+  return {
+    postId: comment.postId,
+    parentCommentId: comment.parentCommentId,
+    userId,
+    body,
+    replyingToId: comment.userId,
+    commentAuthor: {
+      profileGifUrl: user.profileGifUrl,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    },
+  };
 };
 
 const getCommentReplies = async ({ commentId, userId, offset }) => {
@@ -186,14 +216,14 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
       },
     },
     { $sort: { likes: -1 } },
-    { $skip: offset },
+    { $skip: offset || 0 },
     { $limit: 10 },
     {
       $lookup: {
         from: 'users',
         localField: 'userId',
         foreignField: '_id',
-        as: 'replyAuthor',
+        as: 'commentAuthor',
       },
     },
     {
@@ -257,7 +287,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
           lastName: 1,
           jobTitle: 1,
         },
-        replyAuthor: {
+        commentAuthor: {
           firstName: 1,
           lastName: 1,
           profileGifUrl: 1,
@@ -277,9 +307,9 @@ const addLikeToComment = async (commentId, userId) => {
     throw new Error('Comment does not exist.');
   }
 
-  if (comment.userId.toString() === userId) {
-    throw new Error('Cannot like this comment as it belongs to the same user.');
-  }
+  // if (comment.userId.toString() === userId) {
+  //   throw new Error('Cannot like this comment as it belongs to the same user.');
+  // }
 
   const likedComment = await CommentLikes.findOne({ likedBy: userId, commentId });
 
