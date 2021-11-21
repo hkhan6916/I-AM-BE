@@ -58,10 +58,10 @@ const getPostComments = async ({ postId, userId, offset }) => {
   const comments = await Comment.aggregate([
     {
       $match: {
-        postId: ObjectId(postId),
+        $expr: { $and: [{ $eq: ['$postId', ObjectId(postId)] }, { $eq: [{ $type: '$parentCommentId' }, 'missing'] }] },
       },
     },
-    { $sort: { likes: -1, _id: 1 } },
+    { $sort: { likes: -1, replyCount: -1, _id: 1 } },
     { $skip: offset || 0 },
     { $limit: 10 },
     {
@@ -77,7 +77,6 @@ const getPostComments = async ({ postId, userId, offset }) => {
         from: 'commentlikes',
         let: { likedBy: ObjectId(userId), commentId: '$_id' },
         pipeline: [
-          { $limit: 1 },
           {
             $match: {
               $expr: {
@@ -86,6 +85,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
               },
             },
           },
+          { $limit: 1 },
           {
             $project: {
               _id: 1,
@@ -120,6 +120,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
         body: 1,
         likes: 1,
         replyingToId: 1,
+        replyCount: 1,
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -165,8 +166,9 @@ const replyToComment = async ({ commentId, body, userId }) => {
       userId,
       body,
     });
-
+    comment.replyCount += 1;
     reply.save();
+    comment.save();
 
     return {
       postId: comment.postId,
@@ -215,7 +217,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         parentCommentId: ObjectId(commentId),
       },
     },
-    { $sort: { likes: -1 } },
+    { $sort: { likes: -1, _id: 1 } },
     { $skip: offset || 0 },
     { $limit: 10 },
     {
@@ -239,7 +241,6 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         from: 'commentlikes',
         let: { likedBy: ObjectId(userId), commentId: '$_id' },
         pipeline: [
-          { $limit: 1 },
           {
             $match: {
               $expr: {
@@ -248,6 +249,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
               },
             },
           },
+          { $limit: 1 },
           {
             $project: {
               _id: 1,
@@ -307,9 +309,9 @@ const addLikeToComment = async (commentId, userId) => {
     throw new Error('Comment does not exist.');
   }
 
-  // if (comment.userId.toString() === userId) {
-  //   throw new Error('Cannot like this comment as it belongs to the same user.');
-  // }
+  if (comment.userId.toString() === userId) {
+    throw new Error('Cannot like this comment as it belongs to the same user.');
+  }
 
   const likedComment = await CommentLikes.findOne({ likedBy: userId, commentId });
 
