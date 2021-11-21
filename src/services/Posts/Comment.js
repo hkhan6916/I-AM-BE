@@ -121,6 +121,13 @@ const getPostComments = async ({ postId, userId, offset }) => {
         likes: 1,
         replyingToId: 1,
         replyCount: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', ObjectId(userId)] },
+            then: true,
+            else: false,
+          },
+        },
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -191,7 +198,9 @@ const replyToComment = async ({ commentId, body, userId }) => {
     replyingToId: comment.userId,
   });
 
+  comment.replyCount += 1;
   reply.save();
+  comment.save();
 
   return {
     postId: comment.postId,
@@ -225,7 +234,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         from: 'users',
         localField: 'userId',
         foreignField: '_id',
-        as: 'commentAuthor',
+        as: 'replyAuthor',
       },
     },
     {
@@ -268,6 +277,20 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
        },
     },
     {
+      $unwind:
+       {
+         path: '$replyingToObj',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $unwind:
+       {
+         path: '$replyAuthor',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
       $project: {
         _id: 1,
         postId: 1,
@@ -276,6 +299,13 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         lastName: 1,
         body: 1,
         likes: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', ObjectId(userId)] },
+            then: true,
+            else: false,
+          },
+        },
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -289,7 +319,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
           lastName: 1,
           jobTitle: 1,
         },
-        commentAuthor: {
+        replyAuthor: {
           firstName: 1,
           lastName: 1,
           profileGifUrl: 1,
