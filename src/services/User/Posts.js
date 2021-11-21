@@ -1,5 +1,5 @@
 const Posts = require('../../models/posts/Posts');
-const { getPostAge } = require('../../helpers');
+const { calculateAge } = require('../../helpers');
 
 const getUserPosts = async (userId, offset) => {
   const posts = await Posts.find({ userId }, {}, { skip: parseInt(offset, 10), limit: 10 });
@@ -13,7 +13,7 @@ const getUserPosts = async (userId, offset) => {
   }
 
   posts.forEach((post) => {
-    getPostAge(post);
+    calculateAge(post);
   });
 
   return posts;

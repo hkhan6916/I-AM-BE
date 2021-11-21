@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongoose').Types;
+const { v4: uuid } = require('uuid');
 const Comment = require('../../models/posts/Comment');
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
@@ -29,6 +30,7 @@ const addComment = async ({ postId, userId, body }) => {
 
   comment.save();
   return {
+    _id: uuid(),
     postId,
     userId,
     body,
@@ -181,6 +183,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
     comment.save();
 
     return {
+      _id: uuid(),
       postId: comment.postId,
       parentCommentId: comment._id,
       userId,
@@ -206,6 +209,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
   comment.save();
 
   return {
+    _id: uuid(),
     postId: comment.postId,
     parentCommentId: comment.parentCommentId,
     userId,
