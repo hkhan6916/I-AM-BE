@@ -3,7 +3,7 @@ const uploadProfileVideo = require('./uploadProfileVideo');
 const uploadFile = require('./uploadFile');
 const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
-const getPostAge = require('./getPostAge');
+const calculateAge = require('./calculateAge');
 
 module.exports = {
   validateEmail,
@@ -11,5 +11,5 @@ module.exports = {
   uploadFile,
   tmpCleanup,
   generateGif,
-  getPostAge,
+  calculateAge,
 };

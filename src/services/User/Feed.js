@@ -2,7 +2,7 @@ const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
 const PostLikes = require('../../models/user/PostLikes');
 const User = require('../../models/user/User');
-const getPostAge = require('../../helpers/getPostAge');
+const { calculateAge } = require('../../helpers');
 
 const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset }) => {
   const user = await User.findById(userId);
@@ -403,7 +403,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
 
   if (feed.length) {
     feed.forEach((post) => {
-      getPostAge(post);
+      calculateAge(post);
     });
   }
   return feed;

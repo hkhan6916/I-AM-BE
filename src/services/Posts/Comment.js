@@ -3,6 +3,7 @@ const Comment = require('../../models/posts/Comment');
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
 const CommentLikes = require('../../models/posts/CommentLikes');
+const { calculateAge } = require('../../helpers');
 
 const addComment = async ({ postId, userId, body }) => {
   const post = await Posts.findById(postId);
@@ -121,6 +122,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
         likes: 1,
         replyingToId: 1,
         replyCount: 1,
+        createdAt: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },
@@ -144,10 +146,11 @@ const getPostComments = async ({ postId, userId, offset }) => {
       },
     },
   ]);
-  const removeDuplicatePosts = (posts) => Array.from(new Set(posts.map((a) => a._id)))
-    .map((id) => posts.find((a) => a._id === id));
+  comments.forEach((comment) => {
+    calculateAge(comment);
+  });
 
-  return removeDuplicatePosts(comments);
+  return comments;
 };
 
 const replyToComment = async ({ commentId, body, userId }) => {
@@ -299,6 +302,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         lastName: 1,
         body: 1,
         likes: 1,
+        createdAt: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },
@@ -328,7 +332,9 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
       },
     },
   ]);
-
+  replies.forEach((reply) => {
+    calculateAge(reply);
+  });
   return replies;
 };
 

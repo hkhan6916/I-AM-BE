@@ -27,16 +27,6 @@ const CommentSchema = new Schema({
   replyingToId: {
     type: Schema.Types.ObjectId,
   },
-  // replyingTo: [{
-  //   userId: {
-  //     type: Schema.Types.ObjectId,
-  //     required: true,
-  //   },
-  //   replyId: {
-  //     type: Schema.Types.ObjectId,
-  //     required: true,
-  //   },
-  // }],
 },
 { timestamps: true });
 module.exports = model('Comment', CommentSchema);

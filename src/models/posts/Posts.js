@@ -36,9 +36,6 @@ const PostsSchema = new Schema({
   private: {
     type: Boolean,
   },
-  age: {
-    type: Object,
-  },
   likedByFriend: {
     type: Object,
   },
