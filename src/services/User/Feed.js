@@ -136,6 +136,13 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
         private: 1,
         postAuthor: 1,
         createdAt: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', userId] },
+            then: true,
+            else: false,
+          },
+        },
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -372,6 +379,13 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
         postAuthor: 1,
         createdAt: 1,
         likedBy: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', userId] },
+            then: true,
+            else: false,
+          },
+        },
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },

@@ -188,7 +188,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
       parentCommentId: comment._id,
       userId,
       body,
-      commentAuthor: {
+      replyAuthor: {
         profileGifUrl: user.profileGifUrl,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -215,7 +215,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
     userId,
     body,
     replyingToId: comment.userId,
-    commentAuthor: {
+    replyAuthor: {
       profileGifUrl: user.profileGifUrl,
       firstName: user.firstName,
       lastName: user.lastName,
