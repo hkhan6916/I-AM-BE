@@ -27,7 +27,7 @@ const loginUser = async (identifier, password) => {
       JWT_SECRET,
     );
 
-    return { token };
+    return { token, userId: user._id };
   }
 
   throw new Error('Invalid email/password');

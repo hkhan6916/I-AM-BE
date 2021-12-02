@@ -30,7 +30,7 @@ const addComment = async ({ postId, userId, body }) => {
 
   comment.save();
   return {
-    _id: uuid(),
+    _id: comment.id || uuid(),
     postId,
     userId,
     body,

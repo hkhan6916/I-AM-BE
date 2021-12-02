@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const socketIo = require('socket.io');
 
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
@@ -16,6 +17,14 @@ mongoose.connect(process.env.DB_CONNECT, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+const io = socketIo(server, {
+  cors: {
+    origin: '*',
+  },
+});
+
+require('./src/routes/Messages.socket')(io);
 
 app.use(express.urlencoded({ extended: true }));
 
