@@ -20,9 +20,9 @@ module.exports = (io) => {
       socket.emit('createRoomSuccess', { chat });
     });
 
-    socket.on('joinRoom', ({ roomId }) => {
-      socket.join(roomId);
-      socket.emit('joinRoomSuccess', { roomId });
+    socket.on('joinRoom', ({ chatId }) => {
+      socket.join(chatId);
+      socket.emit('joinRoomSuccess', { chatId });
     });
 
     socket.on('sendMessage', ({
@@ -37,12 +37,12 @@ module.exports = (io) => {
       });
       message.save();
       // this is what we want in production.
-      //   socket.to(chatId).emit('receiveMessage', {
-      //     body, chatId, senderId, mediaUrl,
-      //   });
-      socket.emit('receiveMessage', {
+      socket.to(chatId).emit('receiveMessage', {
         body, chatId, senderId, mediaUrl,
       });
+      //   socket.emit('receiveMessage', {
+      //     body, chatId, senderId, mediaUrl,
+      //   });
 
       // TODO: send notification
     });
