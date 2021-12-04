@@ -1,16 +1,17 @@
 const Chat = require('../models/chat/Chat');
+const User = require('../models/user/User');
 const Messages = require('../models/chat/Message');
 const socketAuth = require('../middleware/socketAuth');
 
 module.exports = (io) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
-      console.log('Disconnected');
+      socket.emit('disconnected');
     });
 
     socket.on('createRoom', ({ participants }) => {
       if (participants.length !== 2) {
-        throw new Error(`Chat room must have 2 participants got ${participants.length}`);
+        throw new Error(`Chat room must have 2 participants but got ${participants.length}`);
       }
       const chat = new Chat({
         participants,
@@ -20,15 +21,17 @@ module.exports = (io) => {
       socket.emit('createRoomSuccess', { chat });
     });
 
-    socket.on('joinRoom', ({ chatId }) => {
+    socket.on('joinRoom', async ({ chatId, userId }) => {
       socket.join(chatId);
       socket.emit('joinRoomSuccess', { chatId });
+      const user = await User.findById(userId);
+
+      socket.user = user;
     });
 
-    socket.on('sendMessage', ({
+    socket.on('sendMessage', async ({
       body, chatId, senderId, mediaUrl,
     }) => {
-      console.log('message');
       const message = new Messages({
         body,
         chatId,
@@ -36,13 +39,23 @@ module.exports = (io) => {
         mediaUrl: mediaUrl || null,
       });
       message.save();
-      // this is what we want in production.
+      if (!socket.user) {
+        const user = await User.findById(senderId);
+
+        socket.user = user;
+      }
+      const {
+        firstName, lastName, username, _id,
+      } = socket.user;
       socket.to(chatId).emit('receiveMessage', {
-        body, chatId, senderId, mediaUrl,
+        body,
+        chatId,
+        senderId,
+        mediaUrl,
+        user: {
+          firstName, lastName, username, _id,
+        },
       });
-      //   socket.emit('receiveMessage', {
-      //     body, chatId, senderId, mediaUrl,
-      //   });
 
       // TODO: send notification
     });

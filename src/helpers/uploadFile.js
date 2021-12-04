@@ -1,7 +1,6 @@
 const { S3 } = require('aws-sdk');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 const tmpCleanup = require('./tmpCleanup');
 
 module.exports = async (file) => {
@@ -17,13 +16,6 @@ module.exports = async (file) => {
 
   const absoluteFilePath = path.join(__dirname, '..', '..', inFilePath);
 
-  // const imageTypes = ['jpg', 'jpeg', 'png'];
-  // console.log(file.filename.split('.')[1]);
-  // if (imageTypes.includes(file.filename.split('.')[1])) {
-  //   sharp(absoluteFilePath)
-  //     .png({ quality: 10, compressionLevel: 8 });
-  // }
-
   const fileBuffer = fs.readFileSync(absoluteFilePath);
   const fileParams = {
     Bucket,
@@ -34,14 +26,14 @@ module.exports = async (file) => {
 
   await awsConnection.putObject(fileParams, (err, pres) => {
     if (err) {
-      console.log(err);
       awsConnection.deleteObject(fileParams);
+      throw new Error(err);
     }
   }).promise();
 
-  const profileVideoUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`; // awsConnection.getSignedUrl('getObject', { Bucket: fileParams.Bucket, Key: fileParams.Key });
+  const fileUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`;
 
   // delete all files in tmp uploads
   await tmpCleanup();
-  return profileVideoUrl;
+  return fileUrl;
 };
