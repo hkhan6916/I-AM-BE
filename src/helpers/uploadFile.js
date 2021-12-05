@@ -30,7 +30,7 @@ module.exports = async (file) => {
       throw new Error(err);
     }
   }).promise();
-
+  console.log('here');
   const fileUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`;
 
   // delete all files in tmp uploads
