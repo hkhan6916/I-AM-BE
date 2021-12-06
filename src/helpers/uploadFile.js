@@ -24,14 +24,14 @@ module.exports = async (file) => {
     ACL: 'public-read',
   };
 
-  await awsConnection.putObject(fileParams, (err, pres) => {
+  await awsConnection.putObject(fileParams, async (err, pres) => {
     if (err) {
+      await tmpCleanup();
       awsConnection.deleteObject(fileParams);
-      throw new Error(err);
     }
   }).promise();
-  console.log('here');
-  const fileUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`;
+  // const fileUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`;
+  const fileUrl = `dhahb2s08yybu.cloudfront.net/${fileParams.Key}`;
 
   // delete all files in tmp uploads
   await tmpCleanup();
