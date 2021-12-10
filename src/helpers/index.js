@@ -4,6 +4,7 @@ const uploadFile = require('./uploadFile');
 const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
 const calculateAge = require('./calculateAge');
+const getFileSignedHeaders = require('./getFileSignedHeaders');
 
 module.exports = {
   validateEmail,
@@ -12,4 +13,5 @@ module.exports = {
   tmpCleanup,
   generateGif,
   calculateAge,
+  getFileSignedHeaders,
 };

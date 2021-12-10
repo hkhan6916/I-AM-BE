@@ -19,6 +19,7 @@ const createPost = async ({
   });
   if (file) {
     const mediaUrl = await uploadFile(file);
+    console.log(mediaUrl);
     post.mediaOrientation = mediaOrientation;
     post.mediaUrl = mediaUrl;
     post.mediaMimeType = file.mimetype;

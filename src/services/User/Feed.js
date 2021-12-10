@@ -3,6 +3,7 @@ const Posts = require('../../models/posts/Posts');
 const PostLikes = require('../../models/user/PostLikes');
 const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
+const getSignedFileHeaders = require('../../helpers/getFileSignedHeaders');
 
 const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset }) => {
   const user = await User.findById(userId);
@@ -414,6 +415,14 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const feed = sortByDate(removeDuplicatePosts(
     [...friendsPostsBasedFeed, ...friendsInterestsBasedFeed],
   ));
+
+  feed.forEach(async (post) => {
+    if (post.mediaUrl) {
+      const headers = await getSignedFileHeaders(post.mediaUrl);
+      post.fileHeaders = headers;
+      console.log(post);
+    }
+  });
 
   if (feed.length) {
     feed.forEach((post) => {

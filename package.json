@@ -9,6 +9,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "aws-sdk": "^2.999.0",
+    "aws4": "^1.11.0",
     "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",

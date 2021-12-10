@@ -1,25 +1,9 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
 const { calculateAge } = require('../../helpers');
+const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
 const getUserPosts = async (userId, offset) => {
-  // const posts = await Posts.find({ userId }, {}, { skip: parseInt(offset, 10), limit: 10 });
-
-  // if (posts.length) {
-  //   posts.forEach((post) => {
-  //     calculateAge(post);
-  //   });
-  // }
-  // return posts;
-
-  // posts.forEach((post) => {
-  //   post = { ...post, belonging: 'true' };
-  //   console.log(post);
-  //   calculateAge(post);
-  // });
-
-  // return posts;
-
   const posts = await Posts.aggregate([
     {
       $match: {
@@ -27,6 +11,7 @@ const getUserPosts = async (userId, offset) => {
       },
     },
     { $sort: { createdAt: -1 } },
+    // { $skip: offset || 0 },
     { $limit: 10 },
   ]);
   if (!Array.isArray(posts)) {
@@ -36,8 +21,13 @@ const getUserPosts = async (userId, offset) => {
   if (!posts.length) {
     throw new Error('No posts found');
   }
-  posts.forEach((post) => {
+  posts.forEach(async (post) => {
     post.belongsToUser = true;
+    if (post.mediaUrl) {
+      const headers = await getFileSignedHeaders(post.mediaUrl);
+
+      post.fileHeaders = headers;
+    }
 
     calculateAge(post);
   });

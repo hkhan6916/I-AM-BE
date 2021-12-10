@@ -14,10 +14,12 @@ module.exports = async (file) => {
   if (!file) {
     throw new Error('No video profile provided');
   }
-
+  const credentials = {
+    accessKeyId: 'AKIAVUWLHDRFSZV6Q6UK',
+    secretAccessKey: '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',
+  };
   const awsConnection = new S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    credentials,
     region,
   });
 
@@ -41,26 +43,24 @@ module.exports = async (file) => {
     Bucket,
     Key: profileGifName,
     Body: profileGifBuffer,
-    ACL: 'public-read',
+    ACL: 'private',
   };
 
   const profileVideoParams = {
     Bucket,
     Key: `${file.filename}`,
     Body: profileVideoBuffer,
-    ACL: 'public-read',
+    ACL: 'private',
   };
 
   await awsConnection.putObject(profileGifParams, (err, pres) => {
-    if (err) { // todo delete file if error
-      console.log(err.message);
+    if (err) {
       awsConnection.deleteObject(profileGifParams);
     }
   }).promise();
 
   await awsConnection.putObject(profileVideoParams, (err, pres) => {
-    if (err) { // todo delete file if error
-      console.log(err.message);
+    if (err) {
       awsConnection.deleteObject(profileVideoParams);
     }
   }).promise();
@@ -68,7 +68,6 @@ module.exports = async (file) => {
   const profileVideoUrl = `https://s3-${region}.amazonaws.com/${profileVideoParams.Bucket}/${profileVideoParams.Key}`; // awsConnection.getSignedUrl('getObject', { Bucket: profileVideoParams.Bucket, Key: profileVideoParams.Key });
   const profileGifUrl = `https://s3-${region}.amazonaws.com/${profileGifParams.Bucket}/${profileGifParams.Key}`; // awsConnection.getSignedUrl('getObject', { Bucket: profileGifParams.Bucket, Key: profileGifParams.Key });
 
-  // delete all files in tmp uploads
   await tmpCleanup();
   return { profileVideoUrl, profileGifUrl };
 };

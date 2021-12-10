@@ -6,11 +6,13 @@ const tmpCleanup = require('./tmpCleanup');
 module.exports = async (file) => {
   const Bucket = 'i-am-app-test';
   const region = 'eu-west-2';
-
+  const credentials = {
+    accessKeyId: 'AKIAVUWLHDRFSZV6Q6UK',
+    secretAccessKey: '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',
+  };
   const inFilePath = `tmp/uploads/${file.filename}`;
   const awsConnection = new S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    credentials,
     region,
   });
 
@@ -21,7 +23,7 @@ module.exports = async (file) => {
     Bucket,
     Key: `${file.filename}`,
     Body: fileBuffer,
-    ACL: 'public-read',
+    ACL: 'private',
   };
 
   await awsConnection.putObject(fileParams, async (err, pres) => {
@@ -30,8 +32,8 @@ module.exports = async (file) => {
       awsConnection.deleteObject(fileParams);
     }
   }).promise();
-  // const fileUrl = `https://s3-${region}.amazonaws.com/${fileParams.Bucket}/${fileParams.Key}`;
-  const fileUrl = `dhahb2s08yybu.cloudfront.net/${fileParams.Key}`;
+
+  const fileUrl = `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
 
   // delete all files in tmp uploads
   await tmpCleanup();
