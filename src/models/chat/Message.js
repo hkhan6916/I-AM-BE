@@ -15,5 +15,6 @@ const MessagesSchema = new Schema({
   mediaUrl: {
     type: String,
   },
-});
+},
+{ timestamps: true });
 module.exports = model('messages', MessagesSchema);
