@@ -3,7 +3,7 @@ const Posts = require('../../models/posts/Posts');
 const PostLikes = require('../../models/user/PostLikes');
 const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
-const getSignedFileHeaders = require('../../helpers/getFileSignedHeaders');
+const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
 const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset }) => {
   const user = await User.findById(userId);
@@ -417,10 +417,17 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   ));
 
   feed.forEach(async (post) => {
+    if (post.repostPostObjUser) {
+      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.repostPostObjUser.profileGifHeaders = headers;
+    }
+    if (post.postAuthor.profileGifUrl) {
+      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.postAuthor.profileGifHeaders = headers;
+    }
     if (post.mediaUrl) {
-      const headers = await getSignedFileHeaders(post.mediaUrl);
-      post.fileHeaders = headers;
-      console.log(post);
+      const headers = getFileSignedHeaders(post.mediaUrl);
+      post.mediaHeaders = headers;
     }
   });
 

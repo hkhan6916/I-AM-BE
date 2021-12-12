@@ -83,7 +83,7 @@ const registerUser = async ({
     profileVideoUrl,
     profileGifUrl,
   });
-  return { registered: true };
+  return { registered: true, profileVideoUrl };
 };
 
 const resetUserPassword = async (req, res) => {

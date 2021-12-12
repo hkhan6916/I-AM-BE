@@ -26,9 +26,9 @@ router.post('/files/upload', [verifyAuth, multer({
   let message = 'File uploaded.';
   let data = {};
   try {
-    const fileUrl = await uploadFile(req.file);
+    const { fileUrl, fileHeaders } = await uploadFile(req.file);
 
-    data = { fileUrl };
+    data = { fileUrl, fileHeaders };
   } catch (e) {
     success = false;
     message = e.message;
@@ -46,7 +46,7 @@ router.get('/files/:key', verifyAuth, async (req, res) => {
   let message = 'File uploaded.';
   let data = {};
   try {
-    const fileUrl = await getFileSignedHeaders(`https://s3-eu-west-2.amazonaws.com/i-am-app-test/${req.params.mediaUrl}`);
+    const fileUrl = getFileSignedHeaders(`https://s3-eu-west-2.amazonaws.com/i-am-app-test/${req.params.mediaUrl}`);
     data = fileUrl;
   } catch (e) {
     success = false;

@@ -321,7 +321,7 @@ router.get('/user/posts/:offset', verifyAuth, async (req, res) => {
   let data = {};
   const { offset } = req.params;
   try {
-    data = await getUserPosts(req.user.id, offset);
+    data = await getUserPosts(req.user.id, parseInt(offset, 10));
   } catch (e) {
     success = false;
     message = e.message;

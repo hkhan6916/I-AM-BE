@@ -1,4 +1,5 @@
 const User = require('../../models/user/User');
+const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
 const resetUserFriendsList = async (id) => {
   const user = await User.findById(id);
@@ -16,6 +17,10 @@ const searchUser = async (username, offset) => {
   if (!users.length) {
     throw new Error('no users found');
   }
+
+  users.forEach((user) => {
+    user.profileGifHeaders = getFileSignedHeaders(user.profileGifUrl);
+  });
 
   return users;
 };

@@ -18,8 +18,8 @@ const createPost = async ({
     userId: user.id,
   });
   if (file) {
-    const mediaUrl = await uploadFile(file);
-    console.log(mediaUrl);
+    const fileObj = await uploadFile(file);
+    const mediaUrl = fileObj.fileUrl;
     post.mediaOrientation = mediaOrientation;
     post.mediaUrl = mediaUrl;
     post.mediaMimeType = file.mimetype;

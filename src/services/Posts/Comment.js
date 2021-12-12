@@ -4,7 +4,7 @@ const Comment = require('../../models/posts/Comment');
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
 const CommentLikes = require('../../models/posts/CommentLikes');
-const { calculateAge } = require('../../helpers');
+const { calculateAge, getFileSignedHeaders } = require('../../helpers');
 
 const addComment = async ({ postId, userId, body }) => {
   const post = await Posts.findById(postId);
@@ -34,10 +34,12 @@ const addComment = async ({ postId, userId, body }) => {
     postId,
     userId,
     body,
+    belongsToUser: true,
     commentAuthor: {
       profileGifUrl: user.profileGifUrl,
       firstName: user.firstName,
       lastName: user.lastName,
+      profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
     },
   };
 };
@@ -150,8 +152,10 @@ const getPostComments = async ({ postId, userId, offset }) => {
   ]);
   comments.forEach((comment) => {
     calculateAge(comment);
+    if (comment.commentAuthor.profileGifUrl) {
+      comment.commentAuthor.profileGifHeaders = getFileSignedHeaders(comment.commentAuthor.profileGifUrl);
+    }
   });
-
   return comments;
 };
 
@@ -188,10 +192,12 @@ const replyToComment = async ({ commentId, body, userId }) => {
       parentCommentId: comment._id,
       userId,
       body,
+      belongsToUser: true,
       replyAuthor: {
         profileGifUrl: user.profileGifUrl,
         firstName: user.firstName,
         lastName: user.lastName,
+        profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
       },
     };
   }
@@ -338,6 +344,9 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
   ]);
   replies.forEach((reply) => {
     calculateAge(reply);
+    if (reply.replyAuthor.profileGifUrl) {
+      reply.replyAuthor.profileGifHeaders = getFileSignedHeaders(reply.replyAuthor.profileGifUrl);
+    }
   });
   return replies;
 };

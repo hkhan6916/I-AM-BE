@@ -3,7 +3,7 @@ const Posts = require('../../models/posts/Posts');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
-const getUserPosts = async (userId, offset) => {
+const getUserPosts = async (userId, offset = 0) => {
   const posts = await Posts.aggregate([
     {
       $match: {
@@ -11,7 +11,7 @@ const getUserPosts = async (userId, offset) => {
       },
     },
     { $sort: { createdAt: -1 } },
-    // { $skip: offset || 0 },
+    { $skip: offset },
     { $limit: 10 },
   ]);
   if (!Array.isArray(posts)) {
@@ -24,9 +24,9 @@ const getUserPosts = async (userId, offset) => {
   posts.forEach(async (post) => {
     post.belongsToUser = true;
     if (post.mediaUrl) {
-      const headers = await getFileSignedHeaders(post.mediaUrl);
+      const headers = getFileSignedHeaders(post.mediaUrl);
 
-      post.fileHeaders = headers;
+      post.mediaHeaders = headers;
     }
 
     calculateAge(post);
