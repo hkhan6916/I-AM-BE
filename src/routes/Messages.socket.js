@@ -1,4 +1,3 @@
-const Chat = require('../models/chat/Chat');
 const User = require('../models/user/User');
 const Messages = require('../models/chat/Message');
 const socketAuth = require('../middleware/socketAuth');
@@ -7,18 +6,6 @@ module.exports = (io) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
       socket.emit('disconnected');
-    });
-
-    socket.on('createRoom', ({ participants }) => {
-      if (participants.length !== 2) {
-        throw new Error(`Chat room must have 2 participants but got ${participants.length}`);
-      }
-      const chat = new Chat({
-        participants,
-      });
-      chat.save();
-      socket.join(chat._id);
-      socket.emit('createRoomSuccess', { chat });
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {

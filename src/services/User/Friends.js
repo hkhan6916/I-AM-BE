@@ -35,14 +35,13 @@ const getSingleUser = async (otherUserId, userId) => {
   return { otherUser, user };
 };
 
-const getUserFriends = async (userId) => {
+const getUserFriends = async (userId, offset) => {
   const user = await User.findById(userId);
   const connections = await User.find({
     _id: {
       $in: user.connections,
     },
-  }, 'firstName lastName username email profileVideoUrl profileGifUrl');
-  // const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
+  }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(10);
   if (!user) {
     throw new Error('No user found.');
   }

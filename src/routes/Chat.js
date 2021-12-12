@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const verifyAuth = require('../middleware/auth');
 
-const { getChatMessages } = require('../services/Chat/Chat');
+const { getChatMessages, createChat } = require('../services/Chat/Chat');
 
 router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
   let success = true;
@@ -12,6 +12,25 @@ router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
   const { chatId, offset } = req.params;
   try {
     data = await getChatMessages(chatId, parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/chat/new', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Chat created.';
+  let data = {};
+  const { participants } = req.body;
+  try {
+    data = await createChat(participants, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

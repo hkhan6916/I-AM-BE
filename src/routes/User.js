@@ -150,13 +150,14 @@ router.get('/user/search/:username', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/friend/fetch/all', verifyAuth, async (req, res) => {
+router.get('/user/friend/fetch/all/:offset', verifyAuth, async (req, res) => {
   let success = true;
   // this message looks sad :(
   let message = 'Friends fetched.';
   let data = {};
+  const { offset } = req.params;
   try {
-    data = await getUserFriends(req.user.id);
+    data = await getUserFriends(req.user.id, parseInt(offset, 10));
   } catch (e) {
     success = false;
     message = e.message;

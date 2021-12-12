@@ -1,4 +1,7 @@
+const { ObjectId } = require('mongoose').Types;
 const Messages = require('../../models/chat/Message');
+const Chat = require('../../models/chat/Chat');
+const User = require('../../models/user/User');
 
 const getChatMessages = async (chatId, offset) => {
   const messages = await Messages.aggregate([
@@ -35,4 +38,41 @@ const getChatMessages = async (chatId, offset) => {
   return messages;
 };
 
-module.exports = { getChatMessages };
+const createChat = async (participants, hostId) => {
+  if (participants?.length !== 2) {
+    throw new Error(`Chat room must have 2 participants but got ${participants.length}`);
+  }
+
+  const exists = await Chat.find({ participants });
+  //   if (exists) {}
+  const users = await User.aggregate([
+    {
+      $match: {
+        $expr: {
+          $and: [
+            {
+              $not: { $eq: ['$_id', ObjectId(hostId)] },
+            },
+            {
+              $in: [{ $toString: '$_id' }, participants],
+            },
+          ],
+        },
+      },
+    },
+    { $limit: 1 },
+  ]);
+
+  if (!users.length) {
+    throw new Error('Participant does not exist.');
+  }
+
+  const chat = new Chat({
+    participants,
+  });
+
+  chat.save();
+  return { _id: chat._id, participants, users: users[0] };
+};
+
+module.exports = { getChatMessages, createChat };
