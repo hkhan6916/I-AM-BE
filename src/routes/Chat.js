@@ -30,7 +30,7 @@ router.post('/chat/new', verifyAuth, async (req, res) => {
   let data = {};
   const { participants } = req.body;
   try {
-    data = await createChat(participants, req.user.id);
+    data = await createChat([...participants, req.user.id], req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

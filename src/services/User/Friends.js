@@ -50,6 +50,10 @@ const getUserFriends = async (userId, offset) => {
     throw new Error('Could not fetch connections.');
   }
 
+  connections.forEach((friend) => {
+    friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
+  });
+
   return connections;
 };
 
