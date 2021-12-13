@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongoose').Types;
 const Chat = require('../../models/chat/Chat');
+const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
 const getUserChats = async (userId, offset) => {
   const chats = await Chat.aggregate([
@@ -41,23 +42,20 @@ const getUserChats = async (userId, offset) => {
             },
           },
         ],
-        as: 'secondUser',
+        as: 'users',
       },
-    },
-    {
-      $unwind:
-         {
-           path: '$secondUser',
-           preserveNullAndEmptyArrays: true,
-         },
     },
     {
       $project: {
-        secondUser: 1,
+        users: 1,
       },
     },
   ]);
-
+  chats.forEach((chat) => {
+    if (chat.users.length) {
+      chat.users[0].profileGifHeaders = getFileSignedHeaders(chat.users[0].profileGifUrl);
+    }
+  });
   return chats;
 };
 

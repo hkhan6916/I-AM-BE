@@ -43,8 +43,34 @@ const createChat = async (participants, hostId) => {
     throw new Error(`Chat room must have 2 participants but got ${participants.length}`);
   }
 
-  const exists = await Chat.find({ participants });
-  //   if (exists) {}
+  const sortedParticpants = participants.sort();
+
+  const exists = await Chat.findOne({ participants: sortedParticpants });
+  if (exists) {
+    const users = await User.aggregate([
+      {
+        $match: {
+          $expr: {
+            $and: [
+              {
+                $not: { $eq: ['$_id', ObjectId(hostId)] },
+              },
+              {
+                $in: [{ $toString: '$_id' }, participants],
+              },
+            ],
+          },
+        },
+      },
+      { $limit: 1 },
+    ]);
+
+    if (!users.length) {
+      throw new Error('Participant does not exist.');
+    }
+
+    return { _id: exists._id, participants: sortedParticpants, users };
+  }
   const users = await User.aggregate([
     {
       $match: {
@@ -68,11 +94,11 @@ const createChat = async (participants, hostId) => {
   }
 
   const chat = new Chat({
-    participants,
+    participants: sortedParticpants,
   });
 
   chat.save();
-  return { _id: chat._id, participants, users: users[0] };
+  return { _id: chat._id, participants: sortedParticpants, users };
 };
 
 module.exports = { getChatMessages, createChat };
