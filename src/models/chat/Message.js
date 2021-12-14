@@ -15,6 +15,14 @@ const MessagesSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  stringTime: {
+    type: String,
+    required: true,
+  },
+  stringDate: {
+    type: String,
+    require: true,
+  },
 },
 { timestamps: true });
 module.exports = model('messages', MessagesSchema);

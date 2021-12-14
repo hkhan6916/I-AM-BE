@@ -1,11 +1,12 @@
 const User = require('../models/user/User');
 const Messages = require('../models/chat/Message');
 const socketAuth = require('../middleware/socketAuth');
+const { getNameDate, get12HourTime } = require('../helpers');
 
 module.exports = (io) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
-      socket.emit('disconnected');
+
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
@@ -24,6 +25,8 @@ module.exports = (io) => {
         chatId,
         senderId,
         mediaUrl: mediaUrl || null,
+        stringDate: getNameDate(new Date()),
+        stringTime: get12HourTime(new Date()),
       });
       message.save();
       if (!socket.user) {
@@ -40,8 +43,13 @@ module.exports = (io) => {
         chatId,
         senderId,
         mediaUrl,
+        stringDate: getNameDate(new Date()),
+        // stringTime: get12HourTime(new Date()),
         user: {
-          firstName, lastName, username, _id,
+          firstName,
+          lastName,
+          username,
+          _id,
         },
       });
 

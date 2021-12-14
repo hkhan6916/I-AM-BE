@@ -7,7 +7,7 @@ const { getChatMessages, createChat } = require('../services/Chat/Chat');
 
 router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Job titles found.';
+  let message = 'Chat messages fetched.';
   let data = {};
   const { chatId, offset } = req.params;
   try {
