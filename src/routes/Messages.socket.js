@@ -34,6 +34,7 @@ module.exports = (io) => {
       const {
         firstName, lastName, username, _id,
       } = socket.user;
+
       socket.to(chatId).emit('receiveMessage', {
         body,
         chatId,
