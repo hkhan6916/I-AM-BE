@@ -112,4 +112,12 @@ const createChat = async (participants, hostId) => {
   return { _id: chat._id, participants: sortedParticpants, users };
 };
 
-module.exports = { getChatMessages, createChat };
+const checkChatExists = async (participants) => {
+  const sortedParticpants = participants.sort();
+
+  const exists = await Chat.findOne({ participants: sortedParticpants });
+
+  return exists || null;
+};
+
+module.exports = { getChatMessages, createChat, checkChatExists };
