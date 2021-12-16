@@ -15,6 +15,9 @@ const MessagesSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  mediaType: {
+    type: String,
+  },
   stringTime: {
     type: String,
     required: true,

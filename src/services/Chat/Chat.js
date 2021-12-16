@@ -2,6 +2,7 @@ const { ObjectId } = require('mongoose').Types;
 const Messages = require('../../models/chat/Message');
 const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
+const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
 const getChatMessages = async (chatId, offset) => {
   const messages = await Messages.aggregate([
@@ -28,6 +29,7 @@ const getChatMessages = async (chatId, offset) => {
               _id: 1,
               firstName: 1,
               lastName: 1,
+              username: 1,
             },
           },
         ],
@@ -46,6 +48,12 @@ const getChatMessages = async (chatId, offset) => {
     { $limit: 15 },
     { $sort: { createdAt: 1 } },
   ]);
+
+  messages.forEach((message) => {
+    if (message.mediaUrl) {
+      message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
+    }
+  });
 
   return messages;
 };

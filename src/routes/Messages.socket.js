@@ -18,13 +18,14 @@ module.exports = (io) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, mediaUrl,
+      body, chatId, senderId, mediaUrl, mediaType,
     }) => {
       const message = new Messages({
         body,
         chatId,
         senderId,
         mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
       });
