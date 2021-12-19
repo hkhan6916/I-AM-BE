@@ -5,13 +5,13 @@ const verifyAuth = require('../middleware/auth');
 
 const { sendNotificationToRecipiants } = require('../services/Notifications/Notifications');
 
-router.get('/notification/send/:pushToken', verifyAuth, async (req, res) => {
+router.post('/notification/send', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Job titles found.';
+  let message = 'Notification sent.';
   let data = {};
-  const { pushToken } = req.params;
+  const { chatId, senderId, body } = req.body;
   try {
-    data = await sendNotificationToRecipiants(pushToken);
+    data = await sendNotificationToRecipiants(senderId, chatId, body);
   } catch (e) {
     success = false;
     message = e.message;

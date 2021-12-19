@@ -60,5 +60,9 @@ const UserSchema = new Schema({
     type: Array,
     default: [],
   },
+  notificationToken: {
+    type: String,
+    required: true,
+  },
 });
 module.exports = model('Users', UserSchema);

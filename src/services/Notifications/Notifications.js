@@ -8,7 +8,6 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const notifications = [];
 
   const chat = await Chat.findById(chatId);
-
   const senderIndex = chat.participants.indexOf(senderId);
   if (senderIndex > -1) {
     chat.participants.splice(senderIndex, 1);
@@ -17,14 +16,14 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
 
   for (let i = 0; i < recipiants.length; i += 1) {
     notifications.push({
-      to: recipiants[i].pushNotificationToken,
+      to: recipiants[i].notificationToken,
       sound: 'default',
-      title: senderId,
-      body: message.messageText,
-      data: { ...message, ...{ pushToken: recipiants[i].pushNotificationToken } },
+      title: `${recipiants[i].firstName} ${recipiants[i].lastName}`,
+      body: message,
+      data: { ...message, ...{ pushToken: recipiants[i].notificationToken } },
     });
-    if (!Expo.isExpoPushToken(recipiants[i].pushNotificationToken)) {
-      console.error(`Push token ${recipiants[i].pushNotificationToken} is not a valid Expo push token`);
+    if (!Expo.isExpoPushToken(recipiants[i].notificationToken)) {
+      console.error(`Push token ${recipiants[i].notificationToken} is not a valid Expo push token`);
     }
   }
 

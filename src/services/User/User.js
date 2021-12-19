@@ -49,6 +49,10 @@ const registerUser = async ({
   if (!email || !validEmail || typeof email !== 'string') {
     throw new Error('Email is missing or invalid');
   }
+
+  if (!notificationToken) {
+    throw new Error('Notification token is required.');
+  }
   // $or is unreliable so need to make two queries
   const emailExists = await User.findOne({ email });
   const usernameExists = await User.findOne({ username });
