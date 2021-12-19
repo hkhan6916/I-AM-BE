@@ -18,7 +18,7 @@ module.exports = (io) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, mediaUrl, mediaType,
+      body, chatId, senderId, mediaUrl, mediaType, mediaHeaders,
     }) => {
       const message = new Messages({
         body,
@@ -26,6 +26,7 @@ module.exports = (io) => {
         senderId,
         mediaUrl: mediaUrl || null,
         mediaType: mediaType || null,
+        mediaHeaders: mediaHeaders || null,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
       });
@@ -43,9 +44,11 @@ module.exports = (io) => {
         body,
         chatId,
         senderId,
-        mediaUrl,
+        mediaUrl: mediaUrl || null,
+        mediaType: mediaType || null,
+        mediaHeaders: mediaHeaders || null,
         stringDate: getNameDate(new Date()),
-        // stringTime: get12HourTime(new Date()),
+        stringTime: get12HourTime(new Date()),
         user: {
           firstName,
           lastName,
