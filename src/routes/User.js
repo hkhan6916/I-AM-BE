@@ -16,6 +16,7 @@ const {
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts } = require('../services/User/Posts');
 const { getUserChats } = require('../services/User/Chat');
+const { updateNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
 const { tmpCleanup } = require('../helpers');
 
@@ -56,7 +57,7 @@ router.post('/user/register', multer({
   storage,
 }).single('file'), async (req, res) => {
   const {
-    username, email, password: plainTextPassword, lastName, firstName,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken,
   } = req.body;
   let success = true;
   let message = 'User created.';
@@ -64,7 +65,7 @@ router.post('/user/register', multer({
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, file: req.file,
+      username, email, plainTextPassword, lastName, firstName, file: req.file, notificationToken,
     });
   } catch (e) {
     await tmpCleanup();
@@ -343,6 +344,25 @@ router.get('/user/chats/:offset', verifyAuth, async (req, res) => {
   const { offset } = req.params;
   try {
     data = await getUserChats(req.user.id, parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/user/notifications/token/update', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User chats fetched.';
+  let data = {};
+  const { userId, notificationToken } = req.body;
+  try {
+    data = await updateNotificationToken(userId, notificationToken);
   } catch (e) {
     success = false;
     message = e.message;

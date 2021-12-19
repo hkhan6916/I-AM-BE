@@ -34,7 +34,7 @@ const loginUser = async (identifier, password) => {
 };
 
 const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, file,
+  username, email, plainTextPassword, firstName, lastName, file, notificationToken,
 }) => {
   if (!file) {
     throw new Error('No video profile provided');
@@ -82,6 +82,7 @@ const registerUser = async ({
     lastName,
     profileVideoUrl,
     profileGifUrl,
+    notificationToken,
   });
   return { registered: true, profileVideoUrl };
 };

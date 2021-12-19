@@ -8,7 +8,7 @@ const getChatMessages = async (chatId, offset) => {
   const messages = await Messages.aggregate([
     {
       $match: {
-        chatId,
+        chatId: ObjectId(chatId),
       },
     },
     {
