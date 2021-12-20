@@ -1,20 +1,24 @@
 const User = require('../models/user/User');
 const Messages = require('../models/chat/Message');
 const socketAuth = require('../middleware/socketAuth');
-const { getNameDate, get12HourTime } = require('../helpers');
+const {
+  getNameDate, get12HourTime, createChatSession, deleteChatSession,
+} = require('../helpers');
 
 module.exports = (io) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
-
+      deleteChatSession(socket.user._id, socket.chatId);
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
+      createChatSession(userId, chatId);
       socket.join(chatId);
       socket.emit('joinRoomSuccess', { chatId });
       const user = await User.findById(userId);
 
       socket.user = user;
+      socket.chatId = chatId;
     });
 
     socket.on('sendMessage', async ({

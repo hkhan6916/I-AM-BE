@@ -7,6 +7,8 @@ const calculateAge = require('./calculateAge');
 const getFileSignedHeaders = require('./getFileSignedHeaders');
 const getNameDate = require('./getNameDate');
 const get12HourTime = require('./get12HourTime');
+const createChatSession = require('./createChatSession');
+const deleteChatSession = require('./deleteChatSession');
 
 module.exports = {
   validateEmail,
@@ -18,4 +20,6 @@ module.exports = {
   getFileSignedHeaders,
   getNameDate,
   get12HourTime,
+  createChatSession,
+  deleteChatSession,
 };

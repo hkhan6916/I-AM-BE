@@ -10,6 +10,7 @@ const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
 const file = require('./src/routes/File');
 const chat = require('./src/routes/Chat');
+const notifications = require('./src/routes/Notifications');
 
 const port = process.env.PORT || 5000;
 
@@ -34,6 +35,6 @@ app.use(express.json());
 
 app.use(cors({ origin: '*' }));
 
-app.use(user, posts, jobs, file, chat);
+app.use(user, posts, jobs, file, chat, notifications);
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
