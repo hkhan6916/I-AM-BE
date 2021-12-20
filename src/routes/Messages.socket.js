@@ -4,6 +4,7 @@ const socketAuth = require('../middleware/socketAuth');
 const {
   getNameDate, get12HourTime, createChatSession, deleteChatSession,
 } = require('../helpers');
+const { sendNotificationToRecipiants } = require('../services/Notifications/Notifications');
 
 module.exports = (io) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
@@ -60,7 +61,7 @@ module.exports = (io) => {
           _id,
         },
       });
-
+      sendNotificationToRecipiants(senderId, chatId, body);
       // TODO: send notification
     });
   });

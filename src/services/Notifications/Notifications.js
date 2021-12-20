@@ -1,6 +1,7 @@
 const { Expo } = require('expo-server-sdk');
 const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
+const ChatSession = require('../../models/chat/ChatSession');
 
 const expo = new Expo();
 
@@ -12,6 +13,17 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   if (senderIndex > -1) {
     chat.participants.splice(senderIndex, 1);
   }
+  const sessions = await ChatSession.find({ chatId });
+
+  sessions.forEach((session) => {
+    if (session.userId !== senderId) {
+      const sessionIndex = chat.participants.indexOf(session.userId);
+      if (sessionIndex > -1) {
+        chat.participants.splice(sessionIndex, 1);
+      }
+    }
+  });
+
   const recipiants = await User.find().where('_id').in(chat.participants);
 
   for (let i = 0; i < recipiants.length; i += 1) {
@@ -20,7 +32,7 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
       sound: 'default',
       title: `${recipiants[i].firstName} ${recipiants[i].lastName}`,
       body: message,
-      data: { ...message, ...{ pushToken: recipiants[i].notificationToken } },
+      data: { message, ...{ pushToken: recipiants[i].notificationToken } },
     });
     if (!Expo.isExpoPushToken(recipiants[i].notificationToken)) {
       console.error(`Push token ${recipiants[i].notificationToken} is not a valid Expo push token`);
@@ -28,7 +40,9 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   }
 
   const chunks = expo.chunkPushNotifications(notifications);
+
   chunks.forEach(async (chunk) => {
+    console.log(chunk);
     try {
       await expo.sendPushNotificationsAsync(chunk);
     } catch (error) {
