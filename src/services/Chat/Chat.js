@@ -46,7 +46,7 @@ const getChatMessages = async (chatId, offset) => {
     { $sort: { createdAt: -1 } },
     { $skip: offset || 0 },
     { $limit: 15 },
-    { $sort: { createdAt: 1 } },
+    // { $sort: { createdAt: 1 } },
   ]);
 
   messages.forEach((message) => {
