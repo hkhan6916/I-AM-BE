@@ -417,6 +417,10 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   ));
 
   feed.forEach(async (post) => {
+    if (post.repostPostObj?.mediaUrl) {
+      const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
+      post.repostPostObj.mediaHeaders = headers;
+    }
     if (post.repostPostObjUser) {
       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
       post.repostPostObjUser.profileGifHeaders = headers;
