@@ -26,12 +26,16 @@ const searchUser = async (username, offset) => {
 };
 
 const getSingleUser = async (otherUserId, userId) => {
-  const otherUser = await User.findById(otherUserId);
+  const otherUserRecord = await User.findById(otherUserId);
   const user = await User.findById(userId);
-  if (!otherUser) {
+  if (!otherUserRecord) {
     throw new Error('no user found');
   }
 
+  const otherUser = {
+    ...otherUserRecord.toObject(),
+    profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
+  };
   return { otherUser, user };
 };
 

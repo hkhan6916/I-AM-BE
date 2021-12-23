@@ -2,8 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../../models/user/User');
-const { validateEmail } = require('../../helpers');
-const { uploadProfileVideo } = require('../../helpers');
+const { uploadProfileVideo, validateEmail } = require('../../helpers');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
