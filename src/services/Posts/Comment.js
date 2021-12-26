@@ -351,6 +351,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
   return replies;
 };
 
+// use for liking replies too.
 const addLikeToComment = async (commentId, userId) => {
   const comment = await Comment.findById(commentId);
 

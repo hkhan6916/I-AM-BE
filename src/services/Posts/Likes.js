@@ -16,7 +16,7 @@ const addLikeToPost = async (postId, userId) => {
 
   const likedPost = await PostLikes.findOne({ likedBy: userId, postId });
   if (likedPost) {
-    throw new Error('User has already liked this post.');
+    return 'User has already liked this post.';
   }
 
   const like = new PostLikes({
@@ -38,7 +38,7 @@ const removeLikeFromPost = async (postId, userId) => {
   }
   const likedPost = await PostLikes.findOneAndDelete({ likedBy: userId, postId });
   if (!likedPost) {
-    throw new Error('User has not liked this post yet.');
+    return 'User has not liked this post yet.';
   }
 
   post.likes -= 1;
