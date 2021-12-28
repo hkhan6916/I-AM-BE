@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../../models/user/User');
 const {
-  uploadProfileVideo, validateEmail, deleteFile, tmpCleanup,
+  uploadProfileVideo, validateEmail, deleteFile, tmpCleanup, getFileSignedHeaders,
 } = require('../../helpers');
 
 const loginUser = async (identifier, password) => {
@@ -222,7 +222,7 @@ const getUserData = async (userId) => {
     throw new Error('User does not exist.');
   }
 
-  return user;
+  return { ...user.toObject(), password: '', profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl) };
 };
 
 const updateUserProfile = async ({ userId, file, details }) => {
