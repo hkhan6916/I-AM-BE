@@ -2,7 +2,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../../models/user/User');
-const { uploadProfileVideo, validateEmail } = require('../../helpers');
+const {
+  uploadProfileVideo, validateEmail, deleteFile, tmpCleanup,
+} = require('../../helpers');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -223,12 +225,37 @@ const getUserData = async (userId) => {
   return user;
 };
 
-const updateUserProfile = async (userId, details) => {
-  if (typeof details !== 'object') {
-    throw new Error('Invalid details');
+const updateUserProfile = async ({ userId, file, details }) => {
+  if (!details && !file) {
+    throw new Error('No details provided.');
   }
 
-  const user = await User.findByIdAndUpdate(userId, details);
+  if (details && typeof details !== 'object') {
+    throw new Error('Invalid Details.');
+  }
+
+  const user = await User.findById(userId);
+
+  if (file) {
+    const currentProfileGifUrl = user.profileGifUrl;
+    const currentProfileVideoUrl = user.profileVideoUrl;
+
+    const gifUrlIndex = currentProfileGifUrl.lastIndexOf('/');
+    const videoUrlIndex = currentProfileVideoUrl.lastIndexOf('/');
+
+    const currentProfileGifKey = currentProfileGifUrl.substring(gifUrlIndex + 1);
+    const currentProfileVideoKey = currentProfileVideoUrl.substring(videoUrlIndex + 1);
+    const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+    await User.findByIdAndUpdate(userId, { ...details, profileVideoUrl, profileGifUrl });
+    if (profileVideoUrl && profileGifUrl) {
+      await Promise.allSettled([deleteFile(currentProfileGifKey),
+        deleteFile(currentProfileVideoKey), tmpCleanup(currentProfileVideoKey)]);
+    }
+    return {
+      ...user.toObject(), ...details, profileVideoUrl, profileGifUrl,
+    };
+  }
+  await User.findByIdAndUpdate(userId, details);
 
   return { ...user.toObject(), ...details };
 };

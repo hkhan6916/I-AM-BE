@@ -9,6 +9,7 @@ const getNameDate = require('./getNameDate');
 const get12HourTime = require('./get12HourTime');
 const createChatSession = require('./createChatSession');
 const deleteChatSession = require('./deleteChatSession');
+const deleteFile = require('./deleteFile');
 
 module.exports = {
   validateEmail,
@@ -22,4 +23,5 @@ module.exports = {
   get12HourTime,
   createChatSession,
   deleteChatSession,
+  deleteFile,
 };

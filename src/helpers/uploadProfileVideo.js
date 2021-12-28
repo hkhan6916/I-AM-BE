@@ -48,7 +48,7 @@ module.exports = async (file) => {
 
   const profileVideoParams = {
     Bucket,
-    Key: `public/${file.filename}`,
+    Key: `${file.filename}`,
     Body: profileVideoBuffer,
     ACL: 'private',
   };

@@ -15,11 +15,14 @@ module.exports = async (key) => {
 
   const profileGifParams = {
     Bucket,
-    Key: 'dd138549-080d-4f8d-a0ac-bb81f107c2ef.gif',
-    ACL: 'private',
+    Key: key,
+    // ACL: 'private',
   };
 
-  await awsConnection.deleteObject(profileGifParams);
-
+  await awsConnection.deleteObject(profileGifParams, async (err, pres) => {
+    if (err) {
+      console.log(err);
+    }
+  }).promise();
   return 'deleted';
 };

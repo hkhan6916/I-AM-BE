@@ -381,13 +381,15 @@ router.post('/user/notifications/token/update', verifyAuth, async (req, res) => 
   });
 });
 
-router.patch('/user/update/profile', verifyAuth, async (req, res) => {
+router.post('/user/update/profile', [verifyAuth, multer({
+  storage,
+}).single('file')], async (req, res) => {
   let success = true;
   let message = 'User profile updated.';
   let data = {};
-  const { details } = req.body;
+  const details = req.body;
   try {
-    data = await updateUserProfile(req.user.id, details);
+    data = await updateUserProfile({ userId: req.user.id, file: req.file, details });
   } catch (e) {
     success = false;
     message = e.message;
