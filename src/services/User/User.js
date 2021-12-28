@@ -223,6 +223,10 @@ const getUserData = async (userId) => {
   return user;
 };
 
+// const updateUserProfile = async (details) => {
+
+// }
+
 module.exports = {
   loginUser,
   registerUser,

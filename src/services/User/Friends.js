@@ -12,8 +12,14 @@ const resetUserFriendsList = async (id) => {
 };
 
 const searchUser = async (username, offset) => {
-  const users = await User.find({ username: { $regex: username, $options: 'i' } },
-    'username firstName lastName profileVideoUrl profileGifUrl').skip(offset).limit(5);
+  const users = await (async () => {
+    const result = await User.find({
+      $text:
+        { $search: username },
+    }).skip(offset).limit(10);
+
+    return result;
+  })();
   if (!users.length) {
     throw new Error('no users found');
   }

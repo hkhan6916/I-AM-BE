@@ -26,10 +26,12 @@ const UserSchema = new Schema({
   firstName: {
     type: String,
     required: true,
+    text: true,
   },
   lastName: {
     type: String,
     required: true,
+    text: true,
   },
   jobTitle: {
     jobTitle: String,

@@ -132,13 +132,14 @@ router.post('/user/feed', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/search/:username', verifyAuth, async (req, res) => {
+router.post('/user/search/:offset', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Users found.';
   let data = {};
-  const { username } = req.params;
+  const { searchTerm } = req.body;
+  const { offset } = req.params;
   try {
-    data = await searchUser(username);
+    data = await searchUser(searchTerm, parseInt(offset, 5));
   } catch (e) {
     success = false;
     message = e.message;
