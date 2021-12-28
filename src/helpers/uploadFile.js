@@ -5,8 +5,8 @@ const getFileSignedHeaders = require('./getFileSignedHeaders');
 const tmpCleanup = require('./tmpCleanup');
 
 module.exports = async (file) => {
-  const Bucket = 'i-am-app-test';
-  const region = 'eu-west-2';
+  const Bucket = process.env.AWS_BUCKET_NAME;
+  const region = process.env.AWS_BUCKET_REGION;
   const credentials = {
     accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
     secretAccessKey: process.env.AWS_IAM_SECRET_KEY,

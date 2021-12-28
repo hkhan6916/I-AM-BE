@@ -5,8 +5,8 @@ const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
 
 module.exports = async (file) => {
-  const Bucket = 'i-am-app-test';
-  const region = 'eu-west-2';
+  const Bucket = process.env.AWS_BUCKET_NAME;
+  const region = process.env.AWS_BUCKET_REGION;
 
   const inFilePath = `tmp/uploads/${file.filename}`;
 

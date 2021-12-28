@@ -46,7 +46,7 @@ router.get('/files/:key', verifyAuth, async (req, res) => {
   let message = 'File uploaded.';
   let data = {};
   try {
-    const fileUrl = getFileSignedHeaders(`https://s3-eu-west-2.amazonaws.com/i-am-app-test/${req.params.mediaUrl}`);
+    const fileUrl = getFileSignedHeaders(`https://s3-${process.env.AWS_BUCKET_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${req.params.mediaUrl}`);
     data = fileUrl;
   } catch (e) {
     success = false;

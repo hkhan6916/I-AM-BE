@@ -5,7 +5,12 @@ const multer = require('multer');
 const { v4: uuid } = require('uuid');
 
 const {
-  registerUser, createUserPasswordReset, resetUserPassword, loginUser, getUserData,
+  registerUser,
+  createUserPasswordReset,
+  resetUserPassword,
+  loginUser,
+  getUserData,
+  updateUserProfile,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -359,11 +364,30 @@ router.get('/user/chats/:offset', verifyAuth, async (req, res) => {
 
 router.post('/user/notifications/token/update', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'User chats fetched.';
+  let message = 'User notification token updated.';
   let data = {};
-  const { userId, notificationToken } = req.body;
+  const { notificationToken } = req.body;
   try {
-    data = await updateNotificationToken(userId, notificationToken);
+    data = await updateNotificationToken(req.user.id, notificationToken);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.patch('/user/update/profile', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User profile updated.';
+  let data = {};
+  const { details } = req.body;
+  try {
+    data = await updateUserProfile(req.user.id, details);
   } catch (e) {
     success = false;
     message = e.message;

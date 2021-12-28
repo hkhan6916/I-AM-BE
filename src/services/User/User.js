@@ -223,9 +223,15 @@ const getUserData = async (userId) => {
   return user;
 };
 
-// const updateUserProfile = async (details) => {
+const updateUserProfile = async (userId, details) => {
+  if (typeof details !== 'object') {
+    throw new Error('Invalid details');
+  }
 
-// }
+  const user = await User.findByIdAndUpdate(userId, details);
+
+  return { ...user.toObject(), ...details };
+};
 
 module.exports = {
   loginUser,
@@ -233,4 +239,5 @@ module.exports = {
   resetUserPassword,
   createUserPasswordReset,
   getUserData,
+  updateUserProfile,
 };
