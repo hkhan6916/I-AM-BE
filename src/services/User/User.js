@@ -47,7 +47,6 @@ const registerUser = async ({
     throw new Error('Username is missing or invalid.');
   }
 
-  console.log(email);
   if (!email || !validEmail || typeof email !== 'string') {
     throw new Error('Email is missing or invalid');
   }
@@ -55,6 +54,15 @@ const registerUser = async ({
   if (!notificationToken) {
     throw new Error('Notification token is required.');
   }
+
+  if (!firstName) {
+    throw new Error('Firstname is required.');
+  }
+
+  if (!lastName) {
+    throw new Error('Lastname is required.');
+  }
+
   // $or is unreliable so need to make two queries
   const emailExists = await User.findOne({ emailLowered: email.toLowerCase() });
 

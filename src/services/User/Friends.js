@@ -12,7 +12,7 @@ const resetUserFriendsList = async (id) => {
 };
 
 const searchUser = async (username, offset) => {
-  const users = await (async () => {
+  const userRecords = await (async () => {
     const searchQuery = username.toLowerCase();
     const result = await User.find({
       $text:
@@ -21,13 +21,15 @@ const searchUser = async (username, offset) => {
 
     return result;
   })();
-  if (!users.length) {
+
+  if (!userRecords.length) {
     throw new Error('no users found');
   }
 
-  users.forEach((user) => {
-    user.profileGifHeaders = getFileSignedHeaders(user.profileGifUrl);
-  });
+  const users = userRecords.map((user) => ({
+    ...user.toObject(),
+    profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+  }));
 
   return users;
 };
@@ -70,30 +72,39 @@ const getUserFriends = async (userId, offset) => {
 
 const getUserFriendRequests = async (userId) => {
   const user = await User.findById(userId);
-  const received = await User.find({
+  const receivedRecords = await User.find({
     _id: {
       $in: user.friendRequestsReceived,
     },
   }, 'firstName lastName username email profileVideoUrl profileGifUrl');
 
-  const sent = await User.find({
+  const sentRecords = await User.find({
     _id: {
       $in: user.friendRequestsSent,
     },
   }, 'firstName lastName username email profileVideoUrl profileGifUrl');
 
-  // const user = await User.findOne({ username: new RegExp(`^${username}$`, 'i') });
   if (!user) {
     throw new Error('No user found.');
   }
 
-  if (!Array.isArray(sent)) {
+  if (!Array.isArray(sentRecords)) {
     throw new Error('Could not fetch sent requests.');
   }
 
-  if (!Array.isArray(sent)) {
+  if (!Array.isArray(receivedRecords)) {
     throw new Error('Could not fetch received requests.');
   }
+
+  const received = receivedRecords.map((request) => ({
+    ...request.toObject(),
+    profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
+  }));
+
+  const sent = sentRecords.map((request) => ({
+    ...request.toObject(),
+    profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
+  }));
 
   return { sent, received };
 };
