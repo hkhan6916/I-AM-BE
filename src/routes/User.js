@@ -11,6 +11,7 @@ const {
   loginUser,
   getUserData,
   updateUserProfile,
+  checkUserExists,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -67,6 +68,7 @@ router.post('/user/register', multer({
   let success = true;
   let message = 'User created.';
   let data = {};
+  let other = {};
 
   try {
     data = await registerUser({
@@ -75,6 +77,7 @@ router.post('/user/register', multer({
   } catch (e) {
     await tmpCleanup();
     success = false;
+    other = e.validationFailure;
     if (e.exists) {
       /* This is used for displaying a custom message on the frontend and
          should NOT be changed */
@@ -88,6 +91,7 @@ router.post('/user/register', multer({
     success,
     message,
     data,
+    other,
   });
 });
 
@@ -387,9 +391,31 @@ router.post('/user/update/profile', [verifyAuth, multer({
   let success = true;
   let message = 'User profile updated.';
   let data = {};
+  let other = {};
   const details = req.body;
   try {
     data = await updateUserProfile({ userId: req.user.id, file: req.file, details });
+  } catch (e) {
+    success = false;
+    message = e.message;
+    other = e.validationFailure;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+    other,
+  });
+});
+
+router.post('/user/check/exists', async (req, res) => {
+  let success = true;
+  let message = 'User checked.';
+  let data = {};
+  const { identifier, type } = req.body;
+  try {
+    data = await checkUserExists({ identifier, type });
   } catch (e) {
     success = false;
     message = e.message;

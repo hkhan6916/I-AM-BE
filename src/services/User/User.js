@@ -47,6 +47,7 @@ const registerUser = async ({
     throw new Error('Username is missing or invalid.');
   }
 
+  console.log(email);
   if (!email || !validEmail || typeof email !== 'string') {
     throw new Error('Email is missing or invalid');
   }
@@ -55,12 +56,17 @@ const registerUser = async ({
     throw new Error('Notification token is required.');
   }
   // $or is unreliable so need to make two queries
-  const emailExists = await User.findOne({ email });
-  const usernameExists = await User.findOne({ username });
+  const emailExists = await User.findOne({ emailLowered: email.toLowerCase() });
+
+  const usernameExists = await User.findOne({ usernameLowered: username.toLowerCase() });
 
   if (emailExists || usernameExists) {
-    const error = new Error('an account with that email and username combination already exists');
-    error.exists = true;
+    const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'}`;
+    const error = new Error(message);
+    error.validationFailure = {
+      email: { exists: emailExists },
+      username: { exists: usernameExists },
+    };
     throw error;
   }
 
@@ -81,7 +87,9 @@ const registerUser = async ({
   }
   await User.create({
     username,
+    usernameLowered: username.toLowerCase(),
     email,
+    emailLowered: email.toLowerCase(),
     password,
     firstName,
     lastName,
@@ -166,7 +174,7 @@ const createUserPasswordReset = async (req, res) => {
     // random token to identify the user
     const resetToken = crypto.randomBytes(16).toString('hex');
     const user = await User.findOneAndUpdate(
-      { email },
+      { emailLowered: email.toLowerCase() },
       {
         $set: {
           resetToken,
@@ -230,8 +238,32 @@ const updateUserProfile = async ({ userId, file, details }) => {
     throw new Error('No details provided.');
   }
 
+  if (details.username) {
+    const exists = await User.findOne({ usernameLowered: details.username });
+    if (exists) {
+      const error = new Error('A user exists with that username.');
+      error.validationFailure = { username: { exists: true } };
+      throw error;
+    }
+  }
+
+  if (details.email) {
+    const exists = await User.findOne({ emailLowered: details.email.toLowerCase() });
+    if (exists) {
+      const error = new Error('A user exists with that email address.');
+      error.validationFailure = { email: { exists: true } };
+      throw error;
+    }
+  }
+
   if (details && typeof details !== 'object') {
     throw new Error('Invalid Details.');
+  }
+
+  if (details.password) {
+    if (details.password.length < 8) {
+      throw new Error('Password is not long enough.');
+    }
   }
 
   const user = await User.findById(userId);
@@ -248,16 +280,38 @@ const updateUserProfile = async ({ userId, file, details }) => {
     const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
     await User.findByIdAndUpdate(userId, { ...details, profileVideoUrl, profileGifUrl });
     if (profileVideoUrl && profileGifUrl) {
-      await Promise.allSettled([deleteFile(currentProfileGifKey),
-        deleteFile(currentProfileVideoKey), tmpCleanup(currentProfileVideoKey)]);
+      await Promise.allSettled([
+        deleteFile(currentProfileGifKey),
+        deleteFile(currentProfileVideoKey),
+        tmpCleanup(currentProfileVideoKey),
+      ]);
     }
     return {
       ...user.toObject(), ...details, profileVideoUrl, profileGifUrl,
     };
   }
+  if (details.password) {
+    const password = await bcrypt.hash(details.password, 10);
+    await User.findByIdAndUpdate(userId, { ...details, password });
+
+    return { ...user.toObject(), ...details };
+  }
   await User.findByIdAndUpdate(userId, details);
 
   return { ...user.toObject(), ...details };
+};
+
+const checkUserExists = async ({ type, identifier }) => {
+  if (!identifier) {
+    throw new Error('No identifier provided.');
+  }
+  const query = type === 'email' ? { emailLowered: identifier.toLowerCase() } : { usernameLowered: identifier.toLowerCase() };
+
+  const exists = await User.findOne(query);
+  if (exists) {
+    return { [type]: { exists: true } };
+  }
+  return { [type]: { exists: false } };
 };
 
 module.exports = {
@@ -267,4 +321,5 @@ module.exports = {
   createUserPasswordReset,
   getUserData,
   updateUserProfile,
+  checkUserExists,
 };

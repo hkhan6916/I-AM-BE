@@ -13,9 +13,10 @@ const resetUserFriendsList = async (id) => {
 
 const searchUser = async (username, offset) => {
   const users = await (async () => {
+    const searchQuery = username.toLowerCase();
     const result = await User.find({
       $text:
-        { $search: username },
+        { $search: searchQuery },
     }).skip(offset).limit(10);
 
     return result;
