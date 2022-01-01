@@ -54,7 +54,7 @@ const getUserFriends = async (userId, offset) => {
     _id: {
       $in: user.connections,
     },
-  }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(10);
+  }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(20);
   if (!user) {
     throw new Error('No user found.');
   }

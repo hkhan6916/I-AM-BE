@@ -43,6 +43,8 @@ const UserSchema = new Schema({
   },
   jobTitle: {
     jobTitle: String,
+    required: true,
+    text: true,
   },
   verified: {
     type: Boolean,

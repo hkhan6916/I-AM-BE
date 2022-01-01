@@ -13,7 +13,7 @@ const getUserChats = async (userId, offset) => {
     },
     { $sort: { createdAt: -1 } },
     { $skip: offset || 0 },
-    { $limit: 10 },
+    { $limit: 20 },
     {
       $lookup: {
         from: 'users',

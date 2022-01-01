@@ -13,7 +13,6 @@ module.exports = (io) => {
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
-      console.log('joined');
       createChatSession(userId, chatId);
       socket.join(chatId);
       socket.emit('joinRoomSuccess', { chatId });
@@ -26,7 +25,6 @@ module.exports = (io) => {
     socket.on('sendMessage', async ({
       body, chatId, senderId, mediaUrl, mediaType, mediaHeaders,
     }) => {
-      console.log('backend', body, chatId);
       const message = new Messages({
         body,
         chatId,
