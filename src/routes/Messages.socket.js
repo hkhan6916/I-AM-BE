@@ -13,6 +13,7 @@ module.exports = (io) => {
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
+      console.log('joined');
       createChatSession(userId, chatId);
       socket.join(chatId);
       socket.emit('joinRoomSuccess', { chatId });
@@ -25,16 +26,7 @@ module.exports = (io) => {
     socket.on('sendMessage', async ({
       body, chatId, senderId, mediaUrl, mediaType, mediaHeaders,
     }) => {
-      console.log({
-        body,
-        chatId,
-        senderId,
-        mediaUrl: mediaUrl || null,
-        mediaType: mediaType || null,
-        mediaHeaders: mediaHeaders || null,
-        stringDate: getNameDate(new Date()),
-        stringTime: get12HourTime(new Date()),
-      });
+      console.log('backend', body, chatId);
       const message = new Messages({
         body,
         chatId,
@@ -71,7 +63,7 @@ module.exports = (io) => {
           _id,
         },
       });
-      sendNotificationToRecipiants(senderId, chatId, body);
+      await sendNotificationToRecipiants(senderId, chatId, body);
     });
   });
 };
