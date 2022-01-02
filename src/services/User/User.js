@@ -71,7 +71,7 @@ const registerUser = async ({
   if (emailExists || usernameExists) {
     const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'}`;
     const error = new Error(message);
-    error.validationFailure = {
+    error.validationErrors = {
       email: { exists: emailExists },
       username: { exists: usernameExists },
     };
@@ -243,8 +243,9 @@ const getUserData = async (userId) => {
 
 const updateUserProfile = async ({ userId, file, details }) => {
   const user = await User.findById(userId);
-  if (!details && !file) {
-    throw new Error('No details provided.');
+
+  if (!user) {
+    throw new Error('User could not be found.');
   }
 
   if (details && typeof details !== 'object') {
@@ -252,11 +253,13 @@ const updateUserProfile = async ({ userId, file, details }) => {
   }
 
   if (details.username) {
-    const exists = await User.findOne({ usernameLowered: details.username.toLowerCase() });
+    const usernameLowered = details.username.toLowerCase();
 
-    if (exists && exists._id !== user._id) {
+    const exists = await User.findOne({ usernameLowered });
+
+    if (exists && exists._id.toString() !== user._id.toString()) {
       const error = new Error('A user exists with that username.');
-      error.validationFailure = { username: { exists: true } };
+      error.validationErrors = { username: { exists: true } };
       throw error;
     }
     details.usernameLowered = details.username.toLowerCase();
@@ -264,9 +267,9 @@ const updateUserProfile = async ({ userId, file, details }) => {
 
   if (details.email) {
     const exists = await User.findOne({ emailLowered: details.email.toLowerCase() });
-    if (exists && exists._id !== user._id) {
+    if (exists && exists._id.toString() !== user._id.toString()) {
       const error = new Error('A user exists with that email address.');
-      error.validationFailure = { email: { exists: true } };
+      error.validationErrors = { email: { exists: true } };
       throw error;
     }
     details.emailLowered = details.email.toLowerCase();
@@ -303,18 +306,30 @@ const updateUserProfile = async ({ userId, file, details }) => {
       ]);
     }
     return {
-      ...user.toObject(), ...details, profileVideoUrl, profileGifUrl,
+      ...user.toObject(),
+      ...details,
+      profileVideoUrl,
+      profileGifUrl,
+      profileVideoHeaders: getFileSignedHeaders(profileVideoUrl),
     };
   }
   if (details.password) {
     const password = await bcrypt.hash(details.password, 10);
     await User.findByIdAndUpdate(userId, { ...details, password });
 
-    return { ...user.toObject(), ...details };
+    return {
+      ...user.toObject(),
+      ...details,
+      profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
+    };
   }
   await User.findByIdAndUpdate(userId, details);
 
-  return { ...user.toObject(), ...details };
+  return {
+    ...user.toObject(),
+    ...details,
+    profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
+  };
 };
 
 const checkUserExists = async ({ type, identifier, userId }) => {

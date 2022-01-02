@@ -77,7 +77,7 @@ router.post('/user/register', multer({
   } catch (e) {
     await tmpCleanup();
     success = false;
-    other = e.validationFailure;
+    other = e.validationErrors;
     if (e.exists) {
       /* This is used for displaying a custom message on the frontend and
          should NOT be changed */
@@ -398,7 +398,7 @@ router.post('/user/update/profile', [verifyAuth, multer({
   } catch (e) {
     success = false;
     message = e.message;
-    other = e.validationFailure;
+    other = { validationErrors: e.validationErrors };
   }
 
   res.status(200).json({
