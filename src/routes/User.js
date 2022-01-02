@@ -413,9 +413,9 @@ router.post('/user/check/exists', async (req, res) => {
   let success = true;
   let message = 'User checked.';
   let data = {};
-  const { identifier, type } = req.body;
+  const { identifier, type, userId } = req.body;
   try {
-    data = await checkUserExists({ identifier, type });
+    data = await checkUserExists({ identifier, type, userId });
   } catch (e) {
     success = false;
     message = e.message;

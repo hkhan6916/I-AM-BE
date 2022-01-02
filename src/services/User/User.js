@@ -246,13 +246,18 @@ const updateUserProfile = async ({ userId, file, details }) => {
     throw new Error('No details provided.');
   }
 
+  if (details && typeof details !== 'object') {
+    throw new Error('Invalid Details.');
+  }
+
   if (details.username) {
-    const exists = await User.findOne({ usernameLowered: details.username });
+    const exists = await User.findOne({ usernameLowered: details.username.toLowerCase() });
     if (exists) {
       const error = new Error('A user exists with that username.');
       error.validationFailure = { username: { exists: true } };
       throw error;
     }
+    details.usernameLowered = details.username.toLowerCase();
   }
 
   if (details.email) {
@@ -262,10 +267,7 @@ const updateUserProfile = async ({ userId, file, details }) => {
       error.validationFailure = { email: { exists: true } };
       throw error;
     }
-  }
-
-  if (details && typeof details !== 'object') {
-    throw new Error('Invalid Details.');
+    details.emailLowered = details.email.toLowerCase();
   }
 
   if (details.password) {
@@ -275,7 +277,7 @@ const updateUserProfile = async ({ userId, file, details }) => {
   }
 
   const user = await User.findById(userId);
-
+  console.log(file);
   if (file) {
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
@@ -286,7 +288,13 @@ const updateUserProfile = async ({ userId, file, details }) => {
     const currentProfileGifKey = currentProfileGifUrl.substring(gifUrlIndex + 1);
     const currentProfileVideoKey = currentProfileVideoUrl.substring(videoUrlIndex + 1);
     const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
-    await User.findByIdAndUpdate(userId, { ...details, profileVideoUrl, profileGifUrl });
+    await User.findByIdAndUpdate(userId, {
+      ...details,
+      profileVideoUrl,
+      profileGifUrl,
+      // usernameLowered: details.username.toLowerCase(),
+      // emailLowered: details.email.toLowerCase(),
+    });
     if (profileVideoUrl && profileGifUrl) {
       await Promise.allSettled([
         deleteFile(currentProfileGifKey),
@@ -309,16 +317,23 @@ const updateUserProfile = async ({ userId, file, details }) => {
   return { ...user.toObject(), ...details };
 };
 
-const checkUserExists = async ({ type, identifier }) => {
+const checkUserExists = async ({ type, identifier, userId }) => {
+  const user = await User.findById(userId);
   if (!identifier) {
     throw new Error('No identifier provided.');
   }
   const query = type === 'email' ? { emailLowered: identifier.toLowerCase() } : { usernameLowered: identifier.toLowerCase() };
 
   const exists = await User.findOne(query);
+
+  if (user[`${type}Lowered`] === identifier.toLowerCase()) {
+    return { [type]: { exists: false } };
+  }
+
   if (exists) {
     return { [type]: { exists: true } };
   }
+
   return { [type]: { exists: false } };
 };
 

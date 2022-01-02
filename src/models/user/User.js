@@ -42,7 +42,7 @@ const UserSchema = new Schema({
     text: true,
   },
   jobTitle: {
-    jobTitle: String,
+    type: String,
     required: true,
     text: true,
   },

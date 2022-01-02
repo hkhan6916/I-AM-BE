@@ -113,8 +113,13 @@ const sendFriendRequest = async (userId, recipientId) => {
   const recipient = await User.findById(recipientId);
   const user = await User.findById(userId);
   if (!recipient || !user) {
-    throw new Error('User does not exist.');
+    throw new Error('User or recipient does not exist.');
   }
+
+  if (recipient._id === user._id) {
+    throw new Error('Cannot send a request to the same user.');
+  }
+
   if (user.friendRequestsReceived.includes(recipientId)) {
     return user;
   }
