@@ -242,6 +242,7 @@ const getUserData = async (userId) => {
 };
 
 const updateUserProfile = async ({ userId, file, details }) => {
+  const user = await User.findById(userId);
   if (!details && !file) {
     throw new Error('No details provided.');
   }
@@ -252,7 +253,8 @@ const updateUserProfile = async ({ userId, file, details }) => {
 
   if (details.username) {
     const exists = await User.findOne({ usernameLowered: details.username.toLowerCase() });
-    if (exists) {
+
+    if (exists && exists._id !== user._id) {
       const error = new Error('A user exists with that username.');
       error.validationFailure = { username: { exists: true } };
       throw error;
@@ -262,7 +264,7 @@ const updateUserProfile = async ({ userId, file, details }) => {
 
   if (details.email) {
     const exists = await User.findOne({ emailLowered: details.email.toLowerCase() });
-    if (exists) {
+    if (exists && exists._id !== user._id) {
       const error = new Error('A user exists with that email address.');
       error.validationFailure = { email: { exists: true } };
       throw error;
@@ -276,8 +278,6 @@ const updateUserProfile = async ({ userId, file, details }) => {
     }
   }
 
-  const user = await User.findById(userId);
-  console.log(file);
   if (file) {
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
