@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
 
 const ConnectionsSchema = new Schema({
-  senderId: {
+  requesterId: {
     type: Schema.Types.ObjectId,
     required: true,
   },

@@ -148,23 +148,22 @@ const sendFriendRequest = async (userId, recipientId) => {
 
   const requestAlreadySent = await Connections.findOne({
     $and:
-       [{ senderId: user._id }, { receiverId: recipient._id }],
+       [{ requesterId: user._id }, { receiverId: recipient._id }],
   });
-
   if (requestAlreadySent) {
     return requestAlreadySent;
   }
 
   const requestAlreadyReceived = await Connections.findOne({
     $and:
-    [{ senderId: recipient._id }, { receiverId: user._id }],
+    [{ requesterId: recipient._id }, { receiverId: user._id }],
   });
   if (requestAlreadyReceived) {
     return requestAlreadyReceived;
   }
 
   const newRequest = await Connections.create({
-    senderId: user._id,
+    requesterId: user._id,
     receiverId: recipient._id,
     accepted: false,
   });
@@ -180,29 +179,48 @@ const acceptFriendRequest = async (userId, requesterId) => {
     throw new Error('User does not exist.');
   }
 
-  if (user.connections.includes(requesterId)) {
+  const request = await Connections.findOne({
+    $and:
+       [{ requesterId: requester._id }, { receiverId: user._id }],
+  });
+
+  if (!request) {
+    throw new Error('No request exists.');
+  }
+
+  if (request.accepted) {
     throw new Error('Request already accepted');
   }
 
-  if (!user.friendRequestsReceived.includes(requesterId)) {
-    throw new Error('Request does not exist.');
-  }
+  request.accepted = true;
 
-  const requesterRequestIndex = requester.friendRequestsSent.indexOf(userId);
-  const acceptorRequestIndex = user.friendRequestsReceived.indexOf(requesterId);
-  // remove requests from both receiver and requester of friend request
-  if (acceptorRequestIndex !== -1 && requesterRequestIndex !== -1) {
-    user.friendRequestsReceived.splice(acceptorRequestIndex, 1);
-    requester.friendRequestsSent.splice(requesterRequestIndex, 1);
-  }
+  request.save();
 
-  user.connections = ([...user.connections, requesterId]);
-  requester.connections = ([...requester.connections, userId]);
+  return request;
 
-  user.save();
-  requester.save();
+  // if (user.connections.includes(requesterId)) {
+  //   throw new Error('Request already accepted');
+  // }
 
-  return user;
+  // if (!user.friendRequestsReceived.includes(requesterId)) {
+  //   throw new Error('Request does not exist.');
+  // }
+
+  // const requesterRequestIndex = requester.friendRequestsSent.indexOf(userId);
+  // const acceptorRequestIndex = user.friendRequestsReceived.indexOf(requesterId);
+  // // remove requests from both receiver and requester of friend request
+  // if (acceptorRequestIndex !== -1 && requesterRequestIndex !== -1) {
+  //   user.friendRequestsReceived.splice(acceptorRequestIndex, 1);
+  //   requester.friendRequestsSent.splice(requesterRequestIndex, 1);
+  // }
+
+  // user.connections = ([...user.connections, requesterId]);
+  // requester.connections = ([...requester.connections, userId]);
+
+  // user.save();
+  // requester.save();
+
+  // return user;
 };
 
 const rejectFriendRequest = async (userId, requesterId) => {
