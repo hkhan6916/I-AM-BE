@@ -1,6 +1,8 @@
 const User = require('../../models/user/User');
+const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
+// todo delete this when no longer needed
 const resetUserFriendsList = async (id) => {
   const user = await User.findById(id);
 
@@ -110,6 +112,30 @@ const getUserFriendRequests = async (userId) => {
 };
 
 const sendFriendRequest = async (userId, recipientId) => {
+  // const recipient = await User.findById(recipientId);
+  // const user = await User.findById(userId);
+  // if (!recipient || !user) {
+  //   throw new Error('User or recipient does not exist.');
+  // }
+
+  // if (recipient._id === user._id) {
+  //   throw new Error('Cannot send a request to the same user.');
+  // }
+
+  // if (user.friendRequestsReceived.includes(recipientId)) {
+  //   return user;
+  // }
+  // if (recipient.friendRequestsReceived.includes(userId)) {
+  //   throw new Error('Request already sent');
+  // }
+  // recipient.friendRequestsReceived = ([...recipient.friendRequestsReceived, userId]);
+  // user.friendRequestsSent = ([...user.friendRequestsSent, recipientId]);
+
+  // recipient.save();
+  // user.save();
+
+  // return user;
+
   const recipient = await User.findById(recipientId);
   const user = await User.findById(userId);
   if (!recipient || !user) {
@@ -120,19 +146,30 @@ const sendFriendRequest = async (userId, recipientId) => {
     throw new Error('Cannot send a request to the same user.');
   }
 
-  if (user.friendRequestsReceived.includes(recipientId)) {
-    return user;
-  }
-  if (recipient.friendRequestsReceived.includes(userId)) {
-    throw new Error('Request already sent');
-  }
-  recipient.friendRequestsReceived = ([...recipient.friendRequestsReceived, userId]);
-  user.friendRequestsSent = ([...user.friendRequestsSent, recipientId]);
+  const requestAlreadySent = await Connections.findOne({
+    $and:
+       [{ senderId: user._id }, { receiverId: recipient._id }],
+  });
 
-  recipient.save();
-  user.save();
+  if (requestAlreadySent) {
+    return requestAlreadySent;
+  }
 
-  return user;
+  const requestAlreadyReceived = await Connections.findOne({
+    $and:
+    [{ senderId: recipient._id }, { receiverId: user._id }],
+  });
+  if (requestAlreadyReceived) {
+    return requestAlreadyReceived;
+  }
+
+  const newRequest = await Connections.create({
+    senderId: user._id,
+    receiverId: recipient._id,
+    accepted: false,
+  });
+
+  return newRequest;
 };
 
 const acceptFriendRequest = async (userId, requesterId) => {
