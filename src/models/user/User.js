@@ -63,14 +63,14 @@ const UserSchema = new Schema({
     type: Array,
     default: [],
   },
-  friendRequestsReceived: {
-    type: Array,
-    default: [],
-  },
-  friendRequestsSent: {
-    type: Array,
-    default: [],
-  },
+  // friendRequestsReceived: {
+  //   type: Array,
+  //   default: [],
+  // },
+  // friendRequestsSent: {
+  //   type: Array,
+  //   default: [],
+  // },
   notificationToken: {
     type: String,
     required: true,

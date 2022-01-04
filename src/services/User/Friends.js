@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongoose').Types;
 const User = require('../../models/user/User');
 const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
@@ -91,21 +92,88 @@ const getUserFriends = async (userId, offset) => {
 
 const getUserFriendRequests = async (userId) => {
   const user = await User.findById(userId);
-  const receivedRecords = await User.find({
-    _id: {
-      $in: user.friendRequestsReceived,
-    },
-  }, 'firstName lastName username email profileVideoUrl profileGifUrl');
+  // const receivedRecords = await User.find({
+  //   _id: {
+  //     $in: user.friendRequestsReceived,
+  //   },
+  // }, 'firstName lastName username email profileVideoUrl profileGifUrl');
 
-  const sentRecords = await User.find({
-    _id: {
-      $in: user.friendRequestsSent,
-    },
-  }, 'firstName lastName username email profileVideoUrl profileGifUrl');
-
+  // const sentRecords = await User.find({
+  //   _id: {
+  //     $in: user.friendRequestsSent,
+  //   },
+  // }, 'firstName lastName username email profileVideoUrl profileGifUrl');
   if (!user) {
     throw new Error('No user found.');
   }
+
+  const receivedRecords = await Connections.aggregate([
+    {
+      $match: {
+        receiverId: ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        let: { requesterId: '$requesterId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$requesterId'],
+              },
+            },
+          },
+        ],
+        as: 'user',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$user',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $replaceRoot: { newRoot: '$user' },
+    },
+  ]);
+
+  const sentRecords = await Connections.aggregate([
+    {
+      $match: {
+        requesterId: ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        let: { receiverId: '$receiverId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$receiverId'],
+              },
+            },
+          },
+        ],
+        as: 'user',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$user',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $replaceRoot: { newRoot: '$user' },
+    },
+  ]);
 
   if (!Array.isArray(sentRecords)) {
     throw new Error('Could not fetch sent requests.');
@@ -116,12 +184,12 @@ const getUserFriendRequests = async (userId) => {
   }
 
   const received = receivedRecords.map((request) => ({
-    ...request.toObject(),
+    ...request,
     profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
   }));
 
   const sent = sentRecords.map((request) => ({
-    ...request.toObject(),
+    ...request,
     profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
   }));
 
