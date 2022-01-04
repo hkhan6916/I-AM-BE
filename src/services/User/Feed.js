@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
 const PostLikes = require('../../models/user/PostLikes');
+const Connections = require('../../models/user/Connections');
 const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
@@ -10,6 +11,18 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   if (!user) {
     throw new Error('User could not be found.');
   }
+
+  const connectionsAsSender = await Connections.find({
+    receiverId: user._id,
+    accepted: true,
+  }, 'requesterId');
+
+  const connectionsAsReceiver = await Connections.find({
+    requesterId: user._id,
+    accepted: true,
+  }, 'receiverId');
+
+  const connections = [...connectionsAsSender, ...connectionsAsReceiver];
 
   /**
    * Gets the feed based on what a user's friends have posted.
@@ -24,7 +37,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const friendsPostsBasedFeed = await Posts.aggregate([
     {
       $match: {
-        userId: { $in: user.connections.map((id) => ObjectId(id)) },
+        userId: { $in: connections.map((id) => ObjectId(id)) },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -173,10 +186,11 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
    * 7. Gets the postAuthor for this parent post
    *
    */
+
   const friendsInterestsBasedFeed = await PostLikes.aggregate([
     {
       $match: {
-        likedBy: { $in: user.connections.map((id) => ObjectId(id)) },
+        likedBy: { $in: connections.map((id) => ObjectId(id)) },
       },
     },
     { $sort: { createdAt: -1 } },

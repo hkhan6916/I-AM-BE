@@ -41,14 +41,14 @@ module.exports = async (file) => {
 
   const profileGifParams = {
     Bucket,
-    Key: profileGifName,
+    Key: `profileGifs/${profileGifName}`,
     Body: profileGifBuffer,
     ACL: 'private',
   };
 
   const profileVideoParams = {
     Bucket,
-    Key: `${file.filename}`,
+    Key: `profileVideos/${file.filename}`,
     Body: profileVideoBuffer,
     ACL: 'private',
   };

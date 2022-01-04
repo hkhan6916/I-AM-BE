@@ -238,7 +238,11 @@ const getUserData = async (userId) => {
     throw new Error('User does not exist.');
   }
 
-  return { ...user.toObject(), password: '', profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl) };
+  return {
+    ...user.toObject(),
+    password: '',
+    profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
+  };
 };
 
 const updateUserProfile = async ({ userId, file, details }) => {
