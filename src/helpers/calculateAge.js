@@ -11,7 +11,7 @@ module.exports = (document) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
   if (minutes < 60) {
-    age = { minutes };
+     age = { minutes };
   } else if (hours < 24) {
     age = { hours };
   } else {

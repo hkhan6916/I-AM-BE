@@ -70,39 +70,44 @@ const getSingleUser = async (otherUserId, userId) => {
 
 const getUserFriends = async (userId, offset) => {
   const user = await User.findById(userId);
-  const connections = await User.find({
-    _id: {
-      $in: user.connections,
-    },
-  }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(20);
   if (!user) {
-    throw new Error('No user found.');
+    throw new Error('User does not exist.');
+  }
+  // const connections = await Connections.find({
+  //   $or: [{ receiverId: user._id, accepted: true }, { requesterId: user._id, accepted: true }],
+  // }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(20);
+
+  const friends = await Connections.aggregate([
+    {
+      $match: {
+        $or: [{
+          receiverId: user._id,
+          accepted: true,
+        }, { requesterId: user._id, accepted: true }],
+      },
+    },
+    { $skip: offset || 0 },
+    { $limit: 15 },
+    {
+      $lookup: {
+        from: 'users',
+        let: { friendId: '$_id' },
+      },
+    },
+  ]);
+  if (!Array.isArray(friends)) {
+    throw new Error('Could not fetch friends.');
   }
 
-  if (!Array.isArray(connections)) {
-    throw new Error('Could not fetch connections.');
-  }
-
-  connections.forEach((friend) => {
+  friends.forEach((friend) => {
     friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
   });
 
-  return connections;
+  return friends;
 };
 
 const getUserFriendRequests = async (userId) => {
   const user = await User.findById(userId);
-  // const receivedRecords = await User.find({
-  //   _id: {
-  //     $in: user.friendRequestsReceived,
-  //   },
-  // }, 'firstName lastName username email profileVideoUrl profileGifUrl');
-
-  // const sentRecords = await User.find({
-  //   _id: {
-  //     $in: user.friendRequestsSent,
-  //   },
-  // }, 'firstName lastName username email profileVideoUrl profileGifUrl');
   if (!user) {
     throw new Error('No user found.');
   }
@@ -111,6 +116,7 @@ const getUserFriendRequests = async (userId) => {
     {
       $match: {
         receiverId: ObjectId(userId),
+        accepted: false,
       },
     },
     {
@@ -145,6 +151,7 @@ const getUserFriendRequests = async (userId) => {
     {
       $match: {
         requesterId: ObjectId(userId),
+        accepted: false,
       },
     },
     {
@@ -196,44 +203,20 @@ const getUserFriendRequests = async (userId) => {
   return { sent, received };
 };
 
-const sendFriendRequest = async (userId, recipientId) => {
-  // const recipient = await User.findById(recipientId);
-  // const user = await User.findById(userId);
-  // if (!recipient || !user) {
-  //   throw new Error('User or recipient does not exist.');
-  // }
-
-  // if (recipient._id === user._id) {
-  //   throw new Error('Cannot send a request to the same user.');
-  // }
-
-  // if (user.friendRequestsReceived.includes(recipientId)) {
-  //   return user;
-  // }
-  // if (recipient.friendRequestsReceived.includes(userId)) {
-  //   throw new Error('Request already sent');
-  // }
-  // recipient.friendRequestsReceived = ([...recipient.friendRequestsReceived, userId]);
-  // user.friendRequestsSent = ([...user.friendRequestsSent, recipientId]);
-
-  // recipient.save();
-  // user.save();
-
-  // return user;
-
-  const recipient = await User.findById(recipientId);
+const sendFriendRequest = async (userId, receiverId) => {
+  const receiver = await User.findById(receiverId);
   const user = await User.findById(userId);
-  if (!recipient || !user) {
-    throw new Error('User or recipient does not exist.');
+  if (!receiver || !user) {
+    throw new Error('User or receiver does not exist.');
   }
 
-  if (recipient._id === user._id) {
+  if (receiver._id === user._id) {
     throw new Error('Cannot send a request to the same user.');
   }
 
   const requestAlreadySent = await Connections.findOne({
     $and:
-       [{ requesterId: user._id }, { receiverId: recipient._id }],
+       [{ requesterId: user._id }, { receiverId: receiver._id }],
   });
   if (requestAlreadySent) {
     return requestAlreadySent;
@@ -241,7 +224,7 @@ const sendFriendRequest = async (userId, recipientId) => {
 
   const requestAlreadyReceived = await Connections.findOne({
     $and:
-    [{ requesterId: recipient._id }, { receiverId: user._id }],
+    [{ requesterId: receiver._id }, { receiverId: user._id }],
   });
   if (requestAlreadyReceived) {
     return requestAlreadyReceived;
@@ -249,7 +232,7 @@ const sendFriendRequest = async (userId, recipientId) => {
 
   const newRequest = await Connections.create({
     requesterId: user._id,
-    receiverId: recipient._id,
+    receiverId: receiver._id,
     accepted: false,
   });
 
@@ -283,63 +266,16 @@ const acceptFriendRequest = async (userId, requesterId) => {
   // TODO get other user posts and return them
 
   return requester;
-
-  // if (user.connections.includes(requesterId)) {
-  //   throw new Error('Request already accepted');
-  // }
-
-  // if (!user.friendRequestsReceived.includes(requesterId)) {
-  //   throw new Error('Request does not exist.');
-  // }
-
-  // const requesterRequestIndex = requester.friendRequestsSent.indexOf(userId);
-  // const acceptorRequestIndex = user.friendRequestsReceived.indexOf(requesterId);
-  // // remove requests from both receiver and requester of friend request
-  // if (acceptorRequestIndex !== -1 && requesterRequestIndex !== -1) {
-  //   user.friendRequestsReceived.splice(acceptorRequestIndex, 1);
-  //   requester.friendRequestsSent.splice(requesterRequestIndex, 1);
-  // }
-
-  // user.connections = ([...user.connections, requesterId]);
-  // requester.connections = ([...requester.connections, userId]);
-
-  // user.save();
-  // requester.save();
-
-  // return user;
 };
 
 const rejectFriendRequest = async (userId, requesterId) => {
-  // const user = await User.findById(userId);
-
-  // if (!user) {
-  //   throw new Error('User does not exist..');
-  // }
-
-  // if (user.connections.includes(requesterId)) {
-  //   throw new Error('Request already accepted.');
-  // }
-  // if (!user.friendRequestsReceived.includes(requesterId)) {
-  //   throw new Error('Request does not exist.');
-  // }
-
-  // const acceptorRequestIndex = user.friendRequestsReceived.indexOf(requesterId);
-  // // remove requests from both receiver and requester of friend request
-  // if (acceptorRequestIndex !== -1) {
-  //   user.friendRequestsReceived.splice(acceptorRequestIndex, 1);
-  // }
-
-  // user.save();
-
-  // return user;
-
   const user = await User.findById(userId);
 
   if (!user) {
     throw new Error('User does not exist..');
   }
 
-  const request = await Connections.findOneAndDelete({ requesterId, recipientId: userId });
+  const request = await Connections.findOneAndDelete({ requesterId, receiverId: user._id });
 
   if (!request) {
     throw new Error('Request does not exist.');
@@ -349,45 +285,19 @@ const rejectFriendRequest = async (userId, requesterId) => {
     throw new Error('Request already accepted.');
   }
 
-  await Connections.findOneAndDelete({ requesterId, recipientId: userId });
+  await Connections.findOneAndDelete({ requesterId, receiverId: user._id });
 
   return { rejected: true };
 };
 
-const recallFriendRequest = async (userId, recipientId) => {
-  // const recipient = await User.findById(recipientId);
-  // const user = await User.findById(userId);
-  // if (!recipient || !user) {
-  //   throw new Error('User does not exist.');
-  // }
-
-  // if (user.connections.includes(recipientId)) {
-  //   return user;
-  // }
-
-  // if (!user.friendRequestsSent.includes(recipientId)) {
-  //   throw new Error('Request does not exist.');
-  // }
-
-  // const requesterRequestIndex = user.friendRequestsSent.indexOf(recipientId);
-  // const recipientRequestIndex = recipient.friendRequestsReceived.indexOf(userId);
-  // // remove requests from both receiver and requester
-  // if (recipientRequestIndex !== -1 && requesterRequestIndex !== -1) {
-  //   user.friendRequestsSent.splice(requesterRequestIndex, 1);
-  //   recipient.friendRequestsReceived.splice(recipientRequestIndex, 1);
-  // }
-  // user.save();
-  // recipient.save();
-
-  // return user;
-
+const recallFriendRequest = async (userId, receiverId) => {
   const user = await User.findById(userId);
 
   if (!user) {
     throw new Error('User does not exist..');
   }
 
-  const request = await Connections.findOneAndDelete({ requesterId: user._id, recipientId });
+  const request = await Connections.findOneAndDelete({ requesterId: user._id, receiverId });
 
   if (!request) {
     throw new Error('Request does not exist.');
@@ -397,37 +307,12 @@ const recallFriendRequest = async (userId, recipientId) => {
     throw new Error('Request already accepted.');
   }
 
-  await Connections.findOneAndDelete({ requesterId: user._id, recipientId });
+  await Connections.findOneAndDelete({ requesterId: user._id, receiverId });
 
   return { recalled: true };
 };
 
 const removeConnection = async (userId, friendId) => {
-  // const connection = await User.findById(friendId);
-  // const user = await User.findById(userId);
-
-  // if (!connection || !user) {
-  //   throw new Error('User does not exist.');
-  // }
-
-  // if (!user.connections.includes(friendId)
-  // || !connection.connections.includes(userId)) {
-  //   throw new Error('Not connected to this user.');
-  // }
-
-  // const connectionConnectionIndex = connection.connections.indexOf(userId);
-  // const userConnectionIndex = user.connections.indexOf(friendId);
-
-  // if (userConnectionIndex !== -1 && connectionConnectionIndex !== -1) {
-  //   user.connections.splice(userConnectionIndex, 1);
-  //   connection.connections.splice(connectionConnectionIndex, 1);
-  // }
-
-  // user.save();
-  // connection.save();
-
-  // return user;
-
   const friend = await User.findById(friendId);
   const user = await User.findById(userId);
 
