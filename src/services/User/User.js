@@ -337,7 +337,7 @@ const updateUserProfile = async ({ userId, file, details }) => {
 };
 
 const checkUserExists = async ({ type, identifier, userId }) => {
-  const user = await User.findById(userId);
+  const user = userId ? await User.findById(userId) : null;
   if (!identifier) {
     throw new Error('No identifier provided.');
   }
@@ -345,7 +345,7 @@ const checkUserExists = async ({ type, identifier, userId }) => {
 
   const exists = await User.findOne(query);
 
-  if (user[`${type}Lowered`] === identifier.toLowerCase()) {
+  if (user?.[`${type}Lowered`] === identifier.toLowerCase()) {
     return { [type]: { exists: false } };
   }
 
