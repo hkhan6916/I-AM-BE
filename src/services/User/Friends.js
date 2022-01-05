@@ -77,24 +77,87 @@ const getUserFriends = async (userId, offset) => {
   //   $or: [{ receiverId: user._id, accepted: true }, { requesterId: user._id, accepted: true }],
   // }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(20);
 
-  const friends = await Connections.aggregate([
+  const friendsAsSender = await Connections.aggregate([
     {
-      $match: {
-        $or: [{
-          receiverId: user._id,
-          accepted: true,
-        }, { requesterId: user._id, accepted: true }],
-      },
+      $match: { requesterId: user._id, accepted: true },
     },
     { $skip: offset || 0 },
     { $limit: 15 },
     {
       $lookup: {
         from: 'users',
-        let: { friendId: '$_id' },
+        let: { friendId: '$receiverId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$$friendId', '$_id'] },
+            },
+          },
+        ],
+        as: 'friends',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$friends',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    { $replaceRoot: { newRoot: '$friends' } },
+    {
+      $project: {
+        firstName: 1,
+        lastName: 1,
+        username: 1,
+        email: 1,
+        profileVideoUrl: 1,
+        profileGifUrl: 1,
       },
     },
   ]);
+
+  const friendsAsReceiver = await Connections.aggregate([
+    {
+      $match: { receiverId: user._id, accepted: true },
+    },
+    { $skip: offset || 0 },
+    { $limit: 15 },
+    {
+      $lookup: {
+        from: 'users',
+        let: { friendId: '$requesterId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$$friendId', '$_id'] },
+            },
+          },
+        ],
+        as: 'friends',
+      },
+    }, {
+      $unwind:
+       {
+         path: '$friends',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    { $replaceRoot: { newRoot: '$friends' } },
+    {
+      $project: {
+        firstName: 1,
+        lastName: 1,
+        username: 1,
+        email: 1,
+        profileVideoUrl: 1,
+        profileGifUrl: 1,
+      },
+    },
+  ]);
+
+  const friends = [...friendsAsSender, ...friendsAsReceiver];
+
   if (!Array.isArray(friends)) {
     throw new Error('Could not fetch friends.');
   }
