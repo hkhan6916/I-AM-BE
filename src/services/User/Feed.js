@@ -6,23 +6,33 @@ const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
-const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset }) => {
+const getUserFeed = async ({
+  userId, feedTimelineOffset, friendsInterestsOffset,
+  connectionsAsSenderOffset, connectionsAsReceiverOffset,
+}) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error('User could not be found.');
   }
 
-  const connectionsAsSender = await Connections.find({
-    receiverId: user._id,
-    accepted: true,
-  }, 'requesterId');
+  const connectionsAsSender = connectionsAsSenderOffset >= user.numberOfFriendsAsRequester ? []
+    : await Connections.find({
+      receiverId: user._id,
+      accepted: true,
+    }, 'requesterId').skip(connectionsAsSenderOffset || 0).limit(5);
 
-  const connectionsAsReceiver = await Connections.find({
-    requesterId: user._id,
-    accepted: true,
-  }, 'receiverId');
+  const connectionsAsReceiver = connectionsAsReceiverOffset >= user.numberOfFriendsAsReceiver ? []
+    : await Connections.find({
+      requesterId: user._id,
+      accepted: true,
+    }, 'receiverId').skip(connectionsAsReceiverOffset || 0).limit(5);
 
-  const connections = [...connectionsAsSender, ...connectionsAsReceiver];
+  const connections = [
+    ...connectionsAsSender.map((connection) => connection.requesterId),
+    ...connectionsAsReceiver.map((connection) => connection.receiverId),
+  ];
+
+  if (!connections.length) return [];
 
   /**
    * Gets the feed based on what a user's friends have posted.
@@ -37,7 +47,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const friendsPostsBasedFeed = await Posts.aggregate([
     {
       $match: {
-        userId: { $in: connections.map((id) => ObjectId(id)) },
+        userId: { $in: connections },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -168,10 +178,11 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
     },
   ]);
 
+  /* This is to get the ids of all the friendsPostsBasedFeed posts
+  so we don't get the same posts again in below aggregation */
   const ids = [];
-  friendsPostsBasedFeed.forEach((i) => {
-    // remove this tostring from here and in aggreation below.
-    ids.push(i._id.toString());
+  friendsPostsBasedFeed.forEach((post) => {
+    ids.push(post._id.toString());
   });
 
   /**
@@ -190,7 +201,7 @@ const getUserFeed = async ({ userId, feedTimelineOffset, friendsInterestsOffset 
   const friendsInterestsBasedFeed = await PostLikes.aggregate([
     {
       $match: {
-        likedBy: { $in: connections.map((id) => ObjectId(id)) },
+        likedBy: { $in: connections },
       },
     },
     { $sort: { createdAt: -1 } },

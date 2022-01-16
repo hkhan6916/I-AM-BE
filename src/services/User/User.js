@@ -240,6 +240,7 @@ const getUserData = async (userId) => {
 
   return {
     ...user.toObject(),
+    numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
     password: '',
     profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
   };
@@ -355,6 +356,10 @@ const checkUserExists = async ({ type, identifier, userId }) => {
 
   return { [type]: { exists: false } };
 };
+
+const deleteUser = (userId) => {
+  
+}
 
 module.exports = {
   loginUser,

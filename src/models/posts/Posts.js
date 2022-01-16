@@ -36,9 +36,6 @@ const PostsSchema = new Schema({
   private: {
     type: Boolean,
   },
-  likedByFriend: {
-    type: Object,
-  },
 },
 { timestamps: true });
 module.exports = model('Posts', PostsSchema);

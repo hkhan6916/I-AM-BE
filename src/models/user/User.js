@@ -45,6 +45,14 @@ const UserSchema = new Schema({
     type: String,
     text: true,
   },
+  numberOfFriendsAsRequester: {
+    type: Number,
+    default: 0,
+  },
+  numberOfFriendsAsReceiver: {
+    type: Number,
+    default: 0,
+  },
   verified: {
     type: Boolean,
     default: false,
@@ -59,18 +67,6 @@ const UserSchema = new Schema({
   suspendedDate: {
     type: Date,
   },
-  connections: {
-    type: Array,
-    default: [],
-  },
-  // friendRequestsReceived: {
-  //   type: Array,
-  //   default: [],
-  // },
-  // friendRequestsSent: {
-  //   type: Array,
-  //   default: [],
-  // },
   notificationToken: {
     type: String,
     required: true,

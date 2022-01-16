@@ -3,17 +3,6 @@ const User = require('../../models/user/User');
 const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
-// todo delete this when no longer needed
-const resetUserFriendsList = async (id) => {
-  const user = await User.findById(id);
-
-  user.friendRequestsReceived = [];
-  user.friendRequestsSent = [];
-  user.connections = [];
-
-  user.save();
-};
-
 const searchUser = async (username, offset) => {
   const userRecords = await (async () => {
     const searchQuery = username.toLowerCase();
@@ -61,6 +50,7 @@ const getSingleUser = async (otherUserId, userId) => {
     isFriend: !!requestSent?.accepted || !!requestReceived?.accepted,
     requestSent: !!requestSent,
     requestReceived: !!requestReceived,
+    numberOfFriends: otherUserRecord.friendsAsReceiver + otherUserRecord.numberOfFriendsAsRequester,
   };
   return {
     otherUser,
@@ -73,9 +63,6 @@ const getUserFriends = async (userId, offset) => {
   if (!user) {
     throw new Error('User does not exist.');
   }
-  // const connections = await Connections.find({
-  //   $or: [{ receiverId: user._id, accepted: true }, { requesterId: user._id, accepted: true }],
-  // }, 'firstName lastName username email profileVideoUrl profileGifUrl').skip(offset || 0).limit(20);
 
   const friendsAsSender = await Connections.aggregate([
     {
@@ -323,7 +310,10 @@ const acceptFriendRequest = async (userId, requesterId) => {
   }
 
   request.accepted = true;
-
+  requester.numberOfFriendsAsRequester += 1;
+  user.numberOfFriendsAsReceiver += 1;
+  requester.save();
+  user.save();
   request.save();
 
   // TODO get other user posts and return them
@@ -383,22 +373,29 @@ const removeConnection = async (userId, friendId) => {
     throw new Error('User does not exist.');
   }
 
-  const connection = await Connections.findOneAndDelete({
-    $or:
-       [{
-         requesterId: user._id,
-         receiverId: friend._id,
-         accepted: true,
-       }, {
-         requesterId: friend._id,
-         receiverId: user._id,
-         accepted: true,
-       }],
+  const connectionAsRequester = await Connections.findOneAndDelete({
+    requesterId: user._id,
+    accepted: true,
+  });
+  if (connectionAsRequester) {
+    friend.numberOfFriendsAsReceiver -= 1;
+    user.numberOfFriendsAsRequester -= 1;
+    friend.save();
+    user.save();
+  }
+  const connectionAsReceiver = await Connections.findOneAndDelete({
+    receiverId: user._id,
+    accepted: true,
   });
 
-  if (!connection) {
+  if (!connectionAsReceiver) {
     throw new Error('User connection does not exist.');
   }
+
+  friend.numberOfFriendsAsRequester -= 1;
+  user.numberOfFriendsAsReceiver -= 1;
+  friend.save();
+  user.save();
 
   return { deleted: true };
 };
@@ -413,5 +410,4 @@ module.exports = {
   acceptFriendRequest,
   rejectFriendRequest,
   removeConnection,
-  resetUserFriendsList,
 };

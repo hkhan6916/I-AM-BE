@@ -16,7 +16,7 @@ const {
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
   rejectFriendRequest, removeConnection, searchUser, getUserFriends,
-  resetUserFriendsList, getSingleUser,
+  getSingleUser,
   getUserFriendRequests,
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
@@ -121,14 +121,29 @@ router.post('/user/feed', verifyAuth, async (req, res) => {
   let message = 'User feed fetched.';
   let data = {};
 
-  const { feedTimelineOffset, friendsInterestsOffset } = req.body;
+  const {
+    feedTimelineOffset, friendsInterestsOffset,
+    connectionsAsSenderOffset, connectionsAsReceiverOffset,
+  } = req.body;
 
   try {
     data = await getUserFeed({
       userId: req.user.id,
       feedTimelineOffset,
       friendsInterestsOffset,
+      connectionsAsSenderOffset,
+      connectionsAsReceiverOffset,
     });
+    if (!data.length) {
+      // no feed found, add 5 to friends offset.
+      data = await getUserFeed({
+        userId: req.user.id,
+        feedTimelineOffset,
+        friendsInterestsOffset,
+        connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
+        connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
+      });
+    }
   } catch (e) {
     success = false;
     message = e.message;
@@ -297,25 +312,6 @@ router.get('/user/friend/remove/:friendId', verifyAuth, async (req, res) => {
   let data = {};
   try {
     data = await removeConnection(req.user.id, req.params.friendId);
-  } catch (e) {
-    success = false;
-    message = e.message;
-  }
-
-  res.status(200).json({
-    success,
-    message,
-    data,
-  });
-});
-
-// TODO: delete this when no longer needed.
-router.get('/user/friend/reset/:id', async (req, res) => {
-  let success = true;
-  let message = 'Friend List Reset.';
-  let data = {};
-  try {
-    data = await resetUserFriendsList(req.params.id);
   } catch (e) {
     success = false;
     message = e.message;

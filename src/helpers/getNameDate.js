@@ -6,7 +6,7 @@ module.exports = (date) => {
 
   const year = date.getFullYear();
   const month = date.toLocaleString('default', { month: 'long' });
-   const day = date.getDate();
+  const day = date.getDate();
 
   if (showYear) {
     return `${month} ${day} ${year}`;
