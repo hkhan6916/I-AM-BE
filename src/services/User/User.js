@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const yup = require('yup');
 const User = require('../../models/user/User');
-const createPost = require('../Posts/Post');
+const { sendFriendRequest } = require('./Friends');
 const {
   uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders,
 } = require('../../helpers');
@@ -468,6 +468,8 @@ const generateData = async ({
 
     post.save();
   }
+
+  await sendFriendRequest(user._id, '61d4a62fac871076485409c6');
 
   return {
     registered: true,

@@ -175,19 +175,9 @@ router.post('/user/feed', verifyAuth, async (req, res) => {
       userId: req.user.id,
       feedTimelineOffset,
       friendsInterestsOffset,
-      connectionsAsSenderOffset,
-      connectionsAsReceiverOffset,
+      connectionsAsSenderOffset: connectionsAsSenderOffset || 0,
+      connectionsAsReceiverOffset: connectionsAsReceiverOffset || 0,
     });
-    if (!data.length) {
-      // no feed found, add 5 to friends offset.
-      data = await getUserFeed({
-        userId: req.user.id,
-        feedTimelineOffset,
-        friendsInterestsOffset,
-        connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
-        connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
-      });
-    }
   } catch (e) {
     success = false;
     message = e.message;
