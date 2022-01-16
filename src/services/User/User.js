@@ -1,13 +1,18 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const yup = require('yup');
 const User = require('../../models/user/User');
+
 const {
   uploadProfileVideo, validateEmail, deleteFile, tmpCleanup, getFileSignedHeaders,
 } = require('../../helpers');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
+  if (!identifier || !password) {
+    throw new Error('Identifier or password is missing.');
+  }
   const user = await User.findOne({
     $or:
      [{ email: identifier }, { username: identifier }],
@@ -41,26 +46,25 @@ const registerUser = async ({
     throw new Error('No video profile provided');
   }
 
-  const validEmail = validateEmail(email);
+  const schema = yup.object().shape({
+    firstName: yup.string().required(),
+    lastName: yup.string().required(),
+    email: yup.string().email().required(),
+    password: yup.string().required(),
+    username: yup.string().required(),
+    notificationToken: yup.string().required(),
+  });
+
+  await schema.validate({
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken,
+  }).catch((err) => {
+    if (err.errors?.length) {
+      throw new Error(err.errors[0]);
+    }
+  });
 
   if (!username || typeof username !== 'string') {
     throw new Error('Username is missing or invalid.');
-  }
-
-  if (!email || !validEmail || typeof email !== 'string') {
-    throw new Error('Email is missing or invalid');
-  }
-
-  if (!notificationToken) {
-    throw new Error('Notification token is required.');
-  }
-
-  if (!firstName) {
-    throw new Error('Firstname is required.');
-  }
-
-  if (!lastName) {
-    throw new Error('Lastname is required.');
   }
 
   // $or is unreliable so need to make two queries
@@ -357,9 +361,97 @@ const checkUserExists = async ({ type, identifier, userId }) => {
   return { [type]: { exists: false } };
 };
 
-const deleteUser = (userId) => {
-  
-}
+const generateData = async ({
+  username, email, plainTextPassword, firstName, lastName, file, notificationToken,
+}) => {
+  if (!file) {
+    throw new Error('No video profile provided');
+  }
+
+  const validEmail = validateEmail(email);
+
+  const schema = yup.object().shape({
+    firstName: yup.string().required(),
+    lastname: yup.string().required(),
+    email: yup.string().email(),
+    password: yup.string().required(),
+    username: yup.string().required,
+  });
+
+  schema
+    .isValid({
+      name: 'jimmy',
+      age: 24,
+    })
+    .then((valid) => {
+      // valid; // => true
+      console.log(valid);
+    }).catch((err) => { throw err; });
+
+  if (!username || typeof username !== 'string') {
+    throw new Error('Username is missing or invalid.');
+  }
+
+  if (!email || !validEmail || typeof email !== 'string') {
+    throw new Error('Email is missing or invalid');
+  }
+
+  if (!notificationToken) {
+    throw new Error('Notification token is required.');
+  }
+
+  if (!firstName) {
+    throw new Error('Firstname is required.');
+  }
+
+  if (!lastName) {
+    throw new Error('Lastname is required.');
+  }
+
+  // $or is unreliable so need to make two queries
+  const emailExists = await User.findOne({ emailLowered: email.toLowerCase() });
+
+  const usernameExists = await User.findOne({ usernameLowered: username.toLowerCase() });
+
+  if (emailExists || usernameExists) {
+    const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'}`;
+    const error = new Error(message);
+    error.validationErrors = {
+      email: { exists: emailExists },
+      username: { exists: usernameExists },
+    };
+    throw error;
+  }
+
+  if (!plainTextPassword || typeof plainTextPassword !== 'string') {
+    throw new Error("'Invalid password'");
+  }
+
+  if (plainTextPassword.length < 8) {
+    throw new Error('Password needs to be longer');
+  }
+
+  const password = await bcrypt.hash(plainTextPassword, 10);
+
+  const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+
+  if (!profileVideoUrl || !profileGifUrl) {
+    throw new Error('Profile video not uploaded');
+  }
+  await User.create({
+    username,
+    usernameLowered: username.toLowerCase(),
+    email,
+    emailLowered: email.toLowerCase(),
+    password,
+    firstName,
+    lastName,
+    profileVideoUrl,
+    profileGifUrl,
+    notificationToken,
+  });
+  return { registered: true, profileVideoUrl };
+};
 
 module.exports = {
   loginUser,
@@ -369,4 +461,5 @@ module.exports = {
   getUserData,
   updateUserProfile,
   checkUserExists,
+  generateData,
 };
