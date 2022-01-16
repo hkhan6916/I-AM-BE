@@ -487,13 +487,13 @@ const aggregateFeed = async ({
     : await Connections.find({
       requesterId: user._id,
       accepted: true,
-    }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 10 });
+    }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 5 });
 
   const connectionsAsReceiver = connectionsAsReceiverOffset >= user.numberOfFriendsAsReceiver ? []
     : await Connections.find({
       receiverId: user._id,
       accepted: true,
-    }, 'requesterId', { skip: connectionsAsReceiverOffset, limit: 10 });
+    }, 'requesterId', { skip: connectionsAsReceiverOffset, limit: 5 });
 
   const connections = [
     ...connectionsAsReceiver.map((connection) => connection.requesterId),
@@ -520,7 +520,7 @@ const aggregateFeed = async ({
     },
     { $sort: { createdAt: -1 } },
     { $skip: feedTimelineOffset || 0 },
-    { $limit: 10 },
+    { $limit: 5 },
     {
       $lookup: {
         from: 'posts',
@@ -682,8 +682,9 @@ const aggregateFeed = async ({
             $match: {
               $expr: {
                 $cond: {
-                  if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$userId', ObjectId(userId)] }] },
-                  then: {},
+                  // if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$userId', ObjectId(userId)] }] },
+                  if: { $in: [{ $toString: '$_id' }, ids] },
+                  then: null,
                   else: { $eq: ['$_id', '$$postId'] },
                 },
               },
@@ -832,7 +833,7 @@ const aggregateFeed = async ({
              },
           },
           { $skip: friendsInterestsOffset || 0 },
-          { $limit: 10 },
+          { $limit: 5 },
         ],
         as: 'friendsInterestsBasedPost',
       },
@@ -841,7 +842,7 @@ const aggregateFeed = async ({
       $unwind:
        {
          path: '$friendsInterestsBasedPost',
-         preserveNullAndEmptyArrays: true,
+         preserveNullAndEmptyArrays: false,
        },
     },
     {
@@ -899,7 +900,6 @@ const aggregateFeed = async ({
       },
     },
   ]);
-  console.log(friendsInterestsBasedFeed);
 
   const feed = sortByDate(removeDuplicatePosts(
     [...friendsPostsBasedFeed, ...friendsInterestsBasedFeed],
@@ -945,22 +945,25 @@ const getUserFeed = async ({
     connectionsAsSenderOffset,
     connectionsAsReceiverOffset,
   });
-
+  console.log(feed.feed.length);
   if (!feed.feed.length) {
     const newFeed = await aggregateFeed({
       userId,
       feedTimelineOffset: 0,
       friendsInterestsOffset: 0,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 10,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 10,
+      connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
+      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
+    });
+    console.log({
+      connectionsAsSenderOffset,
+      connectionsAsReceiverOffset,
     });
     return newFeed.feed.length && newFeed.feed[0]?._id ? {
       feed: newFeed.feed,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 10,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 10,
+      connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
+      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
     } : { feed: [] };
   }
-
   return feed.feed.length && feed.feed[0]?._id ? {
     feed: feed.feed,
     connectionsAsSenderOffset,
