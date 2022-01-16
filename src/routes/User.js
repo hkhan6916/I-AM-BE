@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
+// todo delete this once done generating data
+const faker = require('faker');
 
 const {
   registerUser,
@@ -10,8 +12,9 @@ const {
   resetUserPassword,
   loginUser,
   getUserData,
-  updateUserProfile,
+  updateUserDetails,
   checkUserExists,
+  generateData,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -73,6 +76,47 @@ router.post('/user/register', multer({
   try {
     data = await registerUser({
       username, email, plainTextPassword, lastName, firstName, file: req.file, notificationToken,
+    });
+  } catch (e) {
+    await tmpCleanup();
+    success = false;
+    other = e.validationErrors;
+    if (e.exists) {
+      /* This is used for displaying a custom message on the frontend and
+         should NOT be changed */
+      message = 'exists';
+    } else {
+      message = e.message;
+    }
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+    other,
+  });
+});
+
+router.post('/user/generate', async (req, res) => {
+  // const {
+  //   username, email, password: plainTextPassword, lastName, firstName, notificationToken,
+  // } = req.body;
+  const firstName = faker.name.firstName();
+  const lastName = faker.name.lastName();
+  const username = faker.internet.userName(firstName, lastName);
+  const notificationToken = 'test';
+  const email = faker.internet.email();
+  const plainTextPassword = 'password';
+
+  let success = true;
+  let message = 'User generated.';
+  let data = {};
+  let other = {};
+
+  try {
+    data = await generateData({
+      username, email, plainTextPassword, lastName, firstName, notificationToken,
     });
   } catch (e) {
     await tmpCleanup();
@@ -381,16 +425,16 @@ router.post('/user/notifications/token/update', verifyAuth, async (req, res) => 
   });
 });
 
-router.post('/user/update/profile', [verifyAuth, multer({
+router.post('/user/update/details', [verifyAuth, multer({
   storage,
 }).single('file')], async (req, res) => {
   let success = true;
-  let message = 'User profile updated.';
+  let message = 'User details updated.';
   let data = {};
   let other = {};
   const details = req.body;
   try {
-    data = await updateUserProfile({ userId: req.user.id, file: req.file, details });
+    data = await updateUserDetails({ userId: req.user.id, file: req.file, details });
   } catch (e) {
     success = false;
     message = e.message;

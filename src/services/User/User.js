@@ -3,10 +3,11 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const yup = require('yup');
 const User = require('../../models/user/User');
-
+const createPost = require('../Posts/Post');
 const {
-  uploadProfileVideo, validateEmail, deleteFile, tmpCleanup, getFileSignedHeaders,
+  uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders,
 } = require('../../helpers');
+const Posts = require('../../models/posts/Posts');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -50,7 +51,9 @@ const registerUser = async ({
     firstName: yup.string().required(),
     lastName: yup.string().required(),
     email: yup.string().email().required(),
-    password: yup.string().required(),
+    password: yup.string().required('No password provided.')
+      .min(8, 'Password is too short - should be 8 chars minimum.')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
     username: yup.string().required(),
     notificationToken: yup.string().required(),
   });
@@ -250,7 +253,7 @@ const getUserData = async (userId) => {
   };
 };
 
-const updateUserProfile = async ({ userId, file, details }) => {
+const updateUserDetails = async ({ userId, file, details }) => {
   const user = await User.findById(userId);
 
   if (!user) {
@@ -260,6 +263,22 @@ const updateUserProfile = async ({ userId, file, details }) => {
   if (details && typeof details !== 'object') {
     throw new Error('Invalid Details.');
   }
+
+  const schema = yup.object().shape({
+    firstName: yup.string(),
+    lastName: yup.string(),
+    email: yup.string().email(),
+    password: yup.string().min(8, 'Password is too short - should be 8 chars minimum.')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
+    username: yup.string(),
+    notificationToken: yup.string(),
+  });
+
+  await schema.validate(details).catch((err) => {
+    if (err.errors?.length) {
+      throw new Error(err.errors[0]);
+    }
+  });
 
   if (details.username) {
     const usernameLowered = details.username.toLowerCase();
@@ -284,12 +303,6 @@ const updateUserProfile = async ({ userId, file, details }) => {
     details.emailLowered = details.email.toLowerCase();
   }
 
-  if (details.password) {
-    if (details.password.length < 8) {
-      throw new Error('Password is not long enough.');
-    }
-  }
-
   if (file) {
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
@@ -304,8 +317,6 @@ const updateUserProfile = async ({ userId, file, details }) => {
       ...details,
       profileVideoUrl,
       profileGifUrl,
-      // usernameLowered: details.username.toLowerCase(),
-      // emailLowered: details.email.toLowerCase(),
     });
     if (profileVideoUrl && profileGifUrl) {
       await Promise.allSettled([
@@ -362,50 +373,27 @@ const checkUserExists = async ({ type, identifier, userId }) => {
 };
 
 const generateData = async ({
-  username, email, plainTextPassword, firstName, lastName, file, notificationToken,
+  username, email, plainTextPassword, firstName, lastName, notificationToken,
 }) => {
-  if (!file) {
-    throw new Error('No video profile provided');
-  }
-
-  const validEmail = validateEmail(email);
-
   const schema = yup.object().shape({
     firstName: yup.string().required(),
-    lastname: yup.string().required(),
-    email: yup.string().email(),
+    lastName: yup.string().required(),
+    email: yup.string().email().required(),
     password: yup.string().required(),
-    username: yup.string().required,
+    username: yup.string().required(),
+    notificationToken: yup.string().required(),
   });
 
-  schema
-    .isValid({
-      name: 'jimmy',
-      age: 24,
-    })
-    .then((valid) => {
-      // valid; // => true
-      console.log(valid);
-    }).catch((err) => { throw err; });
+  await schema.validate({
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken,
+  }).catch((err) => {
+    if (err.errors?.length) {
+      throw new Error(err.errors[0]);
+    }
+  });
 
   if (!username || typeof username !== 'string') {
     throw new Error('Username is missing or invalid.');
-  }
-
-  if (!email || !validEmail || typeof email !== 'string') {
-    throw new Error('Email is missing or invalid');
-  }
-
-  if (!notificationToken) {
-    throw new Error('Notification token is required.');
-  }
-
-  if (!firstName) {
-    throw new Error('Firstname is required.');
-  }
-
-  if (!lastName) {
-    throw new Error('Lastname is required.');
   }
 
   // $or is unreliable so need to make two queries
@@ -433,12 +421,13 @@ const generateData = async ({
 
   const password = await bcrypt.hash(plainTextPassword, 10);
 
-  const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+  const profileVideoUrl = 'https://i-am-app-test.s3.eu-west-2.amazonaws.com/profileVideos/8faf155b-8be2-4361-99e8-f2bf43b2a74f.mp4';
+  const profileGifUrl = 'https://i-am-app-test.s3.eu-west-2.amazonaws.com/profileGifs/8faf155b-8be2-4361-99e8-f2bf43b2a74f.gif';
 
   if (!profileVideoUrl || !profileGifUrl) {
     throw new Error('Profile video not uploaded');
   }
-  await User.create({
+  const user = await User.create({
     username,
     usernameLowered: username.toLowerCase(),
     email,
@@ -450,7 +439,49 @@ const generateData = async ({
     profileGifUrl,
     notificationToken,
   });
-  return { registered: true, profileVideoUrl };
+  const imageArray = ['https://images.unsplash.com/photo-1478265409131-1f65c88f965c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80',
+    'https://images.unsplash.com/photo-1414541944151-2f3ec1cfd87d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1748&q=80',
+    'https://images.unsplash.com/photo-1483921020237-2ff51e8e4b22?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80',
+    'https://images.unsplash.com/photo-1547754980-3df97fed72a8?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTR8fHNub3d8ZW58MHx8MHx8&auto=format&fit=crop&w=800&q=60',
+  ];
+  const bodyArray = ['Hello',
+    'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    'Lorem ipsum dolor sit',
+    '',
+  ];
+  for (let i = 0; i < 2; i += 1) {
+    const randomImageIndex = Math.floor(Math.random() * imageArray.length);
+    const randomBodyIndex = Math.floor(Math.random() * bodyArray.length);
+    const body = bodyArray[randomBodyIndex];
+    const post = new Posts({
+      body: body || '',
+      userId: user.id,
+    });
+    post.mediaUrl = imageArray[randomImageIndex];
+    post.mediaMimeType = 'jpeg';
+    post.mediaType = 'image';
+    post.mediaIsSelfie = false;
+
+    post.save();
+  }
+
+  return {
+    registered: true,
+    username,
+    usernameLowered: username.toLowerCase(),
+    email,
+    emailLowered: email.toLowerCase(),
+    password,
+    firstName,
+    lastName,
+    profileVideoUrl,
+    profileGifUrl,
+    notificationToken,
+  };
 };
 
 module.exports = {
@@ -459,7 +490,7 @@ module.exports = {
   resetUserPassword,
   createUserPasswordReset,
   getUserData,
-  updateUserProfile,
+  updateUserDetails,
   checkUserExists,
   generateData,
 };
