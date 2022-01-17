@@ -216,10 +216,15 @@ const aggregateFeed = async ({
             $match: {
               $expr: {
                 $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user
-                  if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$userId', ObjectId(userId)] }] },
+                  if: { $in: [{ $toString: '$_id' }, ids] },
                   then: null,
                   else: { $eq: ['$_id', '$$postId'] },
                 },
+                // $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user
+                //   if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$userId', ObjectId(userId)] }] },
+                //   then: null,
+                //   else: { $eq: ['$_id', '$$postId'] },
+                // },
               },
             },
           },
@@ -366,7 +371,7 @@ const aggregateFeed = async ({
             $unwind:
              {
                path: '$repostPostObj',
-               preserveNullAndEmptyArrays: false,
+               preserveNullAndEmptyArrays: true,
              },
           },
           { $skip: friendsInterestsOffset || 0 },
