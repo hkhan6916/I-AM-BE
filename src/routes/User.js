@@ -15,6 +15,7 @@ const {
   updateUserDetails,
   checkUserExists,
   generateData,
+  deleteUser,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -446,6 +447,25 @@ router.post('/user/check/exists', async (req, res) => {
   const { identifier, type, userId } = req.body;
   try {
     data = await checkUserExists({ identifier, type, userId });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.delete('/user/delete', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User deletion in progress.';
+  let data = {};
+
+  try {
+    data = await deleteUser(req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

@@ -1,4 +1,5 @@
 const Posts = require('../../models/posts/Posts');
+const User = require('../../models/user/User');
 
 const { uploadFile } = require('../../helpers');
 
@@ -7,29 +8,39 @@ const { uploadFile } = require('../../helpers');
  */
 
 const createPost = async ({
-  user, file, body, mediaOrientation, mediaIsSelfie,
+  userId, file, body, mediaOrientation, mediaIsSelfie,
 }) => {
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }
-
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
   const post = new Posts({
     body: body || '',
-    userId: user.id,
+    userId,
   });
   if (file) {
     const fileObj = await uploadFile(file);
+    if (!fileObj.fileUrl) {
+      throw new Error('File could not be uploaded.');
+    }
     const mediaUrl = fileObj.fileUrl;
     post.mediaOrientation = mediaOrientation;
     post.mediaUrl = mediaUrl;
     post.mediaMimeType = file.mimetype;
     post.mediaType = file.mimetype.split('/')[0];
     post.mediaIsSelfie = mediaIsSelfie;
+    post.mediaKey = file.filename;
   }
 
   post.save();
+  user.numberOfPosts += 1;
+  user.save();
   return {
     post,
+    user,
   };
 };
 
@@ -59,9 +70,38 @@ const repostPost = async ({
 };
 
 // update post
-// delete post
+const updatePost = async ({
+  file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+}) => {
+  const post = await Posts.findById(postId);
+  if (removeMedia) {
+    delete post.mediaIsSelfie;
+    delete post.mediaUrl;
+    delete post.mimetype;
+    delete post.mediaType;
+  }
+  if (!post) {
+    throw new Error('No post could be found.');
+  }
+};
+// delete post -- need to remove 1 from users number of posts
+const deletePost = async (postId, userId) => {
+  const post = await Posts.findByIdAndDelete(postId);
+  if (!post) {
+    throw new Error('No post could be found.');
+  }
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
+  user.numberOfPosts -= 1;
+  user.save();
+  return { deleted: true };
+};
 
 module.exports = {
   createPost,
   repostPost,
+  deletePost,
+  updatePost,
 };

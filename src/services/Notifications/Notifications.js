@@ -23,7 +23,7 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
       }
     }
   });
-
+  // todo change this to use something like User.find({_id: {$in:chat.participants}}) since .where might be slow
   const recipiants = await User.find().where('_id').in(chat.participants);
 
   for (let i = 0; i < recipiants.length; i += 1) {

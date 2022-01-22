@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { ObjectId } = require('mongoose').Types;
 const yup = require('yup');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
 const {
-  uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders,
+  uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders, deleteMultipleFiles,
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
 
@@ -486,6 +487,43 @@ const generateData = async ({
   };
 };
 
+const deleteUser = async (userId) => {
+  // mark as terminated;
+  const user = await User.findByIdAndUpdate(userId, { terminated: true });
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
+  user.terminated = true;
+  user.save();
+
+  // create offset var
+  let totalDeleted = 0;
+
+  while (totalDeleted < user.numberOfPosts) {
+    // get 500 user posts
+    const posts = await Posts.find({
+      userId,
+      mediaKey: { $ne: null },
+    }, 'mediaKey').skip(totalDeleted).limit(500);
+    totalDeleted += posts.length;
+    if (!posts.length) {
+      break;
+    }
+    // Create array of all aws keys for all posts
+    const mediaKeys = posts.map((post) => ({ Key: post.mediaKey }));
+
+    // delete all above files using mediakeys
+    const deleted = await deleteMultipleFiles(mediaKeys);
+
+    await Posts.deleteMany({ userId: user._id });
+  }
+  user.numberOfPosts -= totalDeleted;
+
+  await User.findByIdAndDelete(userId);
+
+  return { done: true, totalDeleted };
+};
+
 module.exports = {
   loginUser,
   registerUser,
@@ -495,4 +533,5 @@ module.exports = {
   updateUserDetails,
   checkUserExists,
   generateData,
+  deleteUser,
 };

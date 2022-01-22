@@ -7,6 +7,10 @@ const PostsSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  mediaKey: {
+    type: String,
+    default: null,
+  },
   mediaMimeType: {
     type: String,
   },

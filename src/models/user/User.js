@@ -71,5 +71,13 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
+  terminated: {
+    type: Boolean,
+    default: false,
+  },
+  numberOfPosts: {
+    type: Number,
+    default: 0,
+  },
 });
 module.exports = model('Users', UserSchema);

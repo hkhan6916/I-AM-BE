@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const {
-  createPost, repostPost,
+  createPost, repostPost, deletePost, updatePost,
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
@@ -41,8 +41,54 @@ router.post('/posts/new', [verifyAuth, multer({
   const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
   try {
     data = await createPost({
-      user: req.user, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie,
+      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie,
     });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/posts/update', [verifyAuth, multer({
+  storage,
+}).single('file')], async (req, res) => {
+  let success = true;
+  let message = 'Post updated.';
+  let data = {};
+  const {
+    postBody, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+  } = req.body;
+  try {
+    data = await updatePost({
+      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.delete('/posts/remove/:postId', [verifyAuth, multer({
+  storage,
+}).single('file')], async (req, res) => {
+  let success = true;
+  let message = 'Post deleted.';
+  let data = {};
+  const { postId } = req.params;
+  try {
+    data = await deletePost(postId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

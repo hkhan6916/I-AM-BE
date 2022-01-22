@@ -76,7 +76,8 @@ const aggregateFeed = async ({
                 {
                   $match: {
                     $expr: {
-                      $eq: ['$_id', '$$id'],
+                      $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
+                      // $eq: ['$_id', '$$id'],
                     },
                   },
                 },
@@ -104,7 +105,14 @@ const aggregateFeed = async ({
         from: 'users',
         let: { id: '$userId' },
         pipeline: [
-          { $match: { $expr: { $eq: ['$_id', '$$id'] } } },
+          {
+            $match: {
+              $expr: {
+                $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
+                // $eq: ['$_id', '$$id']
+              },
+            },
+          },
           {
             $project: {
               profileGifUrl: 1, username: 1, firstName: 1, lastName: 1,
@@ -220,11 +228,6 @@ const aggregateFeed = async ({
                   then: null,
                   else: { $eq: ['$_id', '$$postId'] },
                 },
-                // $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user
-                //   if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$userId', ObjectId(userId)] }] },
-                //   then: null,
-                //   else: { $eq: ['$_id', '$$postId'] },
-                // },
               },
             },
           },
@@ -252,7 +255,8 @@ const aggregateFeed = async ({
                       {
                         $match: {
                           $expr: {
-                            $eq: ['$_id', '$$id'],
+                            $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
+                            // $eq: ['$_id', '$$id'],
                           },
                         },
                       },
@@ -286,7 +290,10 @@ const aggregateFeed = async ({
                     $expr: {
                       $cond: {
                         if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
-                        then: { $eq: ['$_id', '$$friendToFind'] },
+                        then: {
+                          //  $eq: ['$_id', '$$friendToFind']
+                          $and: [{ $eq: ['$_id', '$$friendToFind'] }, { $eq: ['$terminated', false] }],
+                        },
                         else: {},
                       },
                     },
@@ -329,7 +336,8 @@ const aggregateFeed = async ({
                 {
                   $match: {
                     $expr: {
-                      $eq: ['$_id', '$$id'],
+                      // $eq: ['$_id', '$$id'],
+                      $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
                     },
                   },
                 },

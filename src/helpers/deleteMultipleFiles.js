@@ -1,9 +1,8 @@
 const { S3 } = require('aws-sdk');
 
-module.exports = async (key) => {
+module.exports = async (objects) => {
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
-
   const credentials = {
     accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
     secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
@@ -13,15 +12,10 @@ module.exports = async (key) => {
     region,
   });
 
-  const profileGifParams = {
+  await awsConnection.deleteObjects({
     Bucket,
-    Key: key,
-  };
-
-  await awsConnection.deleteObject(profileGifParams, async (err, pres) => {
-    if (err) {
-      throw err;
-    }
+    Delete: { Objects: objects },
   }).promise();
-  return 'deleted';
+
+  return { deleted: true };
 };
