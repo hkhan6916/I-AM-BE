@@ -13,5 +13,6 @@ module.exports = {
     'no-param-reassign': 0,
     'no-underscore-dangle': 0,
     'max-len': 0,
+    'no-await-in-loop': 0,
   },
 };
