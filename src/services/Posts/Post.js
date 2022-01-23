@@ -1,7 +1,7 @@
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
 
-const { uploadFile } = require('../../helpers');
+const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
 
 /**
  ########## => Post creation,deletion and manipulation
@@ -73,16 +73,47 @@ const repostPost = async ({
 const updatePost = async ({
   file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId,
 }) => {
-  const post = await Posts.findById(postId);
-  if (removeMedia) {
-    delete post.mediaIsSelfie;
-    delete post.mediaUrl;
-    delete post.mimetype;
-    delete post.mediaType;
+  if (!body && !file) {
+    throw new Error('Media or post body required.');
   }
+  const post = await Posts.findById(postId);
+  const postObj = post.toObject();
   if (!post) {
     throw new Error('No post could be found.');
   }
+  // we delete the old media from aws if new file is
+  if (removeMedia || file) {
+    await deleteFile(post.mediaKey);
+  }
+  // if user wants to remove any media from the post we nullify that old media
+  if (removeMedia && !file) {
+    postObj.mediaIsSelfie = null;
+    postObj.mediaUrl = null;
+    postObj.mediaMimeType = null;
+    postObj.mediaType = null;
+    postObj.mediaOrientation = null;
+    postObj.mediaKey = null;
+  }
+  if (file && !removeMedia) {
+    const fileObj = await uploadFile(file);
+    if (!fileObj.fileUrl) {
+      throw new Error('File could not be uploaded.');
+    }
+    const mediaUrl = fileObj.fileUrl;
+    postObj.mediaOrientation = mediaOrientation;
+    postObj.mediaUrl = mediaUrl;
+    postObj.mediaMimeType = file.mimetype;
+    postObj.mediaType = file.mimetype.split('/')[0];
+    postObj.mediaIsSelfie = mediaIsSelfie;
+    postObj.mediaKey = file.filename;
+  }
+  if (body) {
+    postObj.body = body;
+  }
+  await tmpCleanup();
+
+  await Posts.findByIdAndUpdate(postId, postObj);
+  return postObj;
 };
 // delete post -- need to remove 1 from users number of posts
 const deletePost = async (postId, userId) => {

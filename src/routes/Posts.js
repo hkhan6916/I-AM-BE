@@ -55,15 +55,18 @@ router.post('/posts/new', [verifyAuth, multer({
   });
 });
 
-router.post('/posts/update', [verifyAuth, multer({
+router.post('/posts/update/:postId', [verifyAuth, multer({
   storage,
 }).single('file')], async (req, res) => {
   let success = true;
   let message = 'Post updated.';
   let data = {};
   const {
-    postBody, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+    postBody, mediaOrientation, mediaIsSelfie, removeMedia,
   } = req.body;
+  const {
+    postId,
+  } = req.params;
   try {
     data = await updatePost({
       userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie, removeMedia, postId,
