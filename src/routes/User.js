@@ -158,8 +158,8 @@ router.get('/user/data', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/users/password/:email', async (req, res) => createUserPasswordReset(req, res));
-router.post('/user/password', async (req, res) => resetUserPassword(req, res));
+router.post('/user/password/reset', async (req, res) => createUserPasswordReset(req, res));
+router.post('/user/password/update', async (req, res) => resetUserPassword(req, res));
 
 router.post('/user/feed', verifyAuth, async (req, res) => {
   let success = true;

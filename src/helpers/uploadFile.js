@@ -33,6 +33,7 @@ module.exports = async (file) => {
       awsConnection.deleteObject(fileParams);
     }
   }).promise();
+
   const fileUrl = `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = getFileSignedHeaders(fileUrl);
 
