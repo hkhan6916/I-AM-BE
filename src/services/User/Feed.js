@@ -392,7 +392,7 @@ const aggregateFeed = async ({
       $unwind:
        {
          path: '$friendsInterestsBasedPost',
-         preserveNullAndEmptyArrays: false, // test this with by having account with no feed ot small feed
+         preserveNullAndEmptyArrays: false,
        },
     },
     {

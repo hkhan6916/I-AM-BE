@@ -201,13 +201,6 @@ const createUserPasswordReset = async (req, res) => {
     }
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    // const msg = {
-    //   to: 'hkhan6916@gmail.com',
-    //   from: 'noreply@magnetapp.co.uk',
-    //   subject: 'Password Reset Request',
-    //   text: 'We received a password reset request for your Magnet account. If this was you, please use the below instructions to change your password. If this was not you, please ignore this email and have an amazing day!',
-    //   html: `<h5>Click  <a href="${process.env.MAGNET_WEBSITE_ACCOUNTS_URL}/#/password-reset?token=${resetToken}">HERE</a>  to reset your password password.</h5>`,
-    // };
     const msg = {
       to: 'hkhan6916@gmail.com',
       from: 'noreply@magnetapp.co.uk',
@@ -477,7 +470,7 @@ const createUserPasswordReset = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Password reset email has been sent.',
-      data: '',
+      data: resetToken,
     });
   } catch (e) {
     res.status(200).json({

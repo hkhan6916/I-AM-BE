@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const {
-  createPost, repostPost, deletePost, updatePost,
+  createPost, repostPost, deletePost, updatePost, getPost,
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
@@ -83,9 +83,25 @@ router.post('/posts/update/:postId', [verifyAuth, multer({
   });
 });
 
-router.delete('/posts/remove/:postId', [verifyAuth, multer({
-  storage,
-}).single('file')], async (req, res) => {
+router.get('/posts/fetch/:postId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post fetched.';
+  let data = {};
+  const { postId } = req.params;
+  try {
+    data = await getPost(postId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.delete('/posts/remove/:postId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post deleted.';
   let data = {};

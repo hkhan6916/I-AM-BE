@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
 
@@ -115,7 +116,31 @@ const updatePost = async ({
   await Posts.findByIdAndUpdate(postId, postObj);
   return postObj;
 };
-// delete post -- need to remove 1 from users number of posts
+
+const getPost = async (postId) => {
+  const post = await Posts.aggregate([
+    {
+      $match: {
+        _id: { $eq: ObjectId(postId) },
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'postAuthor',
+      },
+    },
+    {
+      $unwind: '$postAuthor',
+    },
+  ]);
+  if (!post) {
+    throw new Error('No post could be found.');
+  }
+  return post;
+};
 const deletePost = async (postId, userId) => {
   const post = await Posts.findByIdAndDelete(postId);
   if (!post) {
@@ -133,6 +158,7 @@ const deletePost = async (postId, userId) => {
 module.exports = {
   createPost,
   repostPost,
+  getPost,
   deletePost,
   updatePost,
 };

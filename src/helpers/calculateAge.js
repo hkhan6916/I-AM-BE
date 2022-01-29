@@ -14,8 +14,10 @@ module.exports = (document) => {
     age = { days };
   } else if (hours) {
     age = { hours };
-  } else {
+  } else if (minutes) {
     age = { minutes };
+  } else {
+    age = { minutes: 1 };
   }
   document.age = age;
 };
