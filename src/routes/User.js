@@ -24,7 +24,7 @@ const {
   getUserFriendRequests,
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
-const { getUserPosts } = require('../services/User/Posts');
+const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
 const { getUserChats } = require('../services/User/Chat');
 const { updateNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
@@ -366,6 +366,24 @@ router.get('/user/posts/:offset', verifyAuth, async (req, res) => {
   const { offset } = req.params;
   try {
     data = await getUserPosts(req.user.id, parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.get('/user/:userId/posts/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User posts fetched.';
+  let data = {};
+  const { offset, userId } = req.params;
+  try {
+    data = await getOtherUserPosts(userId, parseInt(offset, 10), req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

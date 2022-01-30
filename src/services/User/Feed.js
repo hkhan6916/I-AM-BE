@@ -502,14 +502,14 @@ const getUserFeed = async ({
       userId,
       feedTimelineOffset: 0,
       friendsInterestsOffset: 0,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
+      connectionsAsSenderOffset: connectionsAsSenderOffset + 20,
+      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 20,
     });
 
     return newFeed.feed?.length && newFeed.feed[0]?._id ? {
       feed: newFeed.feed,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 5,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 5,
+      connectionsAsSenderOffset: connectionsAsSenderOffset + 20,
+      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 20,
     } : { feed: [] };
   }
   return feed.feed?.length && feed.feed[0]?._id ? {
