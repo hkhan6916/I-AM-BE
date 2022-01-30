@@ -261,16 +261,16 @@ const sendFriendRequest = async (userId, receiverId) => {
   }
 
   const requestAlreadySent = await Connections.findOne({
-    $and:
-       [{ requesterId: user._id }, { receiverId: receiver._id }],
+    requesterId: user._id,
+    receiverId: receiver._id,
   });
   if (requestAlreadySent) {
     return requestAlreadySent;
   }
 
   const requestAlreadyReceived = await Connections.findOne({
-    $and:
-    [{ requesterId: receiver._id }, { receiverId: user._id }],
+    requesterId: receiver._id,
+    receiverId: user._id,
   });
   if (requestAlreadyReceived) {
     return requestAlreadyReceived;
@@ -377,6 +377,7 @@ const removeConnection = async (userId, friendId) => {
 
   const connectionAsRequester = await Connections.findOneAndDelete({
     requesterId: user._id,
+    receiverId: friend._id,
     accepted: true,
   });
   if (connectionAsRequester) {
@@ -388,6 +389,7 @@ const removeConnection = async (userId, friendId) => {
   }
   const connectionAsReceiver = await Connections.findOneAndDelete({
     receiverId: user._id,
+    requesterId: friend._id,
     accepted: true,
   });
 

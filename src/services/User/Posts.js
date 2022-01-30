@@ -1,5 +1,7 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
+const Connections = require('../../models/user/Connections');
+const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 
@@ -134,6 +136,25 @@ const getUserPosts = async (userId, offset) => {
 
 const getOtherUserPosts = async (userId, offset, authUserId) => {
   const belongsToUser = userId === authUserId;
+  const otherUser = await User.findById(userId);
+
+  if (!otherUser) {
+    throw new Error('User does not exist.');
+  }
+
+  if (otherUser.private) {
+    const isConnectedAsSender = await Connections.findOne({
+      requesterId: ObjectId(userId), receiverId: ObjectId(authUserId),
+    });
+    const isConnectedAsReceiver = await Connections.findOne({
+      requesterId: ObjectId(authUserId), receiverId: ObjectId(userId),
+    });
+
+    if (!isConnectedAsSender && !isConnectedAsReceiver) {
+      throw new Error('User is private and not a contact.');
+    }
+  }
+
   const posts = await Posts.aggregate([
     {
       $match: {
