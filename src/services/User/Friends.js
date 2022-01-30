@@ -43,14 +43,14 @@ const getSingleUser = async (otherUserId, userId) => {
     requesterId: otherUserRecord._id,
     receiverId: user._id,
   });
-
+  const otherUserObj = otherUserRecord.toObject();
   const otherUser = {
-    ...otherUserRecord.toObject(),
+    ...otherUserObj,
     profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
     isFriend: !!requestSent?.accepted || !!requestReceived?.accepted,
     requestSent: !!requestSent,
     requestReceived: !!requestReceived,
-    numberOfFriends: otherUserRecord.friendsAsReceiver + otherUserRecord.numberOfFriendsAsRequester,
+    numberOfFriends: otherUserObj.numberOfFriendsAsRequester + otherUserObj.numberOfFriendsAsReceiver,
     isSameUser: user._id.toString() === otherUserRecord._id.toString(),
   };
   return {
@@ -275,12 +275,26 @@ const sendFriendRequest = async (userId, receiverId) => {
   if (requestAlreadyReceived) {
     return requestAlreadyReceived;
   }
+  if (receiver.private) {
+    const newRequest = await Connections.create({
+      requesterId: user._id,
+      receiverId: receiver._id,
+      accepted: false,
+    });
 
+    return newRequest;
+  }
   const newRequest = await Connections.create({
     requesterId: user._id,
     receiverId: receiver._id,
-    accepted: false,
+    accepted: true,
   });
+
+  receiver.numberOfFriendsAsRequester += 1;
+  user.numberOfFriendsAsReceiver += 1;
+
+  receiver.save();
+  user.save();
 
   return newRequest;
 };
@@ -294,15 +308,11 @@ const acceptFriendRequest = async (userId, requesterId) => {
   }
 
   const request = await Connections.findOne({
-    requesterId: requester._id, receiverId: user._id,
+    requesterId: requester._id, receiverId: user._id, accepted: false,
   });
 
   if (!request) {
     throw new Error('Request does not exist.');
-  }
-
-  if (request.accepted) {
-    throw new Error('Request already accepted');
   }
 
   request.accepted = true;
@@ -346,14 +356,10 @@ const recallFriendRequest = async (userId, receiverId) => {
     throw new Error('User does not exist..');
   }
 
-  const request = await Connections.findOneAndDelete({ requesterId: user._id, receiverId });
+  const request = await Connections.findOneAndDelete({ requesterId: user._id, receiverId, accepted: false });
 
   if (!request) {
     throw new Error('Request does not exist.');
-  }
-
-  if (request.accepted) {
-    throw new Error('Request already accepted.');
   }
 
   await Connections.findOneAndDelete({ requesterId: user._id, receiverId });
@@ -378,6 +384,7 @@ const removeConnection = async (userId, friendId) => {
     user.numberOfFriendsAsRequester -= 1;
     friend.save();
     user.save();
+    return { deleted: true };
   }
   const connectionAsReceiver = await Connections.findOneAndDelete({
     receiverId: user._id,

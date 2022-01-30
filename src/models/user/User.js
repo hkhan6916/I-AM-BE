@@ -82,5 +82,9 @@ const UserSchema = new Schema({
   expireToken: {
     type: Number,
   },
+  private: {
+    type: Boolean,
+    default: false,
+  },
 });
 module.exports = model('Users', UserSchema);
