@@ -21,13 +21,13 @@ const aggregateFeed = async ({
     : await Connections.find({
       requesterId: user._id,
       accepted: true,
-    }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 5 });
+    }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 20 });
 
   const connectionsAsReceiver = connectionsAsReceiverOffset >= user.numberOfFriendsAsReceiver ? []
     : await Connections.find({
-      receiverId: user._id,
+      receiverId: ObjectId(user._id),
       accepted: true,
-    }, 'requesterId', { skip: connectionsAsReceiverOffset, limit: 5 });
+    }, 'requesterId', { skip: connectionsAsReceiverOffset, limit: 20 });
 
   const connections = [
     ...connectionsAsReceiver.map((connection) => connection.requesterId),

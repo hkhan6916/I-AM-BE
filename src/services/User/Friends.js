@@ -51,6 +51,7 @@ const getSingleUser = async (otherUserId, userId) => {
     requestSent: !!requestSent,
     requestReceived: !!requestReceived,
     numberOfFriends: otherUserRecord.friendsAsReceiver + otherUserRecord.numberOfFriendsAsRequester,
+    isSameUser: user._id.toString() === otherUserRecord._id.toString(),
   };
   return {
     otherUser,
@@ -85,11 +86,7 @@ const getUserFriends = async (userId, offset) => {
       },
     },
     {
-      $unwind:
-       {
-         path: '$friends',
-         preserveNullAndEmptyArrays: true,
-       },
+      $unwind: '$friends',
     },
     { $replaceRoot: { newRoot: '$friends' } },
     {
@@ -124,11 +121,7 @@ const getUserFriends = async (userId, offset) => {
         as: 'friends',
       },
     }, {
-      $unwind:
-       {
-         path: '$friends',
-         preserveNullAndEmptyArrays: true,
-       },
+      $unwind: '$friends',
     },
     { $replaceRoot: { newRoot: '$friends' } },
     {
@@ -143,7 +136,7 @@ const getUserFriends = async (userId, offset) => {
     },
   ]);
 
-  const friends = [...friendsAsSender, ...friendsAsReceiver];
+  const friends = [...friendsAsSender, ...friendsAsReceiver].map((friend) => friend._id !== user._id && friend);
 
   if (!Array.isArray(friends)) {
     throw new Error('Could not fetch friends.');
@@ -254,6 +247,9 @@ const getUserFriendRequests = async (userId) => {
 };
 
 const sendFriendRequest = async (userId, receiverId) => {
+  if (userId === receiverId) {
+    throw new Error('Cannot send a request to the same user.');
+  }
   const receiver = await User.findById(receiverId);
   const user = await User.findById(userId);
   if (!receiver || !user) {

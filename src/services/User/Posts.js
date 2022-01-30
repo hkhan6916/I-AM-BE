@@ -15,6 +15,14 @@ const getUserPosts = async (userId, offset) => {
     { $limit: 10 },
     {
       $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'postAuthor',
+      },
+    },
+    {
+      $lookup: {
         from: 'posts',
         let: { id: '$repostPostId' },
         pipeline: [
@@ -51,9 +59,15 @@ const getUserPosts = async (userId, offset) => {
               as: 'postAuthor',
             },
           },
+          {
+            $unwind: '$postAuthor',
+          },
         ],
         as: 'repostPostObj',
       },
+    },
+    {
+      $unwind: '$postAuthor',
     },
     {
       $unwind:
@@ -77,6 +91,15 @@ const getUserPosts = async (userId, offset) => {
 
       post.mediaHeaders = headers;
     }
+    if (post.repostPostObj?.postAuthor) {
+      const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+      post.repostPostObj.postAuthor.profileGifHeaders = headers;
+    }
+
+    if (post.postAuthor?.profileGifUrl) {
+      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.postAuthor.profileGifHeaders = headers;
+    }
 
     calculateAge(post);
   });
@@ -86,4 +109,5 @@ const getUserPosts = async (userId, offset) => {
 
 module.exports = {
   getUserPosts,
+
 };
