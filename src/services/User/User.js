@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const yup = require('yup');
+const { object, string } = require('yup');
 const sgMail = require('@sendgrid/mail');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
@@ -48,15 +48,15 @@ const registerUser = async ({
     throw new Error('No video profile provided');
   }
 
-  const schema = yup.object().shape({
-    firstName: yup.string().required(),
-    lastName: yup.string().required(),
-    email: yup.string().email().required(),
-    password: yup.string().required('No password provided.')
+  const schema = object().shape({
+    firstName: string().required(),
+    lastName: string().required(),
+    email: string().email().required(),
+    password: string().required('No password provided.')
       .min(8, 'Password is too short - should be 8 chars minimum.')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
-    username: yup.string().required(),
-    notificationToken: yup.string().required(),
+    username: string().required(),
+    notificationToken: string().required(),
   });
 
   await schema.validate({
@@ -506,14 +506,14 @@ const updateUserDetails = async ({ userId, file, details }) => {
     throw new Error('Invalid Details.');
   }
 
-  const schema = yup.object().shape({
-    firstName: yup.string(),
-    lastName: yup.string(),
-    email: yup.string().email(),
-    password: yup.string().min(8, 'Password is too short - should be 8 chars minimum.')
+  const schema = object().shape({
+    firstName: string(),
+    lastName: string(),
+    email: string().email(),
+    password: string().min(8, 'Password is too short - should be 8 chars minimum.')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
-    username: yup.string(),
-    notificationToken: yup.string(),
+    username: string(),
+    notificationToken: string(),
   });
 
   await schema.validate(details).catch((err) => {
@@ -617,13 +617,13 @@ const checkUserExists = async ({ type, identifier, userId }) => {
 const generateData = async ({
   username, email, plainTextPassword, firstName, lastName, notificationToken,
 }) => {
-  const schema = yup.object().shape({
-    firstName: yup.string().required(),
-    lastName: yup.string().required(),
-    email: yup.string().email().required(),
-    password: yup.string().required(),
-    username: yup.string().required(),
-    notificationToken: yup.string().required(),
+  const schema = object().shape({
+    firstName: string().required(),
+    lastName: string().required(),
+    email: string().email().required(),
+    password: string().required(),
+    username: string().required(),
+    notificationToken: string().required(),
   });
 
   await schema.validate({
