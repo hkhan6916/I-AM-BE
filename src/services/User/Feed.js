@@ -34,7 +34,6 @@ const aggregateFeed = async ({
     ...connectionsAsSender.map((connection) => connection.receiverId),
   ];
 
-
   if (!connections.length) return [];
 
   /**

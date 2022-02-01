@@ -173,8 +173,8 @@ const resetUserPassword = async (req, res) => {
   } catch (e) {
     res.status(200).json({
       success: false,
-      message: "Can't reset your password!",
-      error: e.message,
+      message: e.message,
+      data: { invalidToken: e.invalidToken },
     });
   }
 };
@@ -195,14 +195,14 @@ const createUserPasswordReset = async (req, res) => {
     );
 
     if (!user) {
-      throw new Error(
-        'No user registered to that email has been found.',
-      );
+      const error = new Error('No user registered to that email has been found.');
+      error.found = false;
+      throw error;
     }
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const msg = {
-      to: 'hkhan6916@gmail.com',
+      to: email,
       from: 'noreply@magnetapp.co.uk',
       subject: 'Password Reset Request',
       html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -470,13 +470,12 @@ const createUserPasswordReset = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Password reset email has been sent.',
-      data: resetToken,
     });
   } catch (e) {
     res.status(200).json({
       success: false,
-      message: "Can't reset user password.",
-      error: e.message,
+      message: e.message,
+      data: { found: e.found },
     });
   }
 };
