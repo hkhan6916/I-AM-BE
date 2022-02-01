@@ -290,8 +290,8 @@ const sendFriendRequest = async (userId, receiverId) => {
     accepted: true,
   });
 
-  receiver.numberOfFriendsAsRequester += 1;
-  user.numberOfFriendsAsReceiver += 1;
+  user.numberOfFriendsAsRequester += 1;
+  receiver.numberOfFriendsAsReceiver += 1;
 
   receiver.save();
   user.save();

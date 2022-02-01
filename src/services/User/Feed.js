@@ -17,15 +17,15 @@ const aggregateFeed = async ({
     throw new Error('User could not be found.');
   }
 
-  const connectionsAsSender = connectionsAsSenderOffset >= user.numberOfFriendsAsRequester ? []
+  const connectionsAsSender = connectionsAsSenderOffset > user.numberOfFriendsAsRequester ? []
     : await Connections.find({
       requesterId: user._id,
       accepted: true,
     }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 20 });
 
-  const connectionsAsReceiver = connectionsAsReceiverOffset >= user.numberOfFriendsAsReceiver ? []
+  const connectionsAsReceiver = connectionsAsReceiverOffset > user.numberOfFriendsAsReceiver ? []
     : await Connections.find({
-      receiverId: ObjectId(user._id),
+      receiverId: user._id,
       accepted: true,
     }, 'requesterId', { skip: connectionsAsReceiverOffset, limit: 20 });
 
@@ -33,6 +33,7 @@ const aggregateFeed = async ({
     ...connectionsAsReceiver.map((connection) => connection.requesterId),
     ...connectionsAsSender.map((connection) => connection.receiverId),
   ];
+
 
   if (!connections.length) return [];
 
