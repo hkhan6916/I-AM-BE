@@ -506,6 +506,14 @@ const updateUserDetails = async ({ userId, file, details }) => {
     throw new Error('Invalid Details.');
   }
 
+  Object.keys(details).forEach((key) => {
+    if (details[key] === '') { throw new Error(`${key} is required and cannot be an empty string`); }
+  });
+
+  if (details.username && details.username.length < 3) {
+    throw new Error('Username is too short');
+  }
+
   const schema = object().shape({
     firstName: string(),
     lastName: string(),
@@ -513,7 +521,6 @@ const updateUserDetails = async ({ userId, file, details }) => {
     password: string().min(8, 'Password is too short - should be 8 chars minimum.')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
     username: string(),
-    notificationToken: string(),
   });
 
   await schema.validate(details).catch((err) => {
@@ -754,7 +761,7 @@ const deleteUser = async (userId) => {
     const mediaKeys = posts.map((post) => ({ Key: post.mediaKey }));
 
     // delete all above files using mediakeys
-    const deleted = await deleteMultipleFiles(mediaKeys);
+    await deleteMultipleFiles(mediaKeys);
 
     await Posts.deleteMany({ userId: user._id });
   }
