@@ -54,7 +54,7 @@ const registerUser = async ({
     email: string().email().required(),
     password: string().required('No password provided.')
       .min(8, 'Password is too short - should be 8 chars minimum.')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
+      .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string().required(),
     notificationToken: string().required(),
   });
@@ -66,6 +66,10 @@ const registerUser = async ({
       throw new Error(err.errors[0]);
     }
   });
+
+  if (username && username.length < 3) {
+    throw new Error('Username is too short');
+  }
 
   if (!username || typeof username !== 'string') {
     throw new Error('Username is missing or invalid.');
@@ -120,20 +124,19 @@ const resetUserPassword = async (req, res) => {
   try {
     const { resetToken, password, passwordCheck } = req.body;
     // if there is a user with that token, just remove the token and return the user
+
+    if (!resetToken) {
+      throw new Error('Reset token is required');
+    }
     const user = await User.findOneAndUpdate(
       { resetToken },
-      {
-        $set: {
-          resetToken: '',
-        },
-      },
+      { resetToken: '' },
     );
 
     // no user found so we throw and error
     if (!user) {
       throw new Error('Invalid token.');
     }
-
     // also we throw an error if it's too late
     if (Date.now() > user.expireToken) {
       throw new Error('Reset password link expired.');
@@ -158,7 +161,7 @@ const resetUserPassword = async (req, res) => {
       resetToken: '',
     });
     user.save();
-
+    // console.log({ what: user });
     res.status(200).json({
       success: true,
       message: 'Password was changed',
@@ -184,6 +187,7 @@ const createUserPasswordReset = async (req, res) => {
     const { email } = req.body;
     // random token to identify the user
     const resetToken = crypto.randomBytes(16).toString('hex');
+    console.log(resetToken);
     const user = await User.findOneAndUpdate(
       { emailLowered: email.toLowerCase() },
       {
@@ -193,7 +197,6 @@ const createUserPasswordReset = async (req, res) => {
         },
       },
     );
-
     if (!user) {
       const error = new Error('No user registered to that email has been found.');
       error.found = false;
@@ -202,7 +205,7 @@ const createUserPasswordReset = async (req, res) => {
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const msg = {
-      to: email,
+      to: 'hkhan6916@gmail.com',
       from: 'noreply@magnetapp.co.uk',
       subject: 'Password Reset Request',
       html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -461,11 +464,11 @@ const createUserPasswordReset = async (req, res) => {
           </body>
         </html>`,
     };
-    sgMail
-      .send(msg)
-      .catch(() => {
-        throw new Error('Could not send reset email.');
-      });
+    // sgMail
+    //   .send(msg)
+    //   .catch(() => {
+    //     throw new Error('Could not send reset email.');
+    //   });
 
     res.status(200).json({
       success: true,
@@ -519,7 +522,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
     lastName: string(),
     email: string().email(),
     password: string().min(8, 'Password is too short - should be 8 chars minimum.')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Password is not secure enough.'),
+      .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string(),
   });
 

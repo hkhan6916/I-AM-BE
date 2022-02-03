@@ -82,6 +82,9 @@ const UserSchema = new Schema({
   expireToken: {
     type: Number,
   },
+  resetToken: {
+    type: String,
+  },
   private: {
     type: Boolean,
     default: false,
