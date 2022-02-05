@@ -4,6 +4,7 @@ const Connections = require('../../models/user/Connections');
 const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
+const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const getUserPosts = async (userId, offset) => {
   const posts = await Posts.aggregate([
@@ -85,6 +86,7 @@ const getUserPosts = async (userId, offset) => {
         mediaUrl: 1,
         mediaMimeType: 1,
         mediaType: 1,
+        mediaKey: 1,
         mediaOrientation: 1,
         mediaIsSelfie: 1,
         repostPostId: 1,
@@ -113,9 +115,10 @@ const getUserPosts = async (userId, offset) => {
   }
   posts.forEach(async (post) => {
     post.belongsToUser = true;
-    if (post.mediaUrl) {
+    if (post.mediaType === 'video') {
+      post.mediaUrl = getCloudfrontSignedUrl(post.mediaKey);
+    } else {
       const headers = getFileSignedHeaders(post.mediaUrl);
-
       post.mediaHeaders = headers;
     }
     if (post.repostPostObj?.postAuthor) {
@@ -235,6 +238,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         mediaMimeType: 1,
         mediaType: 1,
         mediaOrientation: 1,
+        mediaKey: 1,
         mediaIsSelfie: 1,
         repostPostId: 1,
         repostPostObj: 1,
@@ -262,16 +266,16 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
   }
   posts.forEach(async (post) => {
     post.belongsToUser = belongsToUser;
-    if (post.mediaUrl) {
+    if (post.mediaType === 'video') {
+      post.mediaUrl = getCloudfrontSignedUrl(post.mediaKey);
+    } else {
       const headers = getFileSignedHeaders(post.mediaUrl);
-
       post.mediaHeaders = headers;
     }
     if (post.repostPostObj?.postAuthor) {
       const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
       post.repostPostObj.postAuthor.profileGifHeaders = headers;
     }
-
     if (post.postAuthor?.profileGifUrl) {
       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
       post.postAuthor.profileGifHeaders = headers;

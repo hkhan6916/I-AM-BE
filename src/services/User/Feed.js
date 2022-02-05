@@ -5,6 +5,7 @@ const Connections = require('../../models/user/Connections');
 const User = require('../../models/user/User');
 const { calculateAge } = require('../../helpers');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
+const getFileSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const sortByDate = (posts) => posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -460,8 +461,12 @@ const aggregateFeed = async ({
   feed.forEach(async (post) => {
     if (post) {
       if (post.repostPostObj?.mediaUrl) {
-        const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
-        post.repostPostObj.mediaHeaders = headers;
+        if (post.repostPostObj.mediaType === 'video') {
+          post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaUrl);
+        } else {
+          const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
+          post.repostPostObj.mediaHeaders = headers;
+        }
       }
       if (post.repostPostObj?.postAuthor) {
         const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
@@ -472,8 +477,12 @@ const aggregateFeed = async ({
         post.postAuthor.profileGifHeaders = headers;
       }
       if (post.mediaUrl) {
-        const headers = getFileSignedHeaders(post.mediaUrl);
-        post.mediaHeaders = headers;
+        if (post.mediaType === 'video') {
+          post.mediaUrl = getFileSignedUrl(post.mediaUrl);
+        } else {
+          const headers = getFileSignedHeaders(post.mediaUrl);
+          post.mediaHeaders = headers;
+        }
       }
     }
   });

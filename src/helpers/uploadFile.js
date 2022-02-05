@@ -33,8 +33,8 @@ module.exports = async (file) => {
       awsConnection.deleteObject(fileParams);
     }
   }).promise();
-
-  const fileUrl = `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
+  const fileType = file.mimetype?.split('/')[0];
+  const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = getFileSignedHeaders(fileUrl);
 
   // delete all files in tmp uploads

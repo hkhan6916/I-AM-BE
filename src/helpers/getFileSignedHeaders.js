@@ -8,13 +8,13 @@ module.exports = (mediaUrl) => {
   if (mediaUrl) {
     const url = new URL(mediaUrl);
 
-    const opts = {
+    const config = {
       region: process.env.AWS_BUCKET_REGION,
       service: 's3',
       method: 'GET',
       host: url.hostname,
       path: `${url.pathname}${url.search}`,
     };
-    return aws4.sign(opts, credentials).headers;
+    return aws4.sign(config, credentials).headers;
   } return null;
 };
