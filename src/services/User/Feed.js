@@ -160,6 +160,7 @@ const aggregateFeed = async ({
         _id: 1,
         body: 1,
         mediaUrl: 1,
+        mediaKey: 1,
         mediaMimeType: 1,
         mediaType: 1,
         mediaOrientation: 1,
@@ -418,6 +419,7 @@ const aggregateFeed = async ({
         mediaIsSelfie: 1,
         repostPostId: 1,
         repostPostObj: 1,
+        mediaKey: 1,
         userId: 1,
         likes: 1,
         private: 1,
@@ -462,7 +464,7 @@ const aggregateFeed = async ({
     if (post) {
       if (post.repostPostObj?.mediaUrl) {
         if (post.repostPostObj.mediaType === 'video') {
-          post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaUrl);
+          post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaKey);
         } else {
           const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
           post.repostPostObj.mediaHeaders = headers;
@@ -478,7 +480,7 @@ const aggregateFeed = async ({
       }
       if (post.mediaUrl) {
         if (post.mediaType === 'video') {
-          post.mediaUrl = getFileSignedUrl(post.mediaUrl);
+          post.mediaUrl = getFileSignedUrl(post.mediaKey);
         } else {
           const headers = getFileSignedHeaders(post.mediaUrl);
           post.mediaHeaders = headers;

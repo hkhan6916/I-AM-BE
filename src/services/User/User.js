@@ -161,7 +161,6 @@ const resetUserPassword = async (req, res) => {
       resetToken: '',
     });
     user.save();
-    // console.log({ what: user });
     res.status(200).json({
       success: true,
       message: 'Password was changed',
@@ -187,7 +186,6 @@ const createUserPasswordReset = async (req, res) => {
     const { email } = req.body;
     // random token to identify the user
     const resetToken = crypto.randomBytes(16).toString('hex');
-    console.log(resetToken);
     const user = await User.findOneAndUpdate(
       { emailLowered: email.toLowerCase() },
       {

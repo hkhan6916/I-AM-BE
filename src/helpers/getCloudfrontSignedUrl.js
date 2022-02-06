@@ -12,6 +12,5 @@ module.exports = (mediaKey) => {
     url: `${process.env.CF_URL}/${mediaKey}`,
     expires: Math.floor((Date.now() + twoDays) / 1000),
   });
-  console.log(signedUrl);
   return signedUrl;
 };
