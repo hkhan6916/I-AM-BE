@@ -2,6 +2,7 @@ const { ObjectId } = require('mongoose').Types;
 const User = require('../../models/user/User');
 const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
+const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const searchUser = async (username, offset) => {
   const userRecords = await (async () => {
@@ -43,10 +44,13 @@ const getSingleUser = async (otherUserId, userId) => {
     requesterId: otherUserRecord._id,
     receiverId: user._id,
   });
+
+  const profileVideoKey = otherUserRecord.profileVideoUrl.substring(otherUserRecord.profileVideoUrl.lastIndexOf('profileVideos'));
   const otherUserObj = otherUserRecord.toObject();
   const otherUser = {
     ...otherUserObj,
-    profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
+    // profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
+    profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
     isFriend: !!requestSent?.accepted || !!requestReceived?.accepted,
     requestSent: !!requestSent,
     requestReceived: !!requestReceived,

@@ -9,6 +9,7 @@ const {
   uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders, deleteMultipleFiles,
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
+const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -487,12 +488,13 @@ const getUserData = async (userId) => {
   if (!user) {
     throw new Error('User does not exist.');
   }
-
+  const profileVideoKey = user.profileVideoUrl.substring(user.profileVideoUrl.lastIndexOf('profileVideos'));
   return {
     ...user.toObject(),
     numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
     password: '',
-    profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
+    profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
+    // profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
   };
 };
 
