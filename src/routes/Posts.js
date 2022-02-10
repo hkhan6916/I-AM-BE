@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const {
-  createPost, repostPost, deletePost, updatePost, getPost,
+  createPost, repostPost, deletePost, updatePost, getPost, reportPost,
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
@@ -16,6 +16,7 @@ const {
   replyToComment,
   addLikeToComment,
   removeLikeFromComment,
+  updateComment,
 } = require('../services/Posts/Comment');
 
 const storage = multer.diskStorage({
@@ -119,6 +120,24 @@ router.delete('/posts/remove/:postId', verifyAuth, async (req, res) => {
     data,
   });
 });
+router.post('/posts/report', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post reported.';
+  let data = {};
+  const { postId, reason } = req.body;
+  try {
+    data = await reportPost({ userId: req.user.id, postId, reason });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 
 // Reposts
 router.post('/posts/repost/:postId', verifyAuth, async (req, res) => {
@@ -194,6 +213,25 @@ router.post('/posts/comments/add', verifyAuth, async (req, res) => {
   const { postId, body } = req.body;
   try {
     data = await addComment({ postId, userId: req.user.id, body });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/posts/comments/update', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment added.';
+  let data = {};
+  const { commentId, body } = req.body;
+  try {
+    data = await updateComment({ commentId, userId: req.user.id, body });
   } catch (e) {
     success = false;
     message = e.message;

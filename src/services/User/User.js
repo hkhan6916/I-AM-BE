@@ -494,7 +494,6 @@ const getUserData = async (userId) => {
     numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
     password: '',
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
-    // profileVideoHeaders: getFileSignedHeaders(user.profileVideoUrl),
   };
 };
 

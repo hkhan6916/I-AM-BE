@@ -37,8 +37,16 @@ const PostsSchema = new Schema({
     type: Number,
     default: 0,
   },
+  reports: {
+    type: Number,
+    default: 0,
+  },
   private: {
     type: Boolean,
+  },
+  hidden: {
+    type: Boolean,
+    default: false,
   },
 },
 { timestamps: true });

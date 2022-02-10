@@ -44,6 +44,23 @@ const addComment = async ({ postId, userId, body }) => {
   };
 };
 
+const updateComment = async ({ commentId, userId, body }) => {
+  console.log(commentId);
+  const comment = await Comment.findById(commentId);
+  if (!body) {
+    throw new Error('Body is required and must not be empty.');
+  }
+  if (!comment) {
+    throw new Error('Comment does not exist.');
+  }
+
+  if (comment.userId.toString() !== userId) {
+    throw new Error('Comment does not belong to this user.');
+  }
+  const newComment = await Comment.findByIdAndUpdate(comment._id, { body, edited: true });
+  return newComment;
+};
+
 const removeComment = async (commentId, userId) => {
   const comment = await Comment.findById(commentId);
   if (!comment) {
@@ -124,6 +141,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
         lastName: 1,
         body: 1,
         likes: 1,
+        edited: 1,
         replyingToId: 1,
         replyCount: 1,
         createdAt: 1,
@@ -187,7 +205,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
     comment.save();
 
     return {
-      _id: uuid(),
+      _id: reply._id,
       postId: comment.postId,
       parentCommentId: comment._id,
       userId,
@@ -215,7 +233,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
   comment.save();
 
   return {
-    _id: uuid(),
+    _id: reply._id,
     postId: comment.postId,
     parentCommentId: comment.parentCommentId,
     userId,
@@ -310,6 +328,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
         userId: 1,
         firstName: 1,
         lastName: 1,
+        edited: 1,
         body: 1,
         likes: 1,
         createdAt: 1,
@@ -351,7 +370,6 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
   return replies;
 };
 
-// use for liking replies too.
 const addLikeToComment = async (commentId, userId) => {
   const comment = await Comment.findById(commentId);
 
@@ -403,4 +421,5 @@ module.exports = {
   getCommentReplies,
   addLikeToComment,
   removeLikeFromComment,
+  updateComment,
 };

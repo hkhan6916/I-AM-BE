@@ -52,6 +52,7 @@ const aggregateFeed = async ({
     {
       $match: {
         userId: { $in: connections },
+        hidden: { $ne: true },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -226,7 +227,7 @@ const aggregateFeed = async ({
             $match: {
               $expr: {
                 $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user
-                  if: { $in: [{ $toString: '$_id' }, ids] },
+                  if: { $and: [{ $in: [{ $toString: '$_id' }, ids] }, { $ne: ['$hidden', true] }] },
                   then: null,
                   else: { $eq: ['$_id', '$$postId'] },
                 },

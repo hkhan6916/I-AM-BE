@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
+const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
 
 const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
@@ -43,6 +44,29 @@ const createPost = async ({
     post,
     user,
   };
+};
+
+const reportPost = async ({ postId, userId, reason }) => {
+  const post = await Posts.findById(postId);
+  if (!post) {
+    throw new Error('Post does not exist');
+  }
+  // const existingReport = await PostReport.findOne({ postId, userId });
+  // if (existingReport) {
+  //   return existingReport;
+  // }
+
+  const report = new PostReport({ userId, postId, reason });
+  // if the number of reports on a post times 6 is more than its number of likes, set as hidden.
+  if (post.reports >= 10 && post.reports * 6 >= post.likes) {
+    post.hidden = true;
+  }
+  post.reports += 1;
+
+  report.save();
+  post.save();
+
+  return { report, hidden: post.hidden };
 };
 
 const repostPost = async ({
@@ -161,4 +185,5 @@ module.exports = {
   getPost,
   deletePost,
   updatePost,
+  reportPost,
 };

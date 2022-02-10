@@ -9,6 +9,9 @@ const CommentSchema = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
+  edited: {
+    type: Boolean,
+  },
   body: {
     type: String,
     required: true,
