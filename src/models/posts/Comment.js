@@ -30,6 +30,14 @@ const CommentSchema = new Schema({
   replyingToId: {
     type: Schema.Types.ObjectId,
   },
+  hidden: {
+    type: Boolean,
+    default: false,
+  },
+  reports: {
+    type: Number,
+    default: 0,
+  },
 },
 { timestamps: true });
 module.exports = model('Comment', CommentSchema);

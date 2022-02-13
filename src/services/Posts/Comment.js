@@ -4,6 +4,7 @@ const Comment = require('../../models/posts/Comment');
 const Posts = require('../../models/posts/Posts');
 const User = require('../../models/user/User');
 const CommentLikes = require('../../models/posts/CommentLikes');
+const CommentReports = require('../../models/posts/CommentReports');
 const { calculateAge, getFileSignedHeaders } = require('../../helpers');
 
 const addComment = async ({ postId, userId, body }) => {
@@ -28,7 +29,10 @@ const addComment = async ({ postId, userId, body }) => {
     body,
   });
 
+  post.numberOfComments += 1;
+
   comment.save();
+  post.save();
   return {
     _id: comment.id || uuid(),
     postId,
@@ -45,7 +49,6 @@ const addComment = async ({ postId, userId, body }) => {
 };
 
 const updateComment = async ({ commentId, userId, body }) => {
-  console.log(commentId);
   const comment = await Comment.findById(commentId);
   if (!body) {
     throw new Error('Body is required and must not be empty.');
@@ -70,17 +73,53 @@ const removeComment = async (commentId, userId) => {
   if (comment.userId.toString() !== userId) {
     throw new Error('Comment does not belong to this user.');
   }
+  const post = await Posts.findById(comment.postId);
+
+  const parentComment = comment.parentCommentId && await Comment.findById(comment.parentCommentId);
+  post.numberOfComments -= 1;
 
   await Comment.findByIdAndDelete(commentId);
 
+  post.save();
+  if (parentComment) {
+    parentComment.replyCount -= 1;
+    parentComment.save();
+  }
+
   return 'Comment has been removed';
+};
+
+const reportComment = async ({ commentId, userId, reason }) => {
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new Error('Comment does not exist');
+  }
+  const existingReport = await CommentReports.findOne({ commentId, userId });
+  if (existingReport) {
+    return existingReport;
+  }
+
+  const report = new CommentReports({ userId, commentId, reason });
+  // if the number of reports on a comment times 6 is more than its number of likes, set as hidden.
+  if (comment.reports >= 15 && comment.reports * 4 >= comment.likes) {
+    comment.hidden = true;
+  }
+  comment.reports += 1;
+
+  report.save();
+  comment.save();
+
+  return { report, hidden: comment.hidden };
 };
 
 const getPostComments = async ({ postId, userId, offset }) => {
   const comments = await Comment.aggregate([
     {
       $match: {
-        $expr: { $and: [{ $eq: ['$postId', ObjectId(postId)] }, { $eq: [{ $type: '$parentCommentId' }, 'missing'] }] },
+        $expr: {
+          $and: [{ $eq: ['$postId', ObjectId(postId)] }, { $ne: ['$hidden', true] },
+            { $eq: [{ $type: '$parentCommentId' }, 'missing'] }],
+        },
       },
     },
     { $sort: { likes: -1, replyCount: -1, _id: 1 } },
@@ -193,6 +232,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
     throw new Error('Could not find user to post this comment reply');
   }
 
+  // if replying to a top level comment, not a reply.
   if (!comment.parentCommentId) {
     const reply = new Comment({
       postId: comment.postId,
@@ -220,6 +260,9 @@ const replyToComment = async ({ commentId, body, userId }) => {
     };
   }
 
+  // we need to get the parent id of the reply we are replying to so we can add 1 to the total number of replies under this parent comment
+  const parentComment = await Comment.findById(comment.parentCommentId);
+
   const reply = new Comment({
     postId: comment.postId,
     parentCommentId: comment.parentCommentId,
@@ -228,9 +271,10 @@ const replyToComment = async ({ commentId, body, userId }) => {
     replyingToId: comment.userId,
   });
 
-  comment.replyCount += 1;
+  parentComment.replyCount += 1;
   reply.save();
   comment.save();
+  parentComment.save();
 
   return {
     _id: reply._id,
@@ -259,7 +303,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
     },
     { $sort: { likes: -1, _id: 1 } },
     { $skip: offset || 0 },
-    { $limit: 10 },
+    { $limit: 4 },
     {
       $lookup: {
         from: 'users',
@@ -422,4 +466,5 @@ module.exports = {
   addLikeToComment,
   removeLikeFromComment,
   updateComment,
+  reportComment,
 };

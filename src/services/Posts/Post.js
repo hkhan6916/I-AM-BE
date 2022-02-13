@@ -51,14 +51,14 @@ const reportPost = async ({ postId, userId, reason }) => {
   if (!post) {
     throw new Error('Post does not exist');
   }
-  // const existingReport = await PostReport.findOne({ postId, userId });
-  // if (existingReport) {
-  //   return existingReport;
-  // }
+  const existingReport = await PostReport.findOne({ postId, userId });
+  if (existingReport) {
+    return existingReport;
+  }
 
   const report = new PostReport({ userId, postId, reason });
   // if the number of reports on a post times 6 is more than its number of likes, set as hidden.
-  if (post.reports >= 10 && post.reports * 6 >= post.likes) {
+  if (post.reports >= 15 && post.reports * 4 >= post.likes) {
     post.hidden = true;
   }
   post.reports += 1;

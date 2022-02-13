@@ -48,6 +48,10 @@ const PostsSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  numberOfComments: {
+    type: Number,
+    default: 0,
+  },
 },
 { timestamps: true });
 module.exports = model('Posts', PostsSchema);

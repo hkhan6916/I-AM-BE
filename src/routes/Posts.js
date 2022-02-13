@@ -17,6 +17,7 @@ const {
   addLikeToComment,
   removeLikeFromComment,
   updateComment,
+  reportComment,
 } = require('../services/Posts/Comment');
 
 const storage = multer.diskStorage({
@@ -361,5 +362,22 @@ router.get('/posts/comment/like/remove/:commentId', verifyAuth, async (req, res)
     data,
   });
 });
+router.post('/posts/comment/report', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Comment reported.';
+  let data = {};
+  const { commentId, reason } = req.body;
+  try {
+    data = await reportComment({ userId: req.user.id, commentId, reason });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
 
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 module.exports = router;

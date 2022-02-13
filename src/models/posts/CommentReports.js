@@ -10,7 +10,7 @@ const CommentReportsSchema = new Schema({
     required: true,
   },
   userId: {
-    type: Number,
+    type: Schema.Types.ObjectId,
     required: true,
   },
 });
