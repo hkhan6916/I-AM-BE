@@ -7,6 +7,9 @@ const PostsSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  thumbnailUrl: {
+    type: String,
+  },
   mediaKey: {
     type: String,
     default: '',

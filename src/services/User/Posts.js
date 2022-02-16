@@ -84,6 +84,7 @@ const getUserPosts = async (userId, offset) => {
         _id: 1,
         body: 1,
         mediaUrl: 1,
+        thumbnailUrl: 1,
         mediaMimeType: 1,
         mediaType: 1,
         mediaKey: 1,
@@ -117,6 +118,7 @@ const getUserPosts = async (userId, offset) => {
     post.belongsToUser = true;
     if (post.mediaType === 'video') {
       post.mediaUrl = getCloudfrontSignedUrl(post.mediaKey);
+      post.thumbnailHeaders = getFileSignedHeaders(post.thumbnailUrl);
     } else {
       const headers = getFileSignedHeaders(post.mediaUrl);
       post.mediaHeaders = headers;
@@ -235,6 +237,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         _id: 1,
         body: 1,
         mediaUrl: 1,
+        thumbnailUrl: 1,
         mediaMimeType: 1,
         mediaType: 1,
         mediaOrientation: 1,

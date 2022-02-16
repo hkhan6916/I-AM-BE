@@ -4,7 +4,7 @@ const path = require('path');
 const getFileSignedHeaders = require('./getFileSignedHeaders');
 const tmpCleanup = require('./tmpCleanup');
 
-module.exports = async (file) => {
+module.exports = async (file, preventCleanup) => {
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
   const credentials = {
@@ -38,6 +38,8 @@ module.exports = async (file) => {
   const fileHeaders = getFileSignedHeaders(fileUrl);
 
   // delete all files in tmp uploads
-  await tmpCleanup();
+  if (!preventCleanup) {
+    await tmpCleanup();
+  }
   return { fileUrl, fileHeaders };
 };

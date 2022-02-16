@@ -12,6 +12,8 @@ const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
 const createPost = async ({
   userId, file, body, mediaOrientation, mediaIsSelfie,
 }) => {
+  const thumbnailFile = file[0]?.originalname.split('.')[0] === ('mediaThumbnail') ? file[0] : null;
+  const mediaFile = thumbnailFile ? file[1] : file[0];
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }
@@ -24,17 +26,24 @@ const createPost = async ({
     userId,
   });
   if (file) {
-    const fileObj = await uploadFile(file);
+    const thumbnailFileObj = thumbnailFile ? await uploadFile(thumbnailFile, true) : null;
+    if (!thumbnailFileObj?.fileUrl) {
+      await tmpCleanup();
+      throw new Error('Thumbnail could not be uploaded.');
+    }
+    const fileObj = await uploadFile(mediaFile);
     if (!fileObj.fileUrl) {
       throw new Error('File could not be uploaded.');
     }
     const mediaUrl = fileObj.fileUrl;
+    const thumbnailUrl = thumbnailFileObj?.fileUrl;
     post.mediaOrientation = mediaOrientation;
     post.mediaUrl = mediaUrl;
-    post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
-    post.mediaType = file.mimetype.split('/')[0];
+    post.mediaMimeType = mediaFile.mimetype.split('/')[1] || mediaFile.mimetype;
+    post.mediaType = mediaFile.mimetype.split('/')[0];
     post.mediaIsSelfie = mediaIsSelfie;
-    post.mediaKey = file.filename;
+    post.mediaKey = mediaFile.filename;
+    post.thumbnailUrl = thumbnailUrl;
   }
 
   post.save();

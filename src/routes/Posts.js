@@ -36,14 +36,14 @@ const verifyAuth = require('../middleware/auth');
 // Posts
 router.post('/posts/new', [verifyAuth, multer({
   storage,
-}).single('file')], async (req, res) => {
+}).array('files', 2)], async (req, res) => {
   let success = true;
   let message = 'Post created.';
   let data = {};
   const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie,
+      userId: req.user.id, file: req.files, body: postBody, mediaOrientation, mediaIsSelfie,
     });
   } catch (e) {
     success = false;
@@ -59,7 +59,7 @@ router.post('/posts/new', [verifyAuth, multer({
 
 router.post('/posts/update/:postId', [verifyAuth, multer({
   storage,
-}).single('file')], async (req, res) => {
+}).single('file')], async (req, res) => { // TODO: change this to multer array and make sure we regenerate thumbnails when updating post which contains video. Also need to delete old thumbnail
   let success = true;
   let message = 'Post updated.';
   let data = {};
