@@ -123,16 +123,24 @@ const getUserPosts = async (userId, offset) => {
       const headers = getFileSignedHeaders(post.mediaUrl);
       post.mediaHeaders = headers;
     }
-    if (post.repostPostObj?.postAuthor) {
-      const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-      post.repostPostObj.postAuthor.profileGifHeaders = headers;
+    if (post.repostPostObj) {
+      if (post.repostPostObj.mediaType === 'video') {
+        post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
+        post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
+      } else {
+        const headers = getFileSignedHeaders(post.repostPostObj?.mediaUrl);
+        post.repostPostObj.mediaHeaders = headers;
+      }
+      if (post.repostPostObj.postAuthor) {
+        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+        post.repostPostObj.postAuthor.profileGifHeaders = headers;
+      }
     }
 
     if (post.postAuthor?.profileGifUrl) {
       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
       post.postAuthor.profileGifHeaders = headers;
     }
-
     calculateAge(post);
   });
 

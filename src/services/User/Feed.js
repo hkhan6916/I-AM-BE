@@ -468,6 +468,7 @@ const aggregateFeed = async ({
       if (post.repostPostObj?.mediaUrl) {
         if (post.repostPostObj.mediaType === 'video') {
           post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaKey);
+          post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.mediaUrl);
         } else {
           const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
           post.repostPostObj.mediaHeaders = headers;
@@ -483,6 +484,7 @@ const aggregateFeed = async ({
       }
       if (post.mediaUrl) {
         if (post.mediaType === 'video') {
+          post.thumbnailHeaders = getFileSignedHeaders(post.mediaUrl);
           post.mediaUrl = getFileSignedUrl(post.mediaKey);
         } else {
           const headers = getFileSignedHeaders(post.mediaUrl);

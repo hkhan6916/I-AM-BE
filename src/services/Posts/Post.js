@@ -27,7 +27,7 @@ const createPost = async ({
   });
   if (file) {
     const thumbnailFileObj = thumbnailFile ? await uploadFile(thumbnailFile, true) : null;
-    if (!thumbnailFileObj?.fileUrl) {
+    if (thumbnailFileObj && !thumbnailFileObj.fileUrl) {
       await tmpCleanup();
       throw new Error('Thumbnail could not be uploaded.');
     }

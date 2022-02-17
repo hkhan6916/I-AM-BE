@@ -495,5 +495,25 @@ router.delete('/user/delete', verifyAuth, async (req, res) => {
     data,
   });
 });
+router.post('/user/test/test', multer({
+  storage,
+}).single('file'), async (req, res) => {
+  let success = true;
+  let message = 'Request received.';
+  let data = {};
+  console.log('request received');
+  try {
+    data = { hey: 'hello' };
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 
 module.exports = router;
