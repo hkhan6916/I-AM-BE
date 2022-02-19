@@ -34,16 +34,40 @@ const storage = multer.diskStorage({
 const verifyAuth = require('../middleware/auth');
 
 // Posts
+// router.post('/posts/new', [verifyAuth, multer({
+//   storage,
+// }).array('files', 2)], async (req, res) => {
+//   let success = true;
+//   let message = 'Post created.';
+//   let data = {};
+//   const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
+//   try {
+//     data = await createPost({
+//       userId: req.user.id, file: req.files, body: postBody, mediaOrientation, mediaIsSelfie,
+//     });
+//   } catch (e) {
+//     success = false;
+//     message = e.message;
+//   }
+
+//   res.status(200).json({
+//     success,
+//     message,
+//     data,
+//   });
+// });
 router.post('/posts/new', [verifyAuth, multer({
   storage,
-}).array('files', 2)], async (req, res) => {
+}).single('file')], async (req, res) => {
   let success = true;
   let message = 'Post created.';
   let data = {};
-  const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
+  const {
+    postBody, mediaOrientation, mediaIsSelfie, postId,
+  } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.files, body: postBody, mediaOrientation, mediaIsSelfie,
+      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie, postId,
     });
   } catch (e) {
     success = false;

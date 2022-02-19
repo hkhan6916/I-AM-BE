@@ -96,6 +96,7 @@ const getUserPosts = async (userId, offset) => {
         likes: 1,
         private: 1,
         postAuthor: 1,
+        uploaded: 1,
         createdAt: 1,
         liked: {
           $cond: {

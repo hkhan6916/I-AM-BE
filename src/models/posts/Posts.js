@@ -14,6 +14,10 @@ const PostsSchema = new Schema({
     type: String,
     default: '',
   },
+  thumbnailKey: {
+    type: String,
+    default: '',
+  },
   mediaMimeType: {
     type: String,
   },
@@ -50,6 +54,9 @@ const PostsSchema = new Schema({
   hidden: {
     type: Boolean,
     default: false,
+  },
+  uploaded: {
+    type: Boolean,
   },
   numberOfComments: {
     type: Number,

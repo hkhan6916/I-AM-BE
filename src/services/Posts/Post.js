@@ -9,11 +9,82 @@ const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
  ########## => Post creation,deletion and manipulation
  */
 
+// const createPost = async ({
+//   userId, file, body, mediaOrientation, mediaIsSelfie,
+// }) => {
+//   const thumbnailFile = file[0]?.originalname.split('.')[0] === ('mediaThumbnail') ? file[0] : null;
+//   const mediaFile = thumbnailFile ? file[1] : file[0];
+//   if (!body && !file) {
+//     throw new Error('Media or post body required.');
+//   }
+//   const user = await User.findById(userId);
+//   if (!user) {
+//     throw new Error('User does not exist.');
+//   }
+//   const post = new Posts({
+//     body: body || '',
+//     userId,
+//   });
+//   if (file) {
+//     const thumbnailFileObj = thumbnailFile ? await uploadFile(thumbnailFile, true) : null;
+//     if (thumbnailFileObj && !thumbnailFileObj.fileUrl) {
+//       await tmpCleanup();
+//       throw new Error('Thumbnail could not be uploaded.');
+//     }
+//     const fileObj = await uploadFile(mediaFile);
+//     if (!fileObj.fileUrl) {
+//       throw new Error('File could not be uploaded.');
+//     }
+//     const mediaUrl = fileObj.fileUrl;
+//     const thumbnailUrl = thumbnailFileObj?.fileUrl;
+//     post.mediaOrientation = mediaOrientation;
+//     post.mediaUrl = mediaUrl;
+//     post.mediaMimeType = mediaFile.mimetype.split('/')[1] || mediaFile.mimetype;
+//     post.mediaType = mediaFile.mimetype.split('/')[0];
+//     post.mediaIsSelfie = mediaIsSelfie;
+//     post.mediaKey = mediaFile.filename;
+//     post.thumbnailUrl = thumbnailUrl;
+//   }
+
+//   post.save();
+//   user.numberOfPosts += 1;
+//   user.save();
+//   return {
+//     post,
+//     user,
+//   };
+// };
+
 const createPost = async ({
-  userId, file, body, mediaOrientation, mediaIsSelfie,
+  userId, file, body, mediaOrientation, mediaIsSelfie, postId,
 }) => {
-  const thumbnailFile = file[0]?.originalname.split('.')[0] === ('mediaThumbnail') ? file[0] : null;
-  const mediaFile = thumbnailFile ? file[1] : file[0];
+  // if posting video after the thumbnail body have been posted.
+  if (file && postId && file.mimetype.split('/')[0] === 'video') {
+    const post = await Posts.findById(postId);
+    if (!post) {
+      throw new Error('Post does not exist.');
+    }
+    if (post?.thumbnailUrl && post.mediaUrl) {
+      throw new Error('Media for this post has already been uploaded.');
+    }
+    if (!post?.thumbnailUrl) {
+      throw new Error('This post does not have a thumbnail for the video.');
+    }
+    const fileObj = await uploadFile(file);
+    if (!fileObj.fileUrl) {
+      throw new Error('File could not be uploaded.');
+    }
+
+    const mediaUrl = fileObj.fileUrl;
+    await Posts.findByIdAndUpdate(postId, {
+      mediaUrl,
+      mediaMimeType: file.mimetype.split('/')[1] || file.mimetype,
+      mediaType: file.mimetype.split('/')[0],
+      mediaKey: file.filename,
+      private: false,
+      uploaded: true,
+    });
+  }
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }
@@ -26,32 +97,37 @@ const createPost = async ({
     userId,
   });
   if (file) {
-    const thumbnailFileObj = thumbnailFile ? await uploadFile(thumbnailFile, true) : null;
-    if (thumbnailFileObj && !thumbnailFileObj.fileUrl) {
-      await tmpCleanup();
-      throw new Error('Thumbnail could not be uploaded.');
-    }
-    const fileObj = await uploadFile(mediaFile);
+    const fileObj = await uploadFile(file);
     if (!fileObj.fileUrl) {
       throw new Error('File could not be uploaded.');
     }
+    console.log(post._id);
     const mediaUrl = fileObj.fileUrl;
-    const thumbnailUrl = thumbnailFileObj?.fileUrl;
-    post.mediaOrientation = mediaOrientation;
-    post.mediaUrl = mediaUrl;
-    post.mediaMimeType = mediaFile.mimetype.split('/')[1] || mediaFile.mimetype;
-    post.mediaType = mediaFile.mimetype.split('/')[0];
-    post.mediaIsSelfie = mediaIsSelfie;
-    post.mediaKey = mediaFile.filename;
-    post.thumbnailUrl = thumbnailUrl;
+    if (file.originalname.includes('mediaThumbnail')) {
+      post.mediaOrientation = mediaOrientation;
+      post.mediaIsSelfie = mediaIsSelfie;
+      post.private = true;
+      post.thumbnailKey = file.filename;
+      post.thumbnailUrl = mediaUrl;
+      post.mediaUrl = null;
+      post.mediaType = 'video';
+      post.uploaded = false;
+    } else {
+      post.mediaOrientation = mediaOrientation;
+      post.mediaUrl = mediaUrl;
+      post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
+      post.mediaType = file.mimetype.split('/')[0];
+      post.mediaIsSelfie = mediaIsSelfie;
+      post.mediaKey = file.filename;
+      post.uploaded = true;
+    }
   }
-
   post.save();
   user.numberOfPosts += 1;
   user.save();
   return {
     post,
-    user,
+    // user,
   };
 };
 

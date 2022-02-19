@@ -501,7 +501,7 @@ router.post('/user/test/test', multer({
   let success = true;
   let message = 'Request received.';
   let data = {};
-  console.log('request received');
+  console.log(req.files, req.file);
   try {
     data = { hey: 'hello' };
   } catch (e) {
