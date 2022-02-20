@@ -3,6 +3,7 @@ const Messages = require('../../models/chat/Message');
 const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
+const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const getChatMessages = async (chatId, offset) => {
   const messages = await Messages.aggregate([
@@ -50,8 +51,12 @@ const getChatMessages = async (chatId, offset) => {
   ]);
 
   messages.forEach((message) => {
+    const arr = message.mediaUrl.split('/');
+    const mediaKey = arr[arr.length - 1];
+
     if (message.mediaUrl) {
       message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
+      message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
     }
   });
 

@@ -55,7 +55,7 @@ const PostsSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  uploaded: {
+  ready: {
     type: Boolean,
   },
   numberOfComments: {

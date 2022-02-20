@@ -58,7 +58,7 @@ const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
 const createPost = async ({
   userId, file, body, mediaOrientation, mediaIsSelfie, postId,
 }) => {
-  // if posting video after the thumbnail body have been posted.
+  // if posting video after the thumbnail and body have been posted.
   if (file && postId && file.mimetype.split('/')[0] === 'video') {
     const post = await Posts.findById(postId);
     if (!post) {
@@ -82,7 +82,7 @@ const createPost = async ({
       mediaType: file.mimetype.split('/')[0],
       mediaKey: file.filename,
       private: false,
-      uploaded: true,
+      ready: true,
     });
   }
   if (!body && !file) {
@@ -101,7 +101,6 @@ const createPost = async ({
     if (!fileObj.fileUrl) {
       throw new Error('File could not be uploaded.');
     }
-    console.log(post._id);
     const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
       post.mediaOrientation = mediaOrientation;
@@ -111,7 +110,7 @@ const createPost = async ({
       post.thumbnailUrl = mediaUrl;
       post.mediaUrl = null;
       post.mediaType = 'video';
-      post.uploaded = false;
+      post.ready = false;
     } else {
       post.mediaOrientation = mediaOrientation;
       post.mediaUrl = mediaUrl;
@@ -119,7 +118,7 @@ const createPost = async ({
       post.mediaType = file.mimetype.split('/')[0];
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaKey = file.filename;
-      post.uploaded = true;
+      post.ready = true;
     }
   }
   post.save();
@@ -183,6 +182,7 @@ const repostPost = async ({
 const updatePost = async ({
   file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId,
 }) => {
+// TODO: check if post is hidden. If hidden, don't allow update
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }

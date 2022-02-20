@@ -61,6 +61,7 @@ router.get('/files/:key', verifyAuth, async (req, res) => {
   });
 });
 
+// just for testing delete later
 router.post('/files/cloudfront', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'File uploaded.';
