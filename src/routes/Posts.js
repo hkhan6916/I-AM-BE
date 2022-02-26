@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const {
-  createPost, repostPost, deletePost, updatePost, getPost, reportPost,
+  createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed,
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
@@ -34,28 +34,6 @@ const storage = multer.diskStorage({
 const verifyAuth = require('../middleware/auth');
 
 // Posts
-// router.post('/posts/new', [verifyAuth, multer({
-//   storage,
-// }).array('files', 2)], async (req, res) => {
-//   let success = true;
-//   let message = 'Post created.';
-//   let data = {};
-//   const { postBody, mediaOrientation, mediaIsSelfie } = req.body;
-//   try {
-//     data = await createPost({
-//       userId: req.user.id, file: req.files, body: postBody, mediaOrientation, mediaIsSelfie,
-//     });
-//   } catch (e) {
-//     success = false;
-//     message = e.message;
-//   }
-
-//   res.status(200).json({
-//     success,
-//     message,
-//     data,
-//   });
-// });
 router.post('/posts/new', [verifyAuth, multer({
   storage,
 }).single('file')], async (req, res) => {
@@ -152,6 +130,25 @@ router.post('/posts/report', verifyAuth, async (req, res) => {
   const { postId, reason } = req.body;
   try {
     data = await reportPost({ userId: req.user.id, postId, reason });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/fail/:postId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Post marked as failed.';
+  let data = {};
+  const { postId } = req.params;
+  try {
+    data = await markPostAsFailed(postId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
@@ -386,6 +383,7 @@ router.get('/posts/comment/like/remove/:commentId', verifyAuth, async (req, res)
     data,
   });
 });
+
 router.post('/posts/comment/report', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Comment reported.';
@@ -404,4 +402,5 @@ router.post('/posts/comment/report', verifyAuth, async (req, res) => {
     data,
   });
 });
+
 module.exports = router;

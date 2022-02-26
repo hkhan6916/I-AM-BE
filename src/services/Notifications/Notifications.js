@@ -23,8 +23,8 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
       }
     }
   });
-  // todo change this to use something like User.find({_id: {$in:chat.participants}}) since .where might be slow
-  const recipiants = await User.find().where('_id').in(chat.participants);
+
+  const recipiants = await User.find({ _id: { $in: chat.participants } });
 
   for (let i = 0; i < recipiants.length; i += 1) {
     notifications.push({
@@ -53,6 +53,27 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   return { success: true, message: 'sent' };
 };
 
+const sendNotificationToSingleUser = async ({ userId, title, messageBody }) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User does not exist');
+  }
+  if (!Expo.isExpoPushToken(user.notificationToken)) {
+    throw new Error(`Push token ${user.notificationToken} is not a valid Expo push token`);
+  }
+  const chunk = expo.chunkPushNotifications([{
+    to: user.notificationToken,
+    sound: 'default',
+    title,
+    body: messageBody,
+    data: {},
+  }]);
+  await expo.sendPushNotificationsAsync(chunk[0]);
+
+  return { success: true, message: 'sent' };
+};
+
 module.exports = {
   sendNotificationToRecipiants,
+  sendNotificationToSingleUser,
 };

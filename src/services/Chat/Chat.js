@@ -51,10 +51,10 @@ const getChatMessages = async (chatId, offset) => {
   ]);
 
   messages.forEach((message) => {
-    const arr = message.mediaUrl.split('/');
-    const mediaKey = arr[arr.length - 1];
+    const arr = message.mediaUrl ? message.mediaUrl.split('/') : null;
+    const mediaKey = arr ? arr[arr.length - 1] : null;
 
-    if (message.mediaUrl) {
+    if (mediaKey) {
       message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
       message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
     }

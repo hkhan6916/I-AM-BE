@@ -58,6 +58,9 @@ const PostsSchema = new Schema({
   ready: {
     type: Boolean,
   },
+  cancelled: {
+    type: Boolean,
+  },
   numberOfComments: {
     type: Number,
     default: 0,

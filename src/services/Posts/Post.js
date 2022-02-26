@@ -2,58 +2,12 @@ const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
 const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
-
+const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
 
 /**
  ########## => Post creation,deletion and manipulation
  */
-
-// const createPost = async ({
-//   userId, file, body, mediaOrientation, mediaIsSelfie,
-// }) => {
-//   const thumbnailFile = file[0]?.originalname.split('.')[0] === ('mediaThumbnail') ? file[0] : null;
-//   const mediaFile = thumbnailFile ? file[1] : file[0];
-//   if (!body && !file) {
-//     throw new Error('Media or post body required.');
-//   }
-//   const user = await User.findById(userId);
-//   if (!user) {
-//     throw new Error('User does not exist.');
-//   }
-//   const post = new Posts({
-//     body: body || '',
-//     userId,
-//   });
-//   if (file) {
-//     const thumbnailFileObj = thumbnailFile ? await uploadFile(thumbnailFile, true) : null;
-//     if (thumbnailFileObj && !thumbnailFileObj.fileUrl) {
-//       await tmpCleanup();
-//       throw new Error('Thumbnail could not be uploaded.');
-//     }
-//     const fileObj = await uploadFile(mediaFile);
-//     if (!fileObj.fileUrl) {
-//       throw new Error('File could not be uploaded.');
-//     }
-//     const mediaUrl = fileObj.fileUrl;
-//     const thumbnailUrl = thumbnailFileObj?.fileUrl;
-//     post.mediaOrientation = mediaOrientation;
-//     post.mediaUrl = mediaUrl;
-//     post.mediaMimeType = mediaFile.mimetype.split('/')[1] || mediaFile.mimetype;
-//     post.mediaType = mediaFile.mimetype.split('/')[0];
-//     post.mediaIsSelfie = mediaIsSelfie;
-//     post.mediaKey = mediaFile.filename;
-//     post.thumbnailUrl = thumbnailUrl;
-//   }
-
-//   post.save();
-//   user.numberOfPosts += 1;
-//   user.save();
-//   return {
-//     post,
-//     user,
-//   };
-// };
 
 const createPost = async ({
   userId, file, body, mediaOrientation, mediaIsSelfie, postId,
@@ -128,6 +82,18 @@ const createPost = async ({
     post,
     // user,
   };
+};
+
+const markPostAsFailed = async (postId, userId) => {
+  const post = await Posts.findByIdAndUpdate(postId, { cancelled: true });
+  if (!post) {
+    throw new Error('Post does not exist');
+  }
+  await sendNotificationToSingleUser({
+    userId,
+    messageBody: 'Connection was lost when uploading your media files.',
+    title: 'Post upload failed.',
+  });
 };
 
 const reportPost = async ({ postId, userId, reason }) => {
@@ -271,4 +237,5 @@ module.exports = {
   deletePost,
   updatePost,
   reportPost,
+  markPostAsFailed,
 };
