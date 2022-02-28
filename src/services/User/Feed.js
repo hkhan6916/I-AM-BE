@@ -229,7 +229,14 @@ const aggregateFeed = async ({
             $match: {
               $expr: {
                 $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user or the post is hidden due to reports, or the post is not ready since media needs uploading
-                  if: { $or: [{ $in: [{ $toString: '$_id' }, ids] }, { $eq: ['$hidden', true] }, { $eq: ['$ready', false] }, { $eq: ['$userId', ObjectId(userId)] }] },
+                  if: {
+                    $or: [{
+                      $in: [
+                        { $toString: '$_id' }, ids],
+                    },
+                    { $eq: ['$hidden', true] }, { $eq: ['$ready', false] },
+                    { $eq: ['$userId', ObjectId(userId)] }],
+                  },
                   then: null,
                   else: { $eq: ['$_id', '$$postId'] },
                 },

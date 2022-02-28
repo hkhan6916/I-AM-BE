@@ -80,7 +80,6 @@ const createPost = async ({
   user.save();
   return {
     post,
-    // user,
   };
 };
 

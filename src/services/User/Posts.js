@@ -152,7 +152,9 @@ const getUserPosts = async (userId, offset) => {
 const getOtherUserPosts = async (userId, offset, authUserId) => {
   const belongsToUser = userId === authUserId;
   const otherUser = await User.findById(userId);
-
+  if (otherUser.terminated) {
+    throw new Error('This user does not exist.');
+  }
   if (!otherUser) {
     throw new Error('User does not exist.');
   }
@@ -173,7 +175,13 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
   const posts = await Posts.aggregate([
     {
       $match: {
-        $expr: { $eq: ['$userId', ObjectId(userId)] },
+        $expr: {
+          $and: [
+            { $eq: ['$userId', ObjectId(userId)] },
+            { $ne: ['$hidden', true] },
+            { $ne: ['$ready', false] },
+          ],
+        },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -195,7 +203,17 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
           {
             $match: {
               $expr: {
-                $eq: ['$_id', '$$id'],
+                // $eq: ['$_id', '$$id'],
+                $cond: { // return null if already fetched in the above timeline feed or the post belongs to same user or the post is hidden due to reports, or the post is not ready since media needs uploading
+                  if: {
+                    $or: [
+                      { $eq: ['$hidden', true] },
+                      { $eq: ['$ready', false] },
+                    ],
+                  },
+                  then: null,
+                  else: { $eq: ['$_id', '$$id'] },
+                },
               },
             },
           },
@@ -281,19 +299,29 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
     post.belongsToUser = belongsToUser;
     if (post.mediaType === 'video') {
       post.mediaUrl = getCloudfrontSignedUrl(post.mediaKey);
+      post.thumbnailHeaders = getFileSignedHeaders(post.thumbnailUrl);
     } else {
       const headers = getFileSignedHeaders(post.mediaUrl);
       post.mediaHeaders = headers;
     }
-    if (post.repostPostObj?.postAuthor) {
-      const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-      post.repostPostObj.postAuthor.profileGifHeaders = headers;
+    if (post.repostPostObj) {
+      if (post.repostPostObj.mediaType === 'video') {
+        post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
+        post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
+      } else {
+        const headers = getFileSignedHeaders(post.repostPostObj?.mediaUrl);
+        post.repostPostObj.mediaHeaders = headers;
+      }
+      if (post.repostPostObj.postAuthor) {
+        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+        post.repostPostObj.postAuthor.profileGifHeaders = headers;
+      }
     }
+
     if (post.postAuthor?.profileGifUrl) {
       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
       post.postAuthor.profileGifHeaders = headers;
     }
-
     calculateAge(post);
   });
 
