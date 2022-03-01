@@ -156,7 +156,7 @@ const updatePost = async ({
   if (!post) {
     throw new Error('No post could be found.');
   }
-  // we delete the old media from aws if new file is
+  // we delete the old media from aws if new file
   if (removeMedia || file) {
     await deleteFile(post.mediaKey);
   }
@@ -219,6 +219,9 @@ const deletePost = async (postId, userId) => {
   const post = await Posts.findByIdAndDelete(postId);
   if (!post) {
     throw new Error('No post could be found.');
+  }
+  if (post.mediaKey) {
+    await deleteFile(post.mediaKey);
   }
   const user = await User.findById(userId);
   if (!user) {
