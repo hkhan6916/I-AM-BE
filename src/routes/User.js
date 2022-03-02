@@ -16,6 +16,7 @@ const {
   checkUserExists,
   generateData,
   deleteUser,
+  changeAccountVisibility,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -495,15 +496,13 @@ router.delete('/user/delete', verifyAuth, async (req, res) => {
     data,
   });
 });
-router.post('/user/test/test', multer({
-  storage,
-}).single('file'), async (req, res) => {
+
+router.get('/user/visibility/change', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Request received.';
+  let message = 'User account visibility changed.';
   let data = {};
-  console.log(req.files, req.file);
   try {
-    data = { hey: 'hello' };
+    data = await changeAccountVisibility(req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

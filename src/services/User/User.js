@@ -204,7 +204,7 @@ const createUserPasswordReset = async (req, res) => {
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     const msg = {
-      to: 'hkhan6916@gmail.com',
+      to: email,
       from: 'noreply@magnetapp.co.uk',
       subject: 'Password Reset Request',
       html: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -463,11 +463,11 @@ const createUserPasswordReset = async (req, res) => {
           </body>
         </html>`,
     };
-    // sgMail
-    //   .send(msg)
-    //   .catch(() => {
-    //     throw new Error('Could not send reset email.');
-    //   });
+    sgMail
+      .send(msg)
+      .catch(() => {
+        throw new Error('Could not send reset email.');
+      });
 
     res.status(200).json({
       success: true,
@@ -774,6 +774,16 @@ const deleteUser = async (userId) => {
   return { done: true, totalDeleted };
 };
 
+const changeAccountVisibility = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User does not exist');
+  }
+  const oldVisibility = user.private;
+  user.private = !oldVisibility;
+  user.save();
+};
+
 module.exports = {
   loginUser,
   registerUser,
@@ -784,4 +794,5 @@ module.exports = {
   checkUserExists,
   generateData,
   deleteUser,
+  changeAccountVisibility,
 };
