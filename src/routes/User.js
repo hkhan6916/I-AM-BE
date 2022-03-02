@@ -232,6 +232,25 @@ router.get('/user/friend/fetch/all/:offset', verifyAuth, async (req, res) => {
   });
 });
 
+router.get('/user/:userId/friend/fetch/all/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Other users friends fetched.';
+  let data = {};
+  const { offset, userId } = req.params;
+  try {
+    data = await getUserFriends(userId, parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 router.get('/user/:userId', verifyAuth, async (req, res) => {
   let success = true;
   // this message looks sad :(
