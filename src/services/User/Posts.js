@@ -159,7 +159,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
     throw new Error('User does not exist.');
   }
 
-  if (otherUser.private) {
+  if (otherUser.private && !belongsToUser) {
     const isConnectedAsSender = await Connections.findOne({
       requesterId: ObjectId(userId), receiverId: ObjectId(authUserId),
     });
