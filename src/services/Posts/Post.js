@@ -175,12 +175,24 @@ const updatePost = async ({
       throw new Error('File could not be uploaded.');
     }
     const mediaUrl = fileObj.fileUrl;
-    postObj.mediaOrientation = mediaOrientation;
-    postObj.mediaUrl = mediaUrl;
-    postObj.mediaMimeType = file.mimetype;
-    postObj.mediaType = file.mimetype.split('/')[0];
-    postObj.mediaIsSelfie = mediaIsSelfie;
-    postObj.mediaKey = file.filename;
+    if (file.originalname.includes('mediaThumbnail')) {
+      postObj.mediaOrientation = mediaOrientation;
+      postObj.mediaIsSelfie = mediaIsSelfie;
+      postObj.private = true;
+      postObj.thumbnailKey = file.filename;
+      postObj.thumbnailUrl = mediaUrl;
+      postObj.mediaUrl = null;
+      postObj.mediaType = 'video';
+      postObj.ready = false;
+    } else {
+      postObj.mediaOrientation = mediaOrientation;
+      postObj.mediaUrl = mediaUrl;
+      postObj.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
+      postObj.mediaType = file.mimetype.split('/')[0];
+      postObj.mediaIsSelfie = mediaIsSelfie;
+      postObj.mediaKey = file.filename;
+      postObj.ready = true;
+    }
   }
   if (body) {
     postObj.body = body;
