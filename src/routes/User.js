@@ -23,6 +23,7 @@ const {
   rejectFriendRequest, removeConnection, searchUser, getUserFriends,
   getSingleUser,
   getUserFriendRequests,
+  getOtherUserFriends,
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
@@ -238,7 +239,7 @@ router.get('/user/:userId/friend/fetch/all/:offset', verifyAuth, async (req, res
   let data = {};
   const { offset, userId } = req.params;
   try {
-    data = await getUserFriends(userId, parseInt(offset, 10));
+    data = await getOtherUserFriends({ userId: req.user.id, otherUserId: userId, offset: parseInt(offset, 10) });
   } catch (e) {
     success = false;
     message = e.message;

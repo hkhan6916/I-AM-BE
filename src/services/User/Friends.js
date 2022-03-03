@@ -153,6 +153,100 @@ const getUserFriends = async (userId, offset) => {
   return friends;
 };
 
+const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
+  const otherUser = await User.findById(otherUserId);
+  if (!otherUser) {
+    throw new Error('User does not exist.');
+  }
+
+  const friendsAsSender = await Connections.aggregate([
+    {
+      $match: { requesterId: otherUser._id, accepted: true },
+    },
+    { $skip: offset || 0 },
+    { $limit: 15 },
+    {
+      $lookup: {
+        from: 'users',
+        let: { friendId: '$receiverId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$$friendId', '$_id'] },
+            },
+          },
+        ],
+        as: 'friends',
+      },
+    },
+    {
+      $unwind: '$friends',
+    },
+    { $replaceRoot: { newRoot: '$friends' } },
+    {
+      $project: {
+        firstName: 1,
+        lastName: 1,
+        username: 1,
+        email: 1,
+        profileVideoUrl: 1,
+        profileGifUrl: 1,
+      },
+    },
+  ]);
+
+  const friendsAsReceiver = await Connections.aggregate([
+    {
+      $match: { receiverId: otherUser._id, accepted: true },
+    },
+    { $skip: offset || 0 },
+    { $limit: 15 },
+    {
+      $lookup: {
+        from: 'users',
+        let: { friendId: '$requesterId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$$friendId', '$_id'] },
+            },
+          },
+        ],
+        as: 'friends',
+      },
+    }, {
+      $unwind: '$friends',
+    },
+    { $replaceRoot: { newRoot: '$friends' } },
+    {
+      $project: {
+        firstName: 1,
+        lastName: 1,
+        username: 1,
+        email: 1,
+        profileVideoUrl: 1,
+        profileGifUrl: 1,
+      },
+    },
+  ]);
+
+  const friends = [...friendsAsSender, ...friendsAsReceiver].map((friend) => friend._id !== otherUser._id && friend);
+  // check if user is private and whether the current user is friends with the other user
+  if (otherUser.private && userId !== otherUserId && friends.filter((friend) => friend._id.toString() === userId).length <= 0) {
+    throw new Error('User is private and not in the current users friend list.');
+  }
+
+  if (!Array.isArray(friends)) {
+    throw new Error('Could not fetch friends.');
+  }
+
+  friends.forEach((friend) => {
+    friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
+  });
+
+  return friends;
+};
+
 const getUserFriendRequests = async (userId) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -413,6 +507,7 @@ module.exports = {
   searchUser,
   getSingleUser,
   getUserFriends,
+  getOtherUserFriends,
   getUserFriendRequests,
   sendFriendRequest,
   recallFriendRequest,
