@@ -9,7 +9,7 @@ const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
  ########## => Post creation,deletion and manipulation
  */
 
-const createPost = async ({
+const createPost = async ({ // expects form data
   userId, file, body, mediaOrientation, mediaIsSelfie, postId,
 }) => {
   // if posting video after the thumbnail and body have been posted.
@@ -144,10 +144,10 @@ const repostPost = async ({
 };
 
 // update post
-const updatePost = async ({
+const updatePost = async ({ // expects form data
   file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId,
 }) => {
-// TODO: check if post is hidden. If hidden, don't allow update
+  // TODO: check if post is hidden. If hidden, don't allow update
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }
@@ -157,11 +157,11 @@ const updatePost = async ({
     throw new Error('No post could be found.');
   }
   // we delete the old media from aws if new file
-  if (removeMedia || file) {
+  if ((removeMedia === 'true' || file) && post.mediaKey) {
     await deleteFile(post.mediaKey);
   }
   // if user wants to remove any media from the post we nullify that old media
-  if (removeMedia && !file) {
+  if (removeMedia === 'true' && !file) {
     postObj.mediaIsSelfie = null;
     postObj.mediaUrl = null;
     postObj.mediaMimeType = null;
@@ -169,7 +169,7 @@ const updatePost = async ({
     postObj.mediaOrientation = null;
     postObj.mediaKey = null;
   }
-  if (file && !removeMedia) {
+  if (file && removeMedia === 'false') {
     const fileObj = await uploadFile(file);
     if (!fileObj.fileUrl) {
       throw new Error('File could not be uploaded.');
