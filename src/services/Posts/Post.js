@@ -145,17 +145,22 @@ const repostPost = async ({
 
 // update post
 const updatePost = async ({ // expects form data
-  file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+  file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId, userId,
 }) => {
   // TODO: check if post is hidden. If hidden, don't allow update
   if (!body && !file) {
     throw new Error('Media or post body required.');
   }
   const post = await Posts.findById(postId);
-  const postObj = post.toObject();
+  // const post = await Posts.findById(postId);
+
   if (!post) {
     throw new Error('No post could be found.');
   }
+  if (post.userId.toString() !== userId) {
+    throw new Error('Post does not belong to this user.');
+  }
+  const postObj = post.toObject();
   // we delete the old media from aws if new file
   if ((removeMedia === 'true' || file) && post.mediaKey) {
     await deleteFile(post.mediaKey);
@@ -212,6 +217,51 @@ const getPost = async (postId) => {
     },
     {
       $lookup: {
+        from: 'posts',
+        let: { id: '$repostPostId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$id'],
+              },
+            },
+          },
+          {
+            $lookup: { // get the author of the reposted post
+              from: 'users',
+              let: { id: '$userId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
+                      // $eq: ['$_id', '$$id'],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    username: 1,
+                    profileGifUrl: 1,
+                    firstName: 1,
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: 'postAuthor',
+            },
+          },
+          {
+            $unwind: '$postAuthor',
+          },
+        ],
+        as: 'repostPostObj',
+      },
+    },
+    {
+      $lookup: {
         from: 'users',
         localField: 'userId',
         foreignField: '_id',
@@ -221,11 +271,18 @@ const getPost = async (postId) => {
     {
       $unwind: '$postAuthor',
     },
+    {
+      $unwind:
+       {
+         path: '$repostPostObj',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
   ]);
   if (!post) {
     throw new Error('No post could be found.');
   }
-  return post;
+  return post[0];
 };
 const deletePost = async (postId, userId) => {
   const post = await Posts.findByIdAndDelete(postId);
