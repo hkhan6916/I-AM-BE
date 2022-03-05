@@ -4,6 +4,7 @@ const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
+const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 /**
  ########## => Post creation,deletion and manipulation
@@ -147,15 +148,18 @@ const repostPost = async ({
 const updatePost = async ({ // expects form data
   file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId, userId,
 }) => {
-  // TODO: check if post is hidden. If hidden, don't allow update
-  if (!body && !file) {
-    throw new Error('Media or post body required.');
-  }
   const post = await Posts.findById(postId);
   // const post = await Posts.findById(postId);
 
+  // TODO: check if post is hidden. If hidden, don't allow update
   if (!post) {
     throw new Error('No post could be found.');
+  }
+  if (!body && !file && !post.repostPostId) {
+    throw new Error('Media or post body required.');
+  }
+  if (file && post.repostPostId) {
+    throw new Error('Cannot add media to a post containing a repost.');
   }
   if (post.userId.toString() !== userId) {
     throw new Error('Post does not belong to this user.');
@@ -199,7 +203,7 @@ const updatePost = async ({ // expects form data
       postObj.ready = true;
     }
   }
-  if (body) {
+  if (typeof body === 'string') {
     postObj.body = body;
   }
   await tmpCleanup();
@@ -208,7 +212,7 @@ const updatePost = async ({ // expects form data
   return postObj;
 };
 
-const getPost = async (postId) => {
+const getPost = async (postId, userId) => {
   const post = await Posts.aggregate([
     {
       $match: {
@@ -279,9 +283,13 @@ const getPost = async (postId) => {
        },
     },
   ]);
-  if (!post) {
+  if (!post[0]) {
     throw new Error('No post could be found.');
   }
+  if ((post[0].private || post[0].hidden) && post[0].userId.toString() !== userId) {
+    throw new Error('Post is private or hidden and does not belong to this user.');
+  }
+  post[0].mediaUrl = getCloudfrontSignedUrl(post[0].mediaKey);
   return post[0];
 };
 const deletePost = async (postId, userId) => {

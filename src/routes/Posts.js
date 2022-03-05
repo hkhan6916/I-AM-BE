@@ -93,7 +93,7 @@ router.get('/posts/fetch/:postId', verifyAuth, async (req, res) => {
   let data = {};
   const { postId } = req.params;
   try {
-    data = await getPost(postId);
+    data = await getPost(postId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
