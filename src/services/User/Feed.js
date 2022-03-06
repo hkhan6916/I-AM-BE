@@ -58,7 +58,7 @@ const aggregateFeed = async ({
     },
     { $sort: { createdAt: -1 } },
     { $skip: feedTimelineOffset || 0 },
-    { $limit: 5 },
+    { $limit: 7 },
     {
       $lookup: { // get the post if it's a reposted post
         from: 'posts',
@@ -195,10 +195,7 @@ const aggregateFeed = async ({
 
   /* This is to get the ids of all the friendsPostsBasedFeed posts
   so we don't get the same posts again in below aggregation */
-  const ids = [];
-  friendsPostsBasedFeed.forEach((post) => {
-    ids.push(post._id.toString());
-  });
+  const ids = friendsPostsBasedFeed.map((post) => post._id.toString());
 
   /**
    * Gets the feed based on what a user's friends have liked.
@@ -212,7 +209,6 @@ const aggregateFeed = async ({
    * 7. Gets the postAuthor for this parent post
    *
    */
-
   const friendsInterestsBasedFeed = await PostLikes.aggregate([
     {
       $match: {
@@ -303,7 +299,6 @@ const aggregateFeed = async ({
                       $cond: {
                         if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
                         then: {
-                          //  $eq: ['$_id', '$$friendToFind']
                           $and: [{ $eq: ['$_id', '$$friendToFind'] }, { $eq: ['$terminated', false] }],
                         },
                         else: {},
@@ -348,7 +343,6 @@ const aggregateFeed = async ({
                 {
                   $match: {
                     $expr: {
-                      // $eq: ['$_id', '$$id'],
                       $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
                     },
                   },
@@ -395,7 +389,7 @@ const aggregateFeed = async ({
              },
           },
           { $skip: friendsInterestsOffset || 0 },
-          { $limit: 5 },
+          { $limit: 7 },
         ],
         as: 'friendsInterestsBasedPost',
       },

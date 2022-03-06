@@ -6,10 +6,6 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const searchUser = async (username, offset) => {
   const searchQuery = username.toLowerCase();
-  // const result = await User.find({
-  //   $text:
-  //     { $search: searchQuery },
-  // }).skip(offset).limit(10);
 
   const result = await User.aggregate([
     {
