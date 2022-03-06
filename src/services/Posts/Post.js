@@ -155,7 +155,7 @@ const updatePost = async ({ // expects form data
   if (!post) {
     throw new Error('No post could be found.');
   }
-  if (!body && !file && !post.repostPostId) {
+  if (!body && !file && removeMedia === 'true' && !post.repostPostId) {
     throw new Error('Media or post body required.');
   }
   if (file && post.repostPostId) {

@@ -5,22 +5,52 @@ const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 const searchUser = async (username, offset) => {
-  const userRecords = await (async () => {
-    const searchQuery = username.toLowerCase();
-    const result = await User.find({
-      $text:
-        { $search: searchQuery },
-    }).skip(offset).limit(10);
+  const searchQuery = username.toLowerCase();
+  // const result = await User.find({
+  //   $text:
+  //     { $search: searchQuery },
+  // }).skip(offset).limit(10);
 
-    return result;
-  })();
+  const result = await User.aggregate([
+    {
+      $search: {
+        index: 'user_search',
+        compound: {
+          should: [
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'firstName',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'lastName',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'username',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'jobTitle',
+              },
+            },
+          ],
+        },
+      },
+    },
+    { $skip: offset || 0 },
+    { $limit: 10 },
+  ]);
 
-  if (!userRecords.length) {
-    throw new Error('no users found');
-  }
-
-  const users = userRecords.map((user) => ({
-    ...user.toObject(),
+  const users = result.map((user) => ({
+    ...user,
     profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
   }));
 
