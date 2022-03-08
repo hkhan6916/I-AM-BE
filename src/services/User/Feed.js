@@ -194,8 +194,8 @@ const aggregateFeed = async ({
   ]);
 
   /* This is to get the ids of all the friendsPostsBasedFeed posts
-  so we don't get the same posts again in below aggregation */
-  const ids = friendsPostsBasedFeed.map((post) => post._id.toString());
+  so we don't get the same posts again in below aggregation. */
+  const alreadyFetchedPostIds = friendsPostsBasedFeed.map((post) => post._id.toString());
 
   /**
    * Gets the feed based on what a user's friends have liked.
@@ -228,7 +228,7 @@ const aggregateFeed = async ({
                   if: {
                     $or: [{
                       $in: [
-                        { $toString: '$_id' }, ids],
+                        { $toString: '$_id' }, alreadyFetchedPostIds],
                     },
                     { $eq: ['$hidden', true] }, { $ne: ['$ready', true] },
                     { $eq: ['$userId', ObjectId(userId)] }],
@@ -296,7 +296,7 @@ const aggregateFeed = async ({
                   $match: {
                     $expr: {
                       $cond: {
-                        if: { $not: { $in: [{ $toString: '$_id' }, ids] } },
+                        if: { $not: { $in: [{ $toString: '$_id' }, alreadyFetchedPostIds] } },
                         then: {
                           $and: [{ $eq: ['$_id', '$$friendToFind'] }, { $eq: ['$terminated', false] }],
                         },
@@ -462,44 +462,80 @@ const aggregateFeed = async ({
     ...friendsInterestsBasedFeed,
   ];
 
-  const feed = sortByDate(initialFeed);
+  // const feed = sortByDate(initialFeed);
 
-  feed.forEach(async (post) => {
-    if (post) {
-      if (post.repostPostObj?.mediaUrl) {
-        if (post.repostPostObj.mediaType === 'video') {
-          post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaKey);
-          post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
+  // feed.forEach(async (post) => {
+  //   if (post) {
+  //     calculateAge(post);
+
+  //     if (post.repostPostObj?.mediaUrl) {
+  //       if (post.repostPostObj.mediaType === 'video') {
+  //         post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaKey);
+  //         post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
+  //       } else {
+  //         const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
+  //         post.repostPostObj.mediaHeaders = headers;
+  //       }
+  //     }
+  //     if (post.repostPostObj?.postAuthor) {
+  //       const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+  //       post.repostPostObj.postAuthor.profileGifHeaders = headers;
+  //     }
+  //     if (post.postAuthor?.profileGifUrl) {
+  //       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+  //       post.postAuthor.profileGifHeaders = headers;
+  //     }
+  //     if (post.mediaUrl) {
+  //       if (post.mediaType === 'video') {
+  //         post.thumbnailHeaders = getFileSignedHeaders(post.thumbnailUrl);
+  //         post.mediaUrl = getFileSignedUrl(post.mediaKey);
+  //       } else {
+  //         const headers = getFileSignedHeaders(post.mediaUrl);
+  //         post.mediaHeaders = headers;
+  //       }
+  //     }
+  //   }
+  // });
+
+  const sortedFeed = sortByDate(initialFeed);
+
+  const nonDuplicatePostIds = [];
+  const feed = sortedFeed.reduce((prevFeed, currentPost) => {
+    if (currentPost && !nonDuplicatePostIds.includes(currentPost._id.toString())) {
+      nonDuplicatePostIds.push(currentPost._id.toString());
+      calculateAge(currentPost);
+
+      if (currentPost.repostPostObj?.mediaUrl) {
+        if (currentPost.repostPostObj.mediaType === 'video') {
+          currentPost.repostPostObj.mediaUrl = getFileSignedUrl(currentPost.repostPostObj.mediaKey);
+          currentPost.repostPostObj.thumbnailHeaders = getFileSignedHeaders(currentPost.repostPostObj.thumbnailUrl);
         } else {
-          const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
-          post.repostPostObj.mediaHeaders = headers;
+          const headers = getFileSignedHeaders(currentPost.repostPostObj.mediaUrl);
+          currentPost.repostPostObj.mediaHeaders = headers;
         }
       }
-      if (post.repostPostObj?.postAuthor) {
-        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-        post.repostPostObj.postAuthor.profileGifHeaders = headers;
+      if (currentPost.repostPostObj?.postAuthor) {
+        const headers = getFileSignedHeaders(currentPost.repostPostObj.postAuthor.profileGifUrl);
+        currentPost.repostPostObj.postAuthor.profileGifHeaders = headers;
       }
-      if (post.postAuthor?.profileGifUrl) {
-        const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
-        post.postAuthor.profileGifHeaders = headers;
+      if (currentPost.postAuthor?.profileGifUrl) {
+        const headers = getFileSignedHeaders(currentPost.postAuthor.profileGifUrl);
+        currentPost.postAuthor.profileGifHeaders = headers;
       }
-      if (post.mediaUrl) {
-        if (post.mediaType === 'video') {
-          post.thumbnailHeaders = getFileSignedHeaders(post.thumbnailUrl);
-          post.mediaUrl = getFileSignedUrl(post.mediaKey);
+      if (currentPost.mediaUrl) {
+        if (currentPost.mediaType === 'video') {
+          currentPost.thumbnailHeaders = getFileSignedHeaders(currentPost.thumbnailUrl);
+          currentPost.mediaUrl = getFileSignedUrl(currentPost.mediaKey);
         } else {
-          const headers = getFileSignedHeaders(post.mediaUrl);
-          post.mediaHeaders = headers;
+          const headers = getFileSignedHeaders(currentPost.mediaUrl);
+          currentPost.mediaHeaders = headers;
         }
       }
+      prevFeed.push(currentPost);
     }
-  });
+    return prevFeed;
+  }, []);
 
-  if (feed.length) {
-    feed.forEach((post) => {
-      calculateAge(post);
-    });
-  }
   return { feed, connectionsAsSenderOffset, connectionsAsReceiverOffset };
 };
 
@@ -507,14 +543,14 @@ const getUserFeed = async ({
   userId, feedTimelineOffset, friendsInterestsOffset,
   connectionsAsSenderOffset, connectionsAsReceiverOffset,
 }) => {
-  const feed = await aggregateFeed({
+  const aggregateResult = await aggregateFeed({
     userId,
     feedTimelineOffset,
     friendsInterestsOffset,
     connectionsAsSenderOffset,
     connectionsAsReceiverOffset,
   });
-  if (!feed.feed?.length) {
+  if (!aggregateResult.feed?.length) {
     const newFeed = await aggregateFeed({
       userId,
       feedTimelineOffset: 0,
@@ -529,8 +565,8 @@ const getUserFeed = async ({
       connectionsAsReceiverOffset: connectionsAsReceiverOffset + 20,
     } : { feed: [] };
   }
-  return feed.feed?.length && feed.feed[0]?._id ? {
-    feed: feed.feed,
+  return aggregateResult.feed?.length && aggregateResult.feed[0]?._id ? {
+    feed: aggregateResult.feed,
     connectionsAsSenderOffset,
     connectionsAsReceiverOffset,
   } : { feed: [] };

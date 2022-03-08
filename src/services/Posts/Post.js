@@ -3,7 +3,9 @@ const Posts = require('../../models/posts/Posts');
 const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
-const { uploadFile, deleteFile, tmpCleanup } = require('../../helpers');
+const {
+  uploadFile, deleteFile, tmpCleanup, getFileSignedHeaders,
+} = require('../../helpers');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
 /**
@@ -290,6 +292,7 @@ const getPost = async (postId, userId) => {
     throw new Error('Post is private or hidden and does not belong to this user.');
   }
   post[0].mediaUrl = getCloudfrontSignedUrl(post[0].mediaKey);
+  post[0].thumbnailHeaders = getFileSignedHeaders(post[0].mediaUrl);
   return post[0];
 };
 const deletePost = async (postId, userId) => {
