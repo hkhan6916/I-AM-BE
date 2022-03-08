@@ -53,7 +53,7 @@ const aggregateFeed = async ({
       $match: {
         userId: { $in: connections },
         hidden: { $ne: true },
-        ready: { $ne: false },
+        ready: { $eq: true },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -230,7 +230,7 @@ const aggregateFeed = async ({
                       $in: [
                         { $toString: '$_id' }, ids],
                     },
-                    { $eq: ['$hidden', true] }, { $eq: ['$ready', false] },
+                    { $eq: ['$hidden', true] }, { $ne: ['$ready', true] },
                     { $eq: ['$userId', ObjectId(userId)] }],
                   },
                   then: null,
@@ -264,7 +264,6 @@ const aggregateFeed = async ({
                         $match: {
                           $expr: {
                             $and: [{ $eq: ['$_id', '$$id'] }, { $eq: ['$terminated', false] }],
-                            // $eq: ['$_id', '$$id'],
                           },
                         },
                       },
