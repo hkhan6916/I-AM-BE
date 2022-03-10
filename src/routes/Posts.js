@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const {
-  createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed,
+  createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData,
 } = require('../services/Posts/Post');
 
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
@@ -208,7 +208,7 @@ router.get('/posts/like/add/:postId', verifyAuth, async (req, res) => {
 
 router.get('/posts/like/remove/:postId', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Post liked.';
+  let message = 'Post liked removed.';
   let data = {};
   const { postId } = req.params;
   try {
@@ -391,6 +391,29 @@ router.post('/posts/comment/report', verifyAuth, async (req, res) => {
   const { commentId, reason } = req.body;
   try {
     data = await reportComment({ userId: req.user.id, commentId, reason });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/posts/:postId/additionaldata', verifyAuth, async (req, res) => {
+  // route to get number of likes or number of comments for a post
+  let success = true;
+  let message = 'Additional post data fetched.';
+  let data = {};
+  const { likesCount, commentCount, liked } = req.body;
+  const { postId } = req.params;
+  try {
+    data = await getAdditionalPostData({
+      postId, likesCount, commentCount, liked, userId: req.user.id,
+    });
   } catch (e) {
     success = false;
     message = e.message;

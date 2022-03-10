@@ -52,8 +52,8 @@ const aggregateFeed = async ({
     {
       $match: {
         userId: { $in: connections },
-        hidden: { $ne: true },
-        ready: { $eq: true },
+        hidden: { $eq: false },
+        ready: { $ne: false },
       },
     },
     { $sort: { createdAt: -1 } },
@@ -62,12 +62,12 @@ const aggregateFeed = async ({
     {
       $lookup: { // get the post if it's a reposted post
         from: 'posts',
-        let: { id: '$repostPostId' },
+        let: { repostPostId: '$repostPostId' },
         pipeline: [
           {
             $match: {
               $expr: {
-                $eq: ['$_id', '$$id'],
+                $eq: ['$_id', '$$repostPostId'],
               },
             },
           },
@@ -97,6 +97,34 @@ const aggregateFeed = async ({
               as: 'postAuthor',
             },
           },
+          // {
+          //   $lookup: { // check if the user has liked the post already
+          //     from: 'postlikes',
+          //     let: { likedBy: ObjectId(userId), postId: '$_id' },
+          //     pipeline: [
+          //       { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', '$$postId'] }] } } },
+          //       { $limit: 1 },
+          //       {
+          //         $project: {
+          //           _id: 1,
+          //           likedBy: 1,
+          //         },
+          //       },
+          //     ],
+          //     as: 'liked',
+          //   },
+          // },
+          // {
+          //   $addFields: {
+          //     liked: {
+          //       $cond: {
+          //         if: { $ne: [{ $type: '$liked' }, 'missing'] },
+          //         then: true,
+          //         else: false,
+          //       },
+          //     },
+          //   },
+          // },
           {
             $unwind: '$postAuthor',
           },
@@ -230,7 +258,7 @@ const aggregateFeed = async ({
                       $in: [
                         { $toString: '$_id' }, alreadyFetchedPostIds],
                     },
-                    { $eq: ['$hidden', true] }, { $ne: ['$ready', true] },
+                    { $ne: ['$hidden', false] }, { $ne: ['$ready', true] },
                     { $eq: ['$userId', ObjectId(userId)] }],
                   },
                   then: null,

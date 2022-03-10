@@ -33,9 +33,6 @@ const PostsSchema = new Schema({
   repostPostId: {
     type: Schema.Types.ObjectId,
   },
-  repostPostObj: {
-    type: Object,
-  },
   userId: {
     type: Schema.Types.ObjectId,
     required: true,

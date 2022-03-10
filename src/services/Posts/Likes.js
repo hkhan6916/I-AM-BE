@@ -6,6 +6,7 @@ const PostLikes = require('../../models/user/PostLikes');
 */
 const addLikeToPost = async (postId, userId) => {
   const post = await Posts.findById(postId);
+
   if (!post) {
     throw new Error('Post does not exist.');
   }
@@ -16,7 +17,7 @@ const addLikeToPost = async (postId, userId) => {
 
   const likedPost = await PostLikes.findOne({ likedBy: userId, postId });
   if (likedPost) {
-    return 'User has already liked this post.';
+    throw new Error('User has already liked this post.');
   }
 
   const like = new PostLikes({
@@ -25,8 +26,8 @@ const addLikeToPost = async (postId, userId) => {
   });
 
   post.likes += 1;
-  like.save();
   post.save();
+  like.save();
 
   return 'Post has been liked';
 };
@@ -38,7 +39,7 @@ const removeLikeFromPost = async (postId, userId) => {
   }
   const likedPost = await PostLikes.findOneAndDelete({ likedBy: userId, postId });
   if (!likedPost) {
-    return 'User has not liked this post yet.';
+    throw new Error('User has not liked this post yet.');
   }
 
   post.likes -= 1;

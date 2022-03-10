@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongoose').Types;
 const Posts = require('../../models/posts/Posts');
+const PostLikes = require('../../models/user/PostLikes');
 const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
@@ -312,6 +313,28 @@ const deletePost = async (postId, userId) => {
   return { deleted: true };
 };
 
+const getAdditionalPostData = async ({
+  postId, likesCount, commentCount, liked: fetchLiked, userId,
+}) => {
+  const post = await Posts.findById(postId);
+  if (!post) {
+    throw new Error('Post could not be found.');
+  }
+  if (likesCount) {
+    return { likes: post.likes };
+  }
+  if (commentCount) {
+    return { numberOfComments: post.numberOfComments };
+  }
+  if (fetchLiked) {
+    const liked = await PostLikes.findOne({ postId, likedBy: userId });
+    return { liked: !!liked };
+  }
+  const liked = await PostLikes.findOne({ postId, likedBy: userId });
+
+  return { likes: post.likes, numberOfComments: post.numberOfComments, liked };
+};
+
 module.exports = {
   createPost,
   repostPost,
@@ -320,4 +343,5 @@ module.exports = {
   updatePost,
   reportPost,
   markPostAsFailed,
+  getAdditionalPostData,
 };
