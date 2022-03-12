@@ -24,9 +24,6 @@ const PostsSchema = new Schema({
   mediaType: {
     type: String,
   },
-  mediaOrientation: {
-    type: String,
-  },
   mediaIsSelfie: {
     type: Boolean,
   },

@@ -14,7 +14,7 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, file, body, mediaOrientation, mediaIsSelfie, postId,
+  userId, file, body, mediaIsSelfie, postId,
 }) => {
   // if posting video after the thumbnail and body have been posted.
   if (file && postId && file.mimetype.split('/')[0] === 'video') {
@@ -61,7 +61,6 @@ const createPost = async ({ // expects form data
     }
     const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
-      post.mediaOrientation = mediaOrientation;
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;
       post.thumbnailKey = file.filename;
@@ -70,7 +69,6 @@ const createPost = async ({ // expects form data
       post.mediaType = 'video';
       post.ready = false;
     } else {
-      post.mediaOrientation = mediaOrientation;
       post.mediaUrl = mediaUrl;
       post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
       post.mediaType = file.mimetype.split('/')[0];
@@ -149,7 +147,7 @@ const repostPost = async ({
 
 // update post
 const updatePost = async ({ // expects form data
-  file, body, mediaOrientation, mediaIsSelfie, removeMedia, postId, userId,
+  file, body, mediaIsSelfie, removeMedia, postId, userId,
 }) => {
   const post = await Posts.findById(postId);
   // const post = await Posts.findById(postId);
@@ -178,7 +176,6 @@ const updatePost = async ({ // expects form data
     postObj.mediaUrl = null;
     postObj.mediaMimeType = null;
     postObj.mediaType = null;
-    postObj.mediaOrientation = null;
     postObj.mediaKey = null;
   }
   if (file && removeMedia === 'false') {
@@ -188,7 +185,6 @@ const updatePost = async ({ // expects form data
     }
     const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
-      postObj.mediaOrientation = mediaOrientation;
       postObj.mediaIsSelfie = mediaIsSelfie;
       postObj.private = true;
       postObj.thumbnailKey = file.filename;
@@ -197,7 +193,6 @@ const updatePost = async ({ // expects form data
       postObj.mediaType = 'video';
       postObj.ready = false;
     } else {
-      postObj.mediaOrientation = mediaOrientation;
       postObj.mediaUrl = mediaUrl;
       postObj.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
       postObj.mediaType = file.mimetype.split('/')[0];

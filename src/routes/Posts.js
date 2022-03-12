@@ -41,11 +41,11 @@ router.post('/posts/new', [verifyAuth, multer({
   let message = 'Post created.';
   let data = {};
   const {
-    postBody, mediaOrientation, mediaIsSelfie, postId,
+    postBody, mediaIsSelfie, postId,
   } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie, postId,
+      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId,
     });
   } catch (e) {
     success = false;
@@ -66,14 +66,14 @@ router.post('/posts/update/:postId', [verifyAuth, multer({
   let message = 'Post updated.';
   let data = {};
   const {
-    postBody, mediaOrientation, mediaIsSelfie, removeMedia,
+    postBody, mediaIsSelfie, removeMedia,
   } = req.body;
   const {
     postId,
   } = req.params;
   try {
     data = await updatePost({
-      userId: req.user.id, file: req.file, body: postBody, mediaOrientation, mediaIsSelfie, removeMedia, postId,
+      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, removeMedia, postId,
     });
   } catch (e) {
     success = false;
