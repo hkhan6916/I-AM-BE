@@ -14,6 +14,9 @@ const PostsSchema = new Schema({
     type: String,
     default: '',
   },
+  gif: {
+    type: String,
+  },
   thumbnailKey: {
     type: String,
     default: '',

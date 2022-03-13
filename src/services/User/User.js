@@ -36,7 +36,7 @@ const loginUser = async (identifier, password) => {
       JWT_SECRET,
     );
 
-    return { token, userId: user._id };
+    return { token, userId: user._id, apiKeys: { tenorApiKey: process.env.TENOR_API_KEY } };
   }
 
   throw new Error('Invalid email/password');
