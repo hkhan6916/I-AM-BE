@@ -76,10 +76,14 @@ const createPost = async ({ // expects form data
       post.mediaKey = file.filename;
       post.ready = true;
     }
+  } else {
+    post.ready = true;
   }
+
   if (gif) {
     post.gif = gif;
   }
+
   post.save();
   user.numberOfPosts += 1;
   user.save();
@@ -150,7 +154,7 @@ const repostPost = async ({
 
 // update post
 const updatePost = async ({ // expects form data
-  file, body, mediaIsSelfie, removeMedia, postId, userId,
+  file, body, mediaIsSelfie, removeMedia, postId, userId, gif,
 }) => {
   const post = await Posts.findById(postId);
   // const post = await Posts.findById(postId);
@@ -180,11 +184,15 @@ const updatePost = async ({ // expects form data
     postObj.mediaMimeType = null;
     postObj.mediaType = null;
     postObj.mediaKey = null;
+    postObj.gif = null;
   }
   if (file && removeMedia === 'false') {
     const fileObj = await uploadFile(file);
     if (!fileObj.fileUrl) {
       throw new Error('File could not be uploaded.');
+    }
+    if (postObj.gif) {
+      postObj.gif = null;
     }
     const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
@@ -204,12 +212,22 @@ const updatePost = async ({ // expects form data
       postObj.ready = true;
     }
   }
+  if (gif) {
+    postObj.gif = gif;
+  }
+
   if (typeof body === 'string') {
     postObj.body = body;
   }
   await tmpCleanup();
 
   await Posts.findByIdAndUpdate(postId, postObj);
+
+  if (post.mediaKey && gif) {
+    // if provided a gif, delete any media as it will be replaced with the gif
+    await deleteFile(post.mediaKey);
+  }
+
   return postObj;
 };
 

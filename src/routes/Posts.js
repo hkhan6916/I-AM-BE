@@ -66,14 +66,14 @@ router.post('/posts/update/:postId', [verifyAuth, multer({
   let message = 'Post updated.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, removeMedia,
+    postBody, mediaIsSelfie, removeMedia, gif,
   } = req.body;
   const {
     postId,
   } = req.params;
   try {
     data = await updatePost({
-      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, removeMedia, postId,
+      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, removeMedia, postId, gif,
     });
   } catch (e) {
     success = false;
