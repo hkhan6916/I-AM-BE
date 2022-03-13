@@ -14,7 +14,7 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, file, body, mediaIsSelfie, postId,
+  userId, file, body, mediaIsSelfie, postId, gif,
 }) => {
   // if posting video after the thumbnail and body have been posted.
   if (file && postId && file.mimetype.split('/')[0] === 'video') {
@@ -43,7 +43,7 @@ const createPost = async ({ // expects form data
       ready: true,
     });
   }
-  if (!body && !file) {
+  if (!body && !file && !gif) {
     throw new Error('Media or post body required.');
   }
   const user = await User.findById(userId);
@@ -76,6 +76,9 @@ const createPost = async ({ // expects form data
       post.mediaKey = file.filename;
       post.ready = true;
     }
+  }
+  if (gif) {
+    post.gif = gif;
   }
   post.save();
   user.numberOfPosts += 1;

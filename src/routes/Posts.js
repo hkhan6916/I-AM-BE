@@ -41,11 +41,11 @@ router.post('/posts/new', [verifyAuth, multer({
   let message = 'Post created.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, postId,
+    postBody, mediaIsSelfie, postId, gif,
   } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId,
+      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId, gif,
     });
   } catch (e) {
     success = false;
