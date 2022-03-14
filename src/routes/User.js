@@ -17,6 +17,7 @@ const {
   generateData,
   deleteUser,
   changeAccountVisibility,
+  enableFollowersMode,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -523,6 +524,24 @@ router.get('/user/visibility/change', verifyAuth, async (req, res) => {
   let data = {};
   try {
     data = await changeAccountVisibility(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/followersmode/toggle', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Followers mode enabled.';
+  let data = {};
+  try {
+    data = await enableFollowersMode(req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

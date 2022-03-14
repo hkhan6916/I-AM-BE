@@ -89,5 +89,9 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  followersMode: {
+    type: Boolean,
+    default: false,
+  },
 });
 module.exports = model('Users', UserSchema);

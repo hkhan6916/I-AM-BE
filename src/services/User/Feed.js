@@ -24,7 +24,7 @@ const aggregateFeed = async ({
       accepted: true,
     }, 'receiverId', { skip: connectionsAsSenderOffset, limit: 20 });
 
-  const connectionsAsReceiver = connectionsAsReceiverOffset > user.numberOfFriendsAsReceiver ? []
+  const connectionsAsReceiver = connectionsAsReceiverOffset > user.numberOfFriendsAsReceiver || user.followersMode ? []
     : await Connections.find({
       receiverId: user._id,
       accepted: true,

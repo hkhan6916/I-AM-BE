@@ -743,29 +743,33 @@ const deleteUser = async (userId) => {
   if (!user) {
     throw new Error('User does not exist.');
   }
-  user.terminated = true;
-  user.save();
 
   // create offset var
   let totalDeleted = 0;
-
-  while (totalDeleted < user.numberOfPosts) {
+  if (user.numberOfPosts) {
+    while (totalDeleted < user.numberOfPosts) {
     // get 500 user posts
-    const posts = await Posts.find({
-      userId,
-      mediaKey: { $ne: null },
-    }, 'mediaKey').skip(totalDeleted).limit(500);
-    totalDeleted += posts.length;
-    if (!posts.length) {
-      break;
+      const posts = await Posts.find({
+        userId,
+        mediaKey: { $ne: null },
+      }, 'mediaKey').skip(totalDeleted).limit(500);
+      totalDeleted += posts.length;
+      if (!posts.length) {
+        break;
+      }
+      // Create array of all aws keys for all posts
+      const mediaKeys = posts.reduce((keys, post) => {
+        if (typeof post.mediaKey === 'string' && post.mediaKey.length > 0) {
+          keys.push({ Key: post.mediaKey });
+        }
+        return keys;
+      }, []);
+
+      // delete all above files using mediakeys
+      await deleteMultipleFiles(mediaKeys);
+
+      await Posts.deleteMany({ userId: user._id });
     }
-    // Create array of all aws keys for all posts
-    const mediaKeys = posts.map((post) => ({ Key: post.mediaKey }));
-
-    // delete all above files using mediakeys
-    await deleteMultipleFiles(mediaKeys);
-
-    await Posts.deleteMany({ userId: user._id });
   }
   user.numberOfPosts -= totalDeleted;
 
@@ -779,8 +783,21 @@ const changeAccountVisibility = async (userId) => {
   if (!user) {
     throw new Error('User does not exist');
   }
+  if (!user.private && user.followersMode) {
+    throw new Error("Cannot make an account private when it's in followers mode.");
+  }
   const oldVisibility = user.private;
   user.private = !oldVisibility;
+  user.save();
+};
+const enableFollowersMode = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error('User does not exist');
+  }
+
+  user.private = false;
+  user.followersMode = true;
   user.save();
 };
 
@@ -795,4 +812,5 @@ module.exports = {
   generateData,
   deleteUser,
   changeAccountVisibility,
+  enableFollowersMode,
 };

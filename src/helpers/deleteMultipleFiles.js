@@ -11,7 +11,7 @@ module.exports = async (objects) => {
     credentials,
     region,
   });
-
+  console.log(objects);
   await awsConnection.deleteObjects({
     Bucket,
     Delete: { Objects: objects },
