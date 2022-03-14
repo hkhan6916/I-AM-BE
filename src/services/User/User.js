@@ -790,7 +790,7 @@ const changeAccountVisibility = async (userId) => {
   user.private = !oldVisibility;
   user.save();
 };
-const enableFollowersMode = async (userId) => {
+const toggleFollowersMode = async (userId) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error('User does not exist');
@@ -799,6 +799,7 @@ const enableFollowersMode = async (userId) => {
   user.private = false;
   user.followersMode = true;
   user.save();
+  return { followersMode: user.followersMode };
 };
 
 module.exports = {
@@ -812,5 +813,5 @@ module.exports = {
   generateData,
   deleteUser,
   changeAccountVisibility,
-  enableFollowersMode,
+  toggleFollowersMode,
 };
