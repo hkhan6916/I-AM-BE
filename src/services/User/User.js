@@ -797,7 +797,7 @@ const toggleFollowersMode = async (userId) => {
   }
 
   user.private = false;
-  user.followersMode = true;
+  user.followersMode = !user.followersMode;
   user.save();
   return { followersMode: user.followersMode };
 };
