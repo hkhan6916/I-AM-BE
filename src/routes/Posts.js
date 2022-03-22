@@ -32,6 +32,7 @@ const storage = multer.diskStorage({
   },
 });
 const verifyAuth = require('../middleware/auth');
+const { getUserSearchFeed } = require('../services/User/Posts');
 
 // Posts
 router.post('/posts/new', [verifyAuth, multer({
@@ -414,6 +415,25 @@ router.post('/posts/:postId/additionaldata', verifyAuth, async (req, res) => {
     data = await getAdditionalPostData({
       postId, likesCount, commentCount, liked, userId: req.user.id,
     });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/posts/searchfeed/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Search feed fetched.';
+  let data = {};
+  const { offset } = req.params;
+  try {
+    data = await getUserSearchFeed(parseInt(offset, 10), req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

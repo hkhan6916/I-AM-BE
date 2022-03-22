@@ -156,6 +156,7 @@ const repostPost = async ({
 const updatePost = async ({ // expects form data
   file, body, mediaIsSelfie, removeMedia, postId, userId, gif,
 }) => {
+  // we don't allow reposts to be removed
   const post = await Posts.findById(postId);
   // const post = await Posts.findById(postId);
 
@@ -180,11 +181,11 @@ const updatePost = async ({ // expects form data
   // if user wants to remove any media from the post we nullify that old media
   if (removeMedia === 'true' && !file) {
     postObj.mediaIsSelfie = null;
-    postObj.mediaUrl = null;
+    postObj.mediaUrl = '';
     postObj.mediaMimeType = null;
     postObj.mediaType = null;
-    postObj.mediaKey = null;
-    postObj.gif = null;
+    postObj.mediaKey = '';
+    postObj.gif = '';
   }
   if (file && removeMedia === 'false') {
     const fileObj = await uploadFile(file);
@@ -192,7 +193,7 @@ const updatePost = async ({ // expects form data
       throw new Error('File could not be uploaded.');
     }
     if (postObj.gif) {
-      postObj.gif = null;
+      postObj.gif = '';
     }
     const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
@@ -226,6 +227,8 @@ const updatePost = async ({ // expects form data
   if (post.mediaKey && gif) {
     // if provided a gif, delete any media as it will be replaced with the gif
     await deleteFile(post.mediaKey);
+    postObj.mediaKey = '';
+    postObj.mediaUrl = '';
   }
 
   return postObj;
@@ -276,9 +279,7 @@ const getPost = async (postId, userId) => {
               as: 'postAuthor',
             },
           },
-          {
-            $unwind: '$postAuthor',
-          },
+          { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
         ],
         as: 'repostPostObj',
       },
@@ -291,9 +292,7 @@ const getPost = async (postId, userId) => {
         as: 'postAuthor',
       },
     },
-    {
-      $unwind: '$postAuthor',
-    },
+    { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
     {
       $unwind:
        {

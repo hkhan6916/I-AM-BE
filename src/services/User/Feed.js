@@ -125,9 +125,7 @@ const aggregateFeed = async ({
           //     },
           //   },
           // },
-          {
-            $unwind: '$postAuthor',
-          },
+          { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
         ],
         as: 'repostPostObj',
       },
@@ -170,7 +168,7 @@ const aggregateFeed = async ({
         as: 'liked',
       },
     },
-    { $unwind: '$postAuthor' },
+    { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
     {
       $unwind:
        {
@@ -308,9 +306,7 @@ const aggregateFeed = async ({
                     as: 'postAuthor',
                   },
                 },
-                {
-                  $unwind: '$postAuthor',
-                },
+                { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
               ],
               as: 'repostPostObj',
             },

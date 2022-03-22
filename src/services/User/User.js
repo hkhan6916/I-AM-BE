@@ -85,8 +85,8 @@ const registerUser = async ({
     const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'}`;
     const error = new Error(message);
     error.validationErrors = {
-      email: { exists: emailExists },
-      username: { exists: usernameExists },
+      email: { exists: !!emailExists },
+      username: { exists: !!usernameExists },
     };
     throw error;
   }
@@ -790,6 +790,7 @@ const changeAccountVisibility = async (userId) => {
   user.private = !oldVisibility;
   user.save();
 };
+
 const toggleFollowersMode = async (userId) => {
   const user = await User.findById(userId);
   if (!user) {
