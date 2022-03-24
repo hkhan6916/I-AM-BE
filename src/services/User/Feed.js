@@ -11,9 +11,8 @@ const sortByDate = (posts) => posts.sort((a, b) => new Date(b.createdAt) - new D
 
 const aggregateFeed = async ({
   userId, feedTimelineOffset, friendsInterestsOffset,
-  connectionsAsSenderOffset, connectionsAsReceiverOffset,
+  connectionsAsSenderOffset, connectionsAsReceiverOffset, user,
 }) => {
-  const user = await User.findById(userId);
   if (!user) {
     throw new Error('User could not be found.');
   }
@@ -567,27 +566,35 @@ const getUserFeed = async ({
   userId, feedTimelineOffset, friendsInterestsOffset,
   connectionsAsSenderOffset, connectionsAsReceiverOffset,
 }) => {
-  const aggregateResult = await aggregateFeed({
+  let currentConnectionsAsSenderOffset = connectionsAsSenderOffset || 0;
+  let currentConnectionsAsReceiverOffset = connectionsAsReceiverOffset || 0;
+  const user = await User.findById(userId);
+
+  let aggregateResult = await aggregateFeed({
     userId,
     feedTimelineOffset,
     friendsInterestsOffset,
     connectionsAsSenderOffset,
     connectionsAsReceiverOffset,
+    user,
   });
-  if (!aggregateResult.feed?.length) {
-    const newFeed = await aggregateFeed({
-      userId,
-      feedTimelineOffset: 0,
-      friendsInterestsOffset: 0,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 20,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 20,
-    });
 
-    return newFeed.feed?.length && newFeed.feed[0]?._id ? {
-      feed: newFeed.feed,
-      connectionsAsSenderOffset: connectionsAsSenderOffset + 20,
-      connectionsAsReceiverOffset: connectionsAsReceiverOffset + 20,
-    } : { feed: [] };
+  // while - no feed from above aggregation call and connections offsets are less than 200 and less than number of connections user has
+  while (!aggregateResult.feed?.length && ((currentConnectionsAsSenderOffset < 200 && currentConnectionsAsSenderOffset < user.numberOfFriendsAsRequester) || (currentConnectionsAsReceiverOffset < 200 && currentConnectionsAsReceiverOffset < user.numberOfFriendsAsReceiver))) {
+    aggregateResult = await aggregateFeed({
+      userId,
+      feedTimelineOffset,
+      friendsInterestsOffset,
+      connectionsAsSenderOffset: currentConnectionsAsSenderOffset,
+      connectionsAsReceiverOffset: currentConnectionsAsReceiverOffset,
+      user,
+    });
+    if (aggregateResult.feed?.length) {
+      break;
+    }
+
+    currentConnectionsAsSenderOffset += 20;
+    currentConnectionsAsReceiverOffset += 20;
   }
   return aggregateResult.feed?.length && aggregateResult.feed[0]?._id ? {
     feed: aggregateResult.feed,
