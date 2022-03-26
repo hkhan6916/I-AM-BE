@@ -174,6 +174,7 @@ const updatePost = async ({ // expects form data
     throw new Error('Post does not belong to this user.');
   }
   const postObj = post.toObject();
+  postObj.edited = true;
   // we delete the old media from aws if new file
   if ((removeMedia === 'true' || file) && post.mediaKey) {
     await deleteFile(post.mediaKey);
@@ -347,7 +348,7 @@ const getAdditionalPostData = async ({
   }
   const liked = await PostLikes.findOne({ postId, likedBy: userId });
 
-  return { likes: post.likes, numberOfComments: post.numberOfComments, liked };
+  return { likes: post.likes, numberOfComments: post.numberOfComments, liked: !!liked };
 };
 
 module.exports = {

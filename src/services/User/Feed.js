@@ -199,6 +199,7 @@ const aggregateFeed = async ({
         likes: 1,
         private: 1,
         postAuthor: 1,
+        edited: 1,
         createdAt: 1,
         belongsToUser: {
           $cond: {
@@ -451,6 +452,7 @@ const aggregateFeed = async ({
         likes: 1,
         private: 1,
         postAuthor: 1,
+        edited: 1,
         createdAt: 1,
         likedBy: 1,
         belongsToUser: {
@@ -527,6 +529,9 @@ const aggregateFeed = async ({
     if (currentPost && !nonDuplicatePostIds.includes(currentPost._id.toString())) {
       nonDuplicatePostIds.push(currentPost._id.toString());
       calculateAge(currentPost);
+      if (currentPost.repostPostObj) {
+        calculateAge(currentPost.repostPostObj);
+      }
 
       if (currentPost.repostPostObj?.mediaUrl) {
         if (currentPost.repostPostObj.mediaType === 'video') {

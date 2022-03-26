@@ -72,7 +72,7 @@ const registerUser = async ({
     throw new Error('Username is too short');
   }
 
-  if (!username || typeof username !== 'string') {
+  if (!username || typeof username !== 'string' || username.split(' ').length > 1) {
     throw new Error('Username is missing or invalid.');
   }
 

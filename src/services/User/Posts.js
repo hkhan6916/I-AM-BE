@@ -92,6 +92,7 @@ const getUserPosts = async (userId, offset) => {
         likes: 1,
         private: 1,
         postAuthor: 1,
+        edited: 1,
         ready: 1,
         cancelled: 1,
         createdAt: 1,
@@ -122,6 +123,8 @@ const getUserPosts = async (userId, offset) => {
       post.mediaHeaders = headers;
     }
     if (post.repostPostObj) {
+      calculateAge(post.repostPostObj);
+
       if (post.repostPostObj.mediaType === 'video') {
         post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
         post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
@@ -269,6 +272,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         likes: 1,
         private: 1,
         postAuthor: 1,
+        edited: 1,
         createdAt: 1,
         liked: {
           $cond: {
@@ -297,6 +301,8 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
       post.mediaHeaders = headers;
     }
     if (post.repostPostObj) {
+      calculateAge(post.repostPostObj);
+
       if (post.repostPostObj.mediaType === 'video') {
         post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
         post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
@@ -392,19 +398,6 @@ const getUserSearchFeed = async (offset = 0, userId) => {
     } else {
       const headers = getFileSignedHeaders(post.mediaUrl);
       post.mediaHeaders = headers;
-    }
-    if (post.repostPostObj) {
-      if (post.repostPostObj.mediaType === 'video') {
-        post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
-        post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
-      } else {
-        const headers = getFileSignedHeaders(post.repostPostObj?.mediaUrl);
-        post.repostPostObj.mediaHeaders = headers;
-      }
-      if (post.repostPostObj.postAuthor) {
-        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-        post.repostPostObj.postAuthor.profileGifHeaders = headers;
-      }
     }
 
     if (post.postAuthor?.profileGifUrl) {
