@@ -348,7 +348,9 @@ const getAdditionalPostData = async ({
   }
   const liked = await PostLikes.findOne({ postId, likedBy: userId });
 
-  return { likes: post.likes, numberOfComments: post.numberOfComments, liked: !!liked };
+  return {
+    likes: post.likes, numberOfComments: post.numberOfComments, liked: !!liked,
+  };
 };
 
 module.exports = {

@@ -124,6 +124,17 @@ const aggregateFeed = async ({
           //     },
           //   },
           // },
+          {
+            $addFields: {
+              belongsToUser: {
+                $cond: {
+                  if: { $eq: ['$userId', ObjectId(userId)] },
+                  then: true,
+                  else: false,
+                },
+              },
+            },
+          },
           { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
         ],
         as: 'repostPostObj',
@@ -306,6 +317,17 @@ const aggregateFeed = async ({
                     as: 'postAuthor',
                   },
                 },
+                {
+                  $addFields: {
+                    belongsToUser: {
+                      $cond: {
+                        if: { $eq: ['$userId', ObjectId(userId)] },
+                        then: true,
+                        else: false,
+                      },
+                    },
+                  },
+                },
                 { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
               ],
               as: 'repostPostObj',
@@ -457,7 +479,7 @@ const aggregateFeed = async ({
         likedBy: 1,
         belongsToUser: {
           $cond: {
-            if: { $eq: ['$userId', userId] },
+            if: { $eq: ['$userId', ObjectId(userId)] },
             then: true,
             else: false,
           },

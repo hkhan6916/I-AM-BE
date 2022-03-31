@@ -62,6 +62,17 @@ const getUserPosts = async (userId, offset) => {
               as: 'postAuthor',
             },
           },
+          {
+            $addFields: {
+              belongsToUser: {
+                $cond: {
+                  if: { $eq: ['$userId', ObjectId(userId)] },
+                  then: true,
+                  else: false,
+                },
+              },
+            },
+          },
           { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
         ],
         as: 'repostPostObj',
@@ -99,6 +110,13 @@ const getUserPosts = async (userId, offset) => {
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
+            then: true,
+            else: false,
+          },
+        },
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', ObjectId(userId)] },
             then: true,
             else: false,
           },
@@ -236,10 +254,28 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
                     profileGifUrl: 1,
                     firstName: 1,
                     lastName: 1,
+                    belongsToUser: {
+                      $cond: {
+                        if: { $eq: ['$userId', ObjectId(userId)] },
+                        then: true,
+                        else: false,
+                      },
+                    },
                   },
                 },
               ],
               as: 'postAuthor',
+            },
+          },
+          {
+            $addFields: {
+              belongsToUser: {
+                $cond: {
+                  if: { $eq: ['$userId', ObjectId(userId)] },
+                  then: true,
+                  else: false,
+                },
+              },
             },
           },
           { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },
@@ -274,6 +310,13 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         postAuthor: 1,
         edited: 1,
         createdAt: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', ObjectId(userId)] },
+            then: true,
+            else: false,
+          },
+        },
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -384,6 +427,13 @@ const getUserSearchFeed = async (offset = 0, userId) => {
         private: 1,
         postAuthor: 1,
         createdAt: 1,
+        belongsToUser: {
+          $cond: {
+            if: { $eq: ['$userId', ObjectId(userId)] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     { $unwind: { path: '$postAuthor', preserveNullAndEmptyArrays: true } },

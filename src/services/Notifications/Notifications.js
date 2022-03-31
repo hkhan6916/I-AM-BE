@@ -7,12 +7,12 @@ const expo = new Expo();
 
 const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const notifications = [];
-
   const chat = await Chat.findById(chatId);
   const senderIndex = chat.participants.indexOf(senderId);
   if (senderIndex > -1) {
     chat.participants.splice(senderIndex, 1);
   }
+  // TODO remove sessions and implement a navigation listener on the frontend to prevent notifcations is user in chat
   const sessions = await ChatSession.find({ chatId });
 
   sessions.forEach((session) => {

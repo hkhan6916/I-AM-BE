@@ -95,6 +95,43 @@ const getUserFriends = async (userId, offset) => {
     throw new Error('User does not exist.');
   }
 
+  const receivedFriendRequests = await Connections.aggregate([
+    {
+      $match: {
+        receiverId: ObjectId(userId),
+        accepted: false,
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        let: { requesterId: '$requesterId' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$requesterId'],
+              },
+            },
+          },
+        ],
+        as: 'user',
+      },
+    },
+    { $limit: 5 },
+    {
+      $unwind:
+       {
+         path: '$user',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $replaceRoot: { newRoot: '$user' },
+    },
+    { $addFields: { accepted: false } },
+  ]);
+
   const friendsAsSender = await Connections.aggregate([
     {
       $match: { requesterId: user._id, accepted: true },
@@ -176,7 +213,7 @@ const getUserFriends = async (userId, offset) => {
     friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
   });
 
-  return friends;
+  return { friends, requests: receivedFriendRequests };
 };
 
 const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
@@ -302,6 +339,7 @@ const getUserFriendRequests = async (userId) => {
         as: 'user',
       },
     },
+    { $limit: 10 },
     {
       $unwind:
        {
@@ -337,6 +375,7 @@ const getUserFriendRequests = async (userId) => {
         as: 'user',
       },
     },
+    { $limit: 10 },
     {
       $unwind:
        {
