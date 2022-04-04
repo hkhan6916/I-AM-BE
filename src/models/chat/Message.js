@@ -15,6 +15,9 @@ const MessagesSchema = new Schema({
   mediaUrl: {
     type: String,
   },
+  thumbnailUrl: {
+    type: String,
+  },
   mediaType: {
     type: String,
   },

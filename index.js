@@ -4,6 +4,9 @@ const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const socketIo = require('socket.io');
+const { Server } = require('socket.io');
+const { createClient } = require('redis');
+const { createAdapter } = require('@socket.io/redis-adapter');
 
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
@@ -16,15 +19,28 @@ const port = process.env.PORT || 5000;
 
 const app = express();
 const server = http.createServer(app);
+
 mongoose.connect(process.env.DB_CONNECT, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
     origin: '*',
   },
+});
+// const io = socketIo(server, {
+//   cors: {
+//     origin: '*',
+//   },
+// });
+
+const pubClient = createClient({ host: 'localhost', port: 6379 });
+const subClient = pubClient.duplicate();
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+  io.listen(3000);
 });
 
 require('./src/routes/Messages.socket')(io);
