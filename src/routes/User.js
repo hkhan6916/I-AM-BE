@@ -214,14 +214,18 @@ router.post('/user/search/:offset', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/friend/fetch/all/:offset', verifyAuth, async (req, res) => {
+router.post('/user/friend/fetch/all', verifyAuth, async (req, res) => {
   let success = true;
   // this message looks sad :(
   let message = 'Friends fetched.';
   let data = {};
-  const { offset } = req.params;
+  const { friendsAsSenderOffset, friendsAsReceiverOffset } = req.body;
   try {
-    data = await getUserFriends(req.user.id, parseInt(offset, 10));
+    data = await getUserFriends({
+      userId: req.user.id,
+      friendsAsSenderOffset: friendsAsSenderOffset || 0,
+      friendsAsReceiverOffset: friendsAsReceiverOffset || 0,
+    });
   } catch (e) {
     success = false;
     message = e.message;

@@ -89,7 +89,7 @@ const getSingleUser = async (otherUserId, userId) => {
   };
 };
 
-const getUserFriends = async (userId, offset) => {
+const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiverOffset }) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error('User does not exist.');
@@ -136,7 +136,7 @@ const getUserFriends = async (userId, offset) => {
     {
       $match: { requesterId: user._id, accepted: true },
     },
-    { $skip: offset || 0 },
+    { $skip: friendsAsSenderOffset || 0 },
     { $limit: 15 },
     {
       $lookup: {
@@ -172,7 +172,7 @@ const getUserFriends = async (userId, offset) => {
     {
       $match: { receiverId: user._id, accepted: true },
     },
-    { $skip: offset || 0 },
+    { $skip: friendsAsReceiverOffset || 0 },
     { $limit: 15 },
     {
       $lookup: {
@@ -213,7 +213,12 @@ const getUserFriends = async (userId, offset) => {
     friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
   });
 
-  return { friends, requests: receivedFriendRequests };
+  return {
+    friends,
+    requests: receivedFriendRequests,
+    friendsAsSenderOffset: friendsAsSender.length + friendsAsSenderOffset,
+    friendsAsReceiverOffset: friendsAsReceiver.length + friendsAsSenderOffset,
+  };
 };
 
 const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
