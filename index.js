@@ -27,7 +27,7 @@ mongoose.connect(process.env.DB_CONNECT, {
 const io = new Server(server, {
   cors: {
     origin: '*',
-    credentials: true,
+    credentials: true, // for sticky sessions to work so cookies can be sent
   },
 });
 // const io = socketIo(server, {
