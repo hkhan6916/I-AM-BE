@@ -36,7 +36,7 @@ const io = new Server(server, {
 //   },
 // });
 
-const pubClient = createClient({ host: 'localhost', port: 6380 });
+const pubClient = createClient({ host: 'rediss://:p14900137e958a7e79204a2529280607fecc8c8a0628a75ccedcba3b5ba2a512d@ec2-54-228-13-108.eu-west-1.compute.amazonaws.com:10480', port: 6379 });
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
