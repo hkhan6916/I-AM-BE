@@ -7,7 +7,7 @@ const socketIo = require('socket.io');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
 const { createAdapter } = require('@socket.io/redis-adapter');
-
+const stickySession = require('sticky-session');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -27,6 +27,7 @@ mongoose.connect(process.env.DB_CONNECT, {
 const io = new Server(server, {
   cors: {
     origin: '*',
+    credentials: true,
   },
 });
 // const io = socketIo(server, {
