@@ -38,7 +38,7 @@ const io = new Server(server, {
 
 const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-const pubClient = createClient({ host: redisUrl, password: process.env.REDIS_KEY });
+const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
