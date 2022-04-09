@@ -25,7 +25,6 @@ module.exports = (io) => {
     socket.on('sendMessage', async ({
       body, chatId, senderId, mediaUrl, mediaType, mediaHeaders,
     }) => {
-      console.log(body);
       const message = new Messages({
         body,
         chatId,

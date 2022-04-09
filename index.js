@@ -35,12 +35,11 @@ const io = new Server(server, {
 //   },
 // });
 
-const pubClient = createClient({ host: 'localhost', port: 6379 });
+const pubClient = createClient({ host: 'localhost', port: 6380 });
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
   io.adapter(createAdapter(pubClient, subClient));
-  io.listen(3000);
 });
 
 require('./src/routes/Messages.socket')(io);
