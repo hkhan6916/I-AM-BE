@@ -36,14 +36,14 @@ const io = new Server(server, {
 //   },
 // });
 
-// const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-// const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
-// const subClient = pubClient.duplicate();
+const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
+const subClient = pubClient.duplicate();
 
-// Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
-//   io.adapter(createAdapter(pubClient, subClient));
-// });
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+});
 
 require('./src/routes/Messages.socket')(io);
 
