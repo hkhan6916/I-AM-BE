@@ -3,11 +3,11 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const socketIo = require('socket.io');
+// const socketIo = require('socket.io');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
 const { createAdapter } = require('@socket.io/redis-adapter');
-const stickySession = require('sticky-session');
+// const stickySession = require('sticky-session');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -30,20 +30,15 @@ const io = new Server(server, {
     credentials: true, // for sticky sessions to work so cookies can be sent
   },
 });
-// const io = socketIo(server, {
-//   cors: {
-//     origin: '*',
-//   },
-// });
 
-// const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-// const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
-// const subClient = pubClient.duplicate();
+const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
+const subClient = pubClient.duplicate();
 
-// Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
-//   io.adapter(createAdapter(pubClient, subClient));
-// });
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+});
 
 require('./src/routes/Messages.socket')(io);
 
