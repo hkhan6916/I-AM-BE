@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
 const { createAdapter } = require('@socket.io/redis-adapter');
-// const stickySession = require('sticky-session');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -35,7 +34,8 @@ const io = new Server(server, {
 
 const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-const pubClient = createClient({ url: redisUrl, password: process.env.REDIS_KEY });
+const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
+const pubClient = createClient({ url: redisUrl, ...redisPasswordConfig });
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
