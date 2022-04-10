@@ -9,7 +9,9 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@sendgrid/mail": "^7.6.0",
+    "@socket.io/cluster-adapter": "^0.1.0",
     "@socket.io/redis-adapter": "^7.1.0",
+    "@socket.io/sticky": "^1.0.1",
     "aws-sdk": "^2.999.0",
     "aws4": "^1.11.0",
     "bcrypt": "^5.0.1",
