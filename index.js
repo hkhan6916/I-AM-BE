@@ -20,7 +20,7 @@ const messagesIo = require('./src/routes/Messages.socket');
 
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
-
+  const port = process.env.PORT || 5000;
   const httpServer = http.createServer();
 
   // setup sticky sessions
@@ -41,7 +41,7 @@ if (cluster.isMaster) {
     serialization: 'advanced',
   });
 
-  for (let i = 0; i < numCPUs; i++) {
+  for (let i = 0; i < numCPUs; i += 1) {
     cluster.fork();
   }
 
@@ -49,10 +49,8 @@ if (cluster.isMaster) {
     console.log(`Worker ${worker.process.pid} died`);
     cluster.fork();
   });
-  httpServer.listen(5000, () => console.log(`Listening on port ${5000}`));// TODO investigate where to listen, worker or master, Socketio docs suggest master
+  httpServer.listen(port, () => console.log(`Listening on port ${port}`));// TODO investigate where to listen, worker or master, Socketio docs suggest master
 } else {
-  const port = process.env.PORT || 5000;
-
   const app = express();
   const server = http.createServer(app);
 
@@ -66,7 +64,7 @@ if (cluster.isMaster) {
       credentials: true, // for sticky sessions to work so cookies can be sent
     },
   });
-    // use the cluster adapter
+  // use the cluster adapter
   io.adapter(createClusterAdapter());
 
   // setup connection with the primary process
