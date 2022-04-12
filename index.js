@@ -1,55 +1,88 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const cluster = require('cluster');
 const cors = require('cors');
 const mongoose = require('mongoose');
-// const socketIo = require('socket.io');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
+const numCPUs = require('os').cpus().length;
 const { createAdapter } = require('@socket.io/redis-adapter');
+const { setupMaster, setupWorker } = require('@socket.io/sticky');
+const { createAdapter: createClusterAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
 const file = require('./src/routes/File');
 const chat = require('./src/routes/Chat');
 const notifications = require('./src/routes/Notifications');
-// const { setupMaster, setupWorker } = require("@socket.io/sticky"); // user for clusters
-// const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter"); // use for clusters
+const messagesIo = require('./src/routes/Messages.socket');
 
-const port = process.env.PORT || 5000;
+if (cluster.isPrimary) {
+  console.log(`Master ${process.pid} is running`);
 
-const app = express();
-const server = http.createServer(app);
+  const httpServer = http.createServer();
 
-mongoose.connect(process.env.DB_CONNECT, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    credentials: true, // for sticky sessions to work so cookies can be sent
-  },
-});
+  // setup sticky sessions
+  setupMaster(httpServer, {
+    loadBalancingMethod: 'least-connection',
+  });
 
-const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+  // setup connections between the workers
+  setupPrimary();
 
-const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
-const pubClient = createClient({ url: redisUrl, ...redisPasswordConfig });
-const subClient = pubClient.duplicate();
+  cluster.setupPrimary({
+    serialization: 'advanced',
+  });
 
-Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
-  io.adapter(createAdapter(pubClient, subClient));
-});
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
-require('./src/routes/Messages.socket')(io);
+  cluster.on('exit', (worker) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    cluster.fork();
+  });
+} else {
+  const port = process.env.PORT || 5000;
 
-app.use(express.urlencoded({ extended: true }));
+  const app = express();
+  const server = http.createServer(app);
 
-app.use(express.json());
+  mongoose.connect(process.env.DB_CONNECT, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  const io = new Server(server, {
+    cors: {
+      origin: '*',
+      credentials: true, // for sticky sessions to work so cookies can be sent
+    },
+  });
+    // use the cluster adapter
+  io.adapter(createClusterAdapter());
 
-app.use(cors({ origin: '*' }));
+  // setup connection with the primary process
+  setupWorker(io);
+  messagesIo(io);
+  const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-app.use(user, posts, jobs, file, chat, notifications);
+  const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
+  const pubClient = createClient({ url: redisUrl, ...redisPasswordConfig });
+  const subClient = pubClient.duplicate();
 
-server.listen(port, () => console.log(`Listening on port ${port}`));
+  Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+    io.adapter(createAdapter(pubClient, subClient));
+  });
+
+  app.use(express.urlencoded({ extended: true }));
+
+  app.use(express.json());
+
+  app.use(cors({ origin: '*' }));
+
+  app.use(user, posts, jobs, file, chat, notifications);
+  server.listen(port, () => console.log(`Listening on port ${port}`));
+}
+
+// server.listen(port, () => console.log(`Listening on port ${port}`));
