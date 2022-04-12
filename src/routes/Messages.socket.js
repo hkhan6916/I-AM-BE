@@ -6,7 +6,7 @@ const {
 } = require('../helpers');
 const { sendNotificationToRecipiants } = require('../services/Notifications/Notifications');
 
-module.exports = (io) => {
+module.exports = (io, pid) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
       deleteChatSession(socket.user._id, socket.chatId);
@@ -25,6 +25,7 @@ module.exports = (io) => {
     socket.on('sendMessage', async ({
       body, chatId, senderId, mediaUrl, mediaType, mediaHeaders,
     }) => {
+      console.log(pid);
       const message = new Messages({
         body,
         chatId,

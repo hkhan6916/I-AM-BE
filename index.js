@@ -18,7 +18,7 @@ const chat = require('./src/routes/Chat');
 const notifications = require('./src/routes/Notifications');
 const messagesIo = require('./src/routes/Messages.socket');
 
-if (cluster.isPrimary) {
+if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
   const httpServer = http.createServer();
@@ -31,6 +31,12 @@ if (cluster.isPrimary) {
   // setup connections between the workers
   setupPrimary();
 
+  // needed for packets containing buffers (you can ignore it if you only send plaintext objects)
+  // Node.js < 16.0.0
+  // cluster.setupMaster({
+  //   serialization: 'advanced',
+  // });
+  // Node.js > 16.0.0
   cluster.setupPrimary({
     serialization: 'advanced',
   });
@@ -43,6 +49,7 @@ if (cluster.isPrimary) {
     console.log(`Worker ${worker.process.pid} died`);
     cluster.fork();
   });
+  httpServer.listen(5000, () => console.log(`Listening on port ${5000}`));// TODO investigate where to listen, worker or master, Socketio docs suggest master
 } else {
   const port = process.env.PORT || 5000;
 
@@ -64,7 +71,7 @@ if (cluster.isPrimary) {
 
   // setup connection with the primary process
   setupWorker(io);
-  messagesIo(io);
+  messagesIo(io, process.pid);
   const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
   const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
@@ -82,7 +89,7 @@ if (cluster.isPrimary) {
   app.use(cors({ origin: '*' }));
 
   app.use(user, posts, jobs, file, chat, notifications);
-  server.listen(port, () => console.log(`Listening on port ${port}`));
+  // server.listen(port, () => console.log(`Listening on port ${port}`));//?
 }
 
 // server.listen(port, () => console.log(`Listening on port ${port}`));
