@@ -8,6 +8,7 @@ const { sendNotificationToRecipiants } = require('../services/Notifications/Noti
 
 module.exports = (io, pid) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
+    console.log('connected');
     socket.on('disconnect', () => {
       deleteChatSession(socket.user._id, socket.chatId);
     });

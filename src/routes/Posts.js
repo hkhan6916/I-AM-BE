@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { v4: uuid } = require('uuid');
+const multerS3 = require('multer-s3');
+const { S3 } = require('aws-sdk');
 const {
   createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData,
 } = require('../services/Posts/Post');
@@ -20,24 +22,53 @@ const {
   reportComment,
 } = require('../services/Posts/Comment');
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'tmp/uploads');
-  },
-  filename: (req, file, cb) => {
-    const re = /(?:\.([^.]+))?$/;
-    const fileExtension = re.exec(file.originalname)[1];
-    file.filename = `${uuid()}.${fileExtension}`;
-    cb(null, `${file.filename}`);
-  },
+// const storage = multer.diskStorage({
+//   destination(req, file, cb) {
+//     cb(null, 'tmp/uploads');
+//     console.log(file);
+//   },
+//   filename: (req, file, cb) => {
+//     const re = /(?:\.([^.]+))?$/;
+//     const fileExtension = re.exec(file.originalname)[1];
+//     file.filename = `${uuid()}.${fileExtension}`;
+//     cb(null, `${file.filename}`);
+//   },
+// });
+const Bucket = process.env.AWS_BUCKET_NAME;
+const region = process.env.AWS_BUCKET_REGION;
+const credentials = {
+  accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
+};
+// const inFilePath = `tmp/uploads/${file.filename}`;
+const awsConnection = new S3({
+  credentials,
+  region,
 });
+
+const upload = multer({
+  storage: multerS3({
+    s3: awsConnection,
+    bucket: Bucket,
+    metadata(req, file, cb) {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key(req, file, cb) {
+      const re = /(?:\.([^.]+))?$/;
+      const fileExtension = re.exec(file.originalname)[1];
+      file.filename = `${uuid()}.${fileExtension}`;
+      cb(null, `${uuid()}.${fileExtension}`);
+    },
+    acl: 'private',
+  }),
+});
+
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
 
 // Posts
-router.post('/posts/new', [verifyAuth, multer({
-  storage,
-}).single('file')], async (req, res) => {
+router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) => {
+  console.log(process.pid);
   let success = true;
   let message = 'Post created.';
   let data = {};
@@ -45,6 +76,7 @@ router.post('/posts/new', [verifyAuth, multer({
     postBody, mediaIsSelfie, postId, gif,
   } = req.body;
   try {
+    console.log(req.file);
     data = await createPost({
       userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId, gif,
     });
@@ -60,9 +92,7 @@ router.post('/posts/new', [verifyAuth, multer({
   });
 });
 
-router.post('/posts/update/:postId', [verifyAuth, multer({
-  storage,
-}).single('file')], async (req, res) => { // TODO: change this to multer array and make sure we regenerate thumbnails when updating post which contains video. Also need to delete old thumbnail
+router.post('/posts/update/:postId', [verifyAuth, upload.single('file')], async (req, res) => {
   let success = true;
   let message = 'Post updated.';
   let data = {};

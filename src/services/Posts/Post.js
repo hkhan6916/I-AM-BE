@@ -8,6 +8,7 @@ const {
   uploadFile, deleteFile, tmpCleanup, getFileSignedHeaders,
 } = require('../../helpers');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
+const getS3Url = require('../../helpers/getS3Url');
 
 /**
  ########## => Post creation,deletion and manipulation
@@ -28,16 +29,17 @@ const createPost = async ({ // expects form data
     if (!post?.thumbnailUrl) {
       throw new Error('This post does not have a thumbnail for the video.');
     }
-    const fileObj = await uploadFile(file);
-    if (!fileObj.fileUrl) {
+    // const fileObj = await uploadFile(file);
+    const mediaUrl = `${process.env.CF_URL}/${file.key}`;
+
+    if (!file.key) {
       throw new Error('File could not be uploaded.');
     }
 
-    const mediaUrl = fileObj.fileUrl;
     await Posts.findByIdAndUpdate(postId, {
       mediaUrl,
       mediaMimeType: file.mimetype.split('/')[1] || file.mimetype,
-      mediaType: file.mimetype.split('/')[0],
+      mediaType: 'video',
       mediaKey: file.filename,
       private: false,
       ready: true,
@@ -55,11 +57,12 @@ const createPost = async ({ // expects form data
     userId,
   });
   if (file) {
-    const fileObj = await uploadFile(file);
-    if (!fileObj.fileUrl) {
+    // const fileObj = await uploadFile(file);
+    if (!file.key) {
       throw new Error('File could not be uploaded.');
     }
-    const mediaUrl = fileObj.fileUrl;
+    const { mediaType, mediaUrl } = await getS3Url(file);
+
     if (file.originalname.includes('mediaThumbnail')) {
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;
@@ -71,7 +74,7 @@ const createPost = async ({ // expects form data
     } else {
       post.mediaUrl = mediaUrl;
       post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
-      post.mediaType = file.mimetype.split('/')[0];
+      post.mediaType = mediaType;
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaKey = file.filename;
       post.ready = true;
@@ -189,14 +192,16 @@ const updatePost = async ({ // expects form data
     postObj.gif = '';
   }
   if (file && removeMedia === 'false') {
-    const fileObj = await uploadFile(file);
-    if (!fileObj.fileUrl) {
+    // const fileObj = await uploadFile(file);
+
+    if (!file.key) {
       throw new Error('File could not be uploaded.');
     }
+    const { mediaType, mediaUrl } = await getS3Url(file);
     if (postObj.gif) {
       postObj.gif = '';
     }
-    const mediaUrl = fileObj.fileUrl;
+    // const mediaUrl = fileObj.fileUrl;
     if (file.originalname.includes('mediaThumbnail')) {
       postObj.mediaIsSelfie = mediaIsSelfie;
       postObj.private = true;
@@ -208,7 +213,7 @@ const updatePost = async ({ // expects form data
     } else {
       postObj.mediaUrl = mediaUrl;
       postObj.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
-      postObj.mediaType = file.mimetype.split('/')[0];
+      postObj.mediaType = mediaType;
       postObj.mediaIsSelfie = mediaIsSelfie;
       postObj.mediaKey = file.filename;
       postObj.ready = true;
