@@ -67,8 +67,32 @@ const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
 
 // Posts
-router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) => {
-  console.log(process.pid);
+// router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) => {
+//   console.log(process.pid);
+//   let success = true;
+//   let message = 'Post created.';
+//   let data = {};
+//   const {
+//     postBody, mediaIsSelfie, postId, gif,
+//   } = req.body;
+//   try {
+//     console.log(req.file);
+//     data = await createPost({
+//       userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId, gif,
+//     });
+//   } catch (e) {
+//     success = false;
+//     message = e.message;
+//   }
+
+//   res.status(200).json({
+//     success,
+//     message,
+//     data,
+//   });
+// });
+
+router.post('/posts/new', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post created.';
   let data = {};
@@ -76,9 +100,8 @@ router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) 
     postBody, mediaIsSelfie, postId, gif,
   } = req.body;
   try {
-    console.log(req.file);
     data = await createPost({
-      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId, gif,
+      userId: req.user.id, file: req.files?.file, body: postBody, mediaIsSelfie, postId, gif,
     });
   } catch (e) {
     success = false;
@@ -92,19 +115,19 @@ router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) 
   });
 });
 
-router.post('/posts/update/:postId', [verifyAuth, upload.single('file')], async (req, res) => {
+router.post('/posts/update/:postId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post updated.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, removeMedia, gif,
+    postBody, removeMedia,
   } = req.body;
   const {
     postId,
   } = req.params;
   try {
     data = await updatePost({
-      userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, removeMedia, postId, gif,
+      userId: req.user.id, body: postBody, removeMedia, postId,
     });
   } catch (e) {
     success = false;

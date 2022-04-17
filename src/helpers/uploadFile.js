@@ -11,18 +11,18 @@ module.exports = async (file, preventCleanup) => {
     accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
     secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
   };
-  const inFilePath = `tmp/uploads/${file.filename}`;
+  // const inFilePath = `tmp/uploads/${file.filename}`;
   const awsConnection = new S3({
     credentials,
     region,
   });
 
-  const absoluteFilePath = path.join(__dirname, '..', '..', inFilePath);
+  // const absoluteFilePath = path.join(__dirname, '..', '..', inFilePath);
 
-  const fileBuffer = fs.readFileSync(absoluteFilePath);
+  const fileBuffer = Buffer.from(file.data, 'binary');
   const fileParams = {
     Bucket,
-    Key: `${file.filename}`,
+    Key: `${file.md5}${file.name}`,
     Body: fileBuffer,
     ACL: 'private',
   };
@@ -30,16 +30,17 @@ module.exports = async (file, preventCleanup) => {
   await awsConnection.putObject(fileParams, async (err, pres) => {
     if (err) {
       await tmpCleanup();
+      console.log(err);
       awsConnection.deleteObject(fileParams);
     }
   }).promise();
   const fileType = file.mimetype?.split('/')[0];
-  const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
+  const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key.replace(/ /g, '')}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = getFileSignedHeaders(fileUrl);
 
   // delete all files in tmp uploads
   if (!preventCleanup) {
     await tmpCleanup();
   }
-  return { fileUrl, fileHeaders };
+  return { fileUrl, fileHeaders, key: fileParams.Key };
 };

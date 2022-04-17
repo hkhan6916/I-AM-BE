@@ -8,8 +8,9 @@ const { Server } = require('socket.io');
 const { createClient } = require('redis');
 const numCPUs = require('os').cpus().length;
 const { createAdapter } = require('@socket.io/redis-adapter');
-const { setupMaster, setupWorker } = require('@socket.io/sticky');
-const { createAdapter: createClusterAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
+// const { setupMaster, setupWorker } = require('@socket.io/sticky');
+const { createAdapter: createClusterAdapter } = require('@socket.io/cluster-adapter');
+const fileUpload = require('express-fileupload');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -24,12 +25,12 @@ if (cluster.isMaster) {
   const httpServer = http.createServer();
 
   // setup sticky sessions
-  setupMaster(httpServer, {
-    loadBalancingMethod: 'least-connection',
-  });
+  // setupMaster(httpServer, {
+  //   loadBalancingMethod: 'least-connection',
+  // });
 
   // setup connections between the workers
-  setupPrimary();
+  // setupPrimary();
 
   // needed for packets containing buffers (you can ignore it if you only send plaintext objects)
   // Node.js < 16.0.0
@@ -73,8 +74,6 @@ if (cluster.isMaster) {
   // use the cluster adapter
   io.adapter(createClusterAdapter());
 
-  // setup connection with the primary process
-  setupWorker(io);
   messagesIo(io, process.pid);
   const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
@@ -87,6 +86,11 @@ if (cluster.isMaster) {
   });
 
   app.use(express.urlencoded({ extended: true }));
+  app.use(fileUpload({
+    abortOnLimit: true,
+    limits: { fileSize: 50 * 1024 * 1024 },
+
+  }));
 
   app.use(express.json());
 
