@@ -3,14 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
+const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
 
 module.exports = async (file) => {
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
 
-  const inFilePath = `tmp/uploads/${file.filename}`;
+  // const inFilePath = `tmp/uploads/${file.filename}`;
 
-  const outFilePath = inFilePath.replace(/\.[^/.]+$/, '.gif');
+  // const outFilePath = inFilePath.replace(/\.[^/.]+$/, '.gif');
   if (!file) {
     throw new Error('No video profile provided');
   }
@@ -23,16 +24,16 @@ module.exports = async (file) => {
     region,
   });
 
-  await generateGif(inFilePath, outFilePath);
+  const inFilePath = await getCloudfrontSignedUrl(file.name);
 
-  const profileGifPath = path.join(__dirname, '..', '..', outFilePath);
-  const profileVideoPath = path.join(__dirname, '..', '..', inFilePath);
+  // const profileGifPath = path.join(__dirname, '..', '..', outFilePath);
 
-  if (!fs.existsSync(profileGifPath, 'utf8')) {
+  const profileGifBuffer = await generateGif(inFilePath); // need to generate signed cloudfront url
+  if (!profileGifBuffer) {
     throw new Error('Could not generate a profile gif.');
   }
-  const profileGifBuffer = fs.readFileSync(profileGifPath);
-  const profileVideoBuffer = fs.readFileSync(profileVideoPath);
+
+  const profileVideoBuffer = file.data;
   if (!profileGifBuffer) {
     throw new Error('Unable to get profile gif buffer.');
   }
@@ -48,7 +49,7 @@ module.exports = async (file) => {
 
   const profileVideoParams = {
     Bucket,
-    Key: `profileVideos/${file.filename}`,
+    Key: `profileVideos/${file.name}`,
     Body: profileVideoBuffer,
     ACL: 'private',
   };

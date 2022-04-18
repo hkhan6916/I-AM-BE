@@ -86,11 +86,11 @@ if (cluster.isMaster) {
   });
 
   app.use(express.urlencoded({ extended: true }));
-  app.use(fileUpload({
-    abortOnLimit: true,
-    limits: { fileSize: 50 * 1024 * 1024 },
+  // app.use(fileUpload({
+  //   abortOnLimit: true,
+  //   limits: { fileSize: 50 * 1024 * 1024 },
 
-  }));
+  // }));
 
   app.use(express.json());
 

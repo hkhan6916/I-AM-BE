@@ -5,10 +5,10 @@ const multer = require('multer');
 const { v4: uuid } = require('uuid');
 const multerS3 = require('multer-s3');
 const { S3 } = require('aws-sdk');
+const fileUpload = require('express-fileupload');
 const {
   createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData,
 } = require('../services/Posts/Post');
-
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
 const {
   getPostComments,
@@ -34,6 +34,7 @@ const {
 //     cb(null, `${file.filename}`);
 //   },
 // });
+
 const Bucket = process.env.AWS_BUCKET_NAME;
 const region = process.env.AWS_BUCKET_REGION;
 const credentials = {
@@ -65,6 +66,7 @@ const upload = multer({
 
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
+const { generateGif } = require('../helpers');
 
 // Posts
 // router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) => {
@@ -92,7 +94,10 @@ const { getUserSearchFeed } = require('../services/User/Posts');
 //   });
 // });
 
-router.post('/posts/new', verifyAuth, async (req, res) => {
+router.post('/posts/new', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
   let success = true;
   let message = 'Post created.';
   let data = {};
@@ -487,6 +492,27 @@ router.get('/posts/searchfeed/:offset', verifyAuth, async (req, res) => {
   const { offset } = req.params;
   try {
     data = await getUserSearchFeed(parseInt(offset, 10), req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/test/gif', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
+  let success = true;
+  let message = 'Search feed fetched.';
+  let data = {};
+  try {
+    data = await generateGif(req.files.file?.data);
   } catch (e) {
     success = false;
     message = e.message;
