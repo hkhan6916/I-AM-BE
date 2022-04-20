@@ -34,18 +34,6 @@ const { updateNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
 const { tmpCleanup } = require('../helpers');
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'tmp/uploads');
-  },
-  filename: (req, file, cb) => {
-    const re = /(?:\.([^.]+))?$/;
-    const fileExtension = re.exec(file.originalname)[1];
-    file.filename = `${uuid()}.${fileExtension}`;
-    cb(null, `${file.filename}`);
-  },
-});
-
 // const storage = multer.memoryStorage();
 
 router.post('/user/login', async (req, res) => {
@@ -462,16 +450,17 @@ router.post('/user/notifications/token/update', verifyAuth, async (req, res) => 
   });
 });
 
-router.post('/user/update/details', [verifyAuth, multer({
-  storage,
-}).single('file')], async (req, res) => {
+router.post('/user/update/details', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
   let success = true;
   let message = 'User details updated.';
   let data = {};
   let other = {};
   const details = req.body;
   try {
-    data = await updateUserDetails({ userId: req.user.id, file: req.file, details });
+    data = await updateUserDetails({ userId: req.user.id, file: req.files?.file, details });
   } catch (e) {
     success = false;
     message = e.message;

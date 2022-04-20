@@ -22,18 +22,6 @@ const {
   reportComment,
 } = require('../services/Posts/Comment');
 
-const Bucket = process.env.AWS_BUCKET_NAME;
-const region = process.env.AWS_BUCKET_REGION;
-const credentials = {
-  accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
-};
-// const inFilePath = `tmp/uploads/${file.filename}`;
-const awsConnection = new S3({
-  credentials,
-  region,
-});
-
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
 const { generateGif } = require('../helpers');
