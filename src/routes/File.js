@@ -1,33 +1,21 @@
 const express = require('express');
 
 const router = express.Router();
-const multer = require('multer');
-const { v4: uuid } = require('uuid');
+const fileUpload = require('express-fileupload');
 const verifyAuth = require('../middleware/auth');
 const uploadFile = require('../helpers/uploadFile');
 const getFileSignedHeaders = require('../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../helpers/getCloudfrontSignedUrl');
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'tmp/uploads');
-  },
-  filename: (req, file, cb) => {
-    const re = /(?:\.([^.]+))?$/;
-    const fileExtension = re.exec(file.originalname)[1];
-    file.filename = `${uuid()}.${fileExtension}`;
-    cb(null, `${file.filename}`);
-  },
-});
-
-router.post('/files/upload', [verifyAuth, multer({
-  storage,
-}).single('file')], async (req, res) => {
+router.post('/files/upload', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
   let success = true;
   let message = 'File uploaded.';
   let data = {};
   try {
-    const { fileUrl, fileHeaders } = await uploadFile(req.file);
+    const { fileUrl, fileHeaders } = await uploadFile(req.files?.file);
 
     data = { fileUrl, fileHeaders };
   } catch (e) {
