@@ -1,6 +1,4 @@
 const { S3 } = require('aws-sdk');
-const fs = require('fs');
-const path = require('path');
 const getFileSignedHeaders = require('./getFileSignedHeaders');
 const tmpCleanup = require('./tmpCleanup');
 
@@ -11,18 +9,17 @@ module.exports = async (file, preventCleanup) => {
     accessKeyId: process.env.AWS_IAM_ACCESS_KEY,
     secretAccessKey: process.env.AWS_IAM_SECRET_KEY,
   };
-  // const inFilePath = `tmp/uploads/${file.filename}`;
   const awsConnection = new S3({
     credentials,
     region,
   });
 
-  // const absoluteFilePath = path.join(__dirname, '..', '..', inFilePath);
+  const fileName = `${file.md5}${file.name.replace(/ /g, '')}`;
 
   const fileBuffer = Buffer.from(file.data, 'binary');
   const fileParams = {
     Bucket,
-    Key: `${file.md5}${file.name}`,
+    Key: fileName,
     Body: fileBuffer,
     ACL: 'private',
   };
@@ -30,7 +27,6 @@ module.exports = async (file, preventCleanup) => {
   await awsConnection.putObject(fileParams, async (err, pres) => {
     if (err) {
       await tmpCleanup();
-      console.log(err);
       awsConnection.deleteObject(fileParams);
     }
   }).promise();

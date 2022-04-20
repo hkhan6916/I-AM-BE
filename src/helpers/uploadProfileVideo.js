@@ -1,6 +1,4 @@
 const { S3 } = require('aws-sdk');
-const fs = require('fs');
-const path = require('path');
 const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
 const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
@@ -9,9 +7,6 @@ module.exports = async (file) => {
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
 
-  // const inFilePath = `tmp/uploads/${file.filename}`;
-
-  // const outFilePath = inFilePath.replace(/\.[^/.]+$/, '.gif');
   if (!file) {
     throw new Error('No video profile provided');
   }
@@ -24,21 +19,38 @@ module.exports = async (file) => {
     region,
   });
 
-  const inFilePath = await getCloudfrontSignedUrl(file.name);
+  // ########## Upload profile video
+  const profileVideoBuffer = file.data;
+  const fileName = `${file.md5}${file.name.replace(/ /g, '')}`;
+  const profileVideoParams = {
+    Bucket,
+    Key: `profileVideos/${fileName}`,
+    Body: profileVideoBuffer,
+    ACL: 'private',
+  };
+  await awsConnection.putObject(profileVideoParams, (err, pres) => {
+    if (err) {
+      awsConnection.deleteObject(profileVideoParams);
+    }
+  }).promise();
+  // ########## Create and upload the profile gif
+  const profileVideoSignedUrl = await getCloudfrontSignedUrl(`profileVideos/${fileName}`);
 
-  // const profileGifPath = path.join(__dirname, '..', '..', outFilePath);
+  if (!profileVideoSignedUrl) {
+    throw new Error('Could not fetch the requested profile video.');
+  }
 
-  const profileGifBuffer = await generateGif(inFilePath); // need to generate signed cloudfront url
+  const profileGifBuffer = await generateGif(profileVideoSignedUrl); // need to generate signed cloudfront url
   if (!profileGifBuffer) {
     throw new Error('Could not generate a profile gif.');
   }
+  console.log(profileGifBuffer);
 
-  const profileVideoBuffer = file.data;
   if (!profileGifBuffer) {
     throw new Error('Unable to get profile gif buffer.');
   }
 
-  const profileGifName = file.filename.replace(/\.[^/.]+$/, '.gif');
+  const profileGifName = `${file.md5}${file.name.replace(/\s/g, '')}`.replace(/\.[^/.]+$/, '.gif');
 
   const profileGifParams = {
     Bucket,
@@ -47,22 +59,9 @@ module.exports = async (file) => {
     ACL: 'private',
   };
 
-  const profileVideoParams = {
-    Bucket,
-    Key: `profileVideos/${file.name}`,
-    Body: profileVideoBuffer,
-    ACL: 'private',
-  };
-
   await awsConnection.putObject(profileGifParams, (err, pres) => {
     if (err) {
       awsConnection.deleteObject(profileGifParams);
-    }
-  }).promise();
-
-  await awsConnection.putObject(profileVideoParams, (err, pres) => {
-    if (err) {
-      awsConnection.deleteObject(profileVideoParams);
     }
   }).promise();
 

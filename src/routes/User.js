@@ -5,6 +5,7 @@ const multer = require('multer');
 const { v4: uuid } = require('uuid');
 // todo delete this once done generating data
 const faker = require('faker');
+const fileUpload = require('express-fileupload');
 
 const {
   registerUser,
@@ -66,9 +67,10 @@ router.post('/user/login', async (req, res) => {
   });
 });
 
-router.post('/user/register', multer({
-  storage,
-}).single('file'), async (req, res) => {
+router.post('/user/register', fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+}), async (req, res) => {
   const {
     username, email, password: plainTextPassword, lastName, firstName, notificationToken,
   } = req.body;
@@ -79,7 +81,7 @@ router.post('/user/register', multer({
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, file: req.file, notificationToken,
+      username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken,
     });
   } catch (e) {
     await tmpCleanup();

@@ -22,19 +22,6 @@ const {
   reportComment,
 } = require('../services/Posts/Comment');
 
-// const storage = multer.diskStorage({
-//   destination(req, file, cb) {
-//     cb(null, 'tmp/uploads');
-//     console.log(file);
-//   },
-//   filename: (req, file, cb) => {
-//     const re = /(?:\.([^.]+))?$/;
-//     const fileExtension = re.exec(file.originalname)[1];
-//     file.filename = `${uuid()}.${fileExtension}`;
-//     cb(null, `${file.filename}`);
-//   },
-// });
-
 const Bucket = process.env.AWS_BUCKET_NAME;
 const region = process.env.AWS_BUCKET_REGION;
 const credentials = {
@@ -47,52 +34,11 @@ const awsConnection = new S3({
   region,
 });
 
-const upload = multer({
-  storage: multerS3({
-    s3: awsConnection,
-    bucket: Bucket,
-    metadata(req, file, cb) {
-      cb(null, { fieldName: file.fieldname });
-    },
-    key(req, file, cb) {
-      const re = /(?:\.([^.]+))?$/;
-      const fileExtension = re.exec(file.originalname)[1];
-      file.filename = `${uuid()}.${fileExtension}`;
-      cb(null, `${uuid()}.${fileExtension}`);
-    },
-    acl: 'private',
-  }),
-});
-
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
 const { generateGif } = require('../helpers');
 
 // Posts
-// router.post('/posts/new', [verifyAuth, upload.single('file')], async (req, res) => {
-//   console.log(process.pid);
-//   let success = true;
-//   let message = 'Post created.';
-//   let data = {};
-//   const {
-//     postBody, mediaIsSelfie, postId, gif,
-//   } = req.body;
-//   try {
-//     console.log(req.file);
-//     data = await createPost({
-//       userId: req.user.id, file: req.file, body: postBody, mediaIsSelfie, postId, gif,
-//     });
-//   } catch (e) {
-//     success = false;
-//     message = e.message;
-//   }
-
-//   res.status(200).json({
-//     success,
-//     message,
-//     data,
-//   });
-// });
 
 router.post('/posts/new', [verifyAuth, fileUpload({
   abortOnLimit: true,

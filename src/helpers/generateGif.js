@@ -18,7 +18,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 module.exports = (inFilePath) => new Promise((resolve, reject) => {
   const bufferStream = new stream.PassThrough();
 
-  ffmpeg(inFilePath)
+  ffmpeg({ source: inFilePath, timeout: 999 })
     .outputOption('-vf', 'scale=320:-1:flags=lanczos,fps=3')
     .format('gif')
     .pipe(bufferStream)
