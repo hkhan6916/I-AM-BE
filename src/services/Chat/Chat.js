@@ -134,4 +134,13 @@ const checkChatExists = async (participants) => {
   return exists || null;
 };
 
-module.exports = { getChatMessages, createChat, checkChatExists };
+const updateChatUpToDateUsers = async (userId, chatId) => {
+  const chat = await Chat.findById(chatId);
+  chat.upToDateUsers = [...chat.upToDateUsers, userId];
+  chat.save();
+  return 'updated chat';
+};
+
+module.exports = {
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers,
+};

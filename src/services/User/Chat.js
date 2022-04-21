@@ -46,8 +46,40 @@ const getUserChats = async (userId, offset) => {
       },
     },
     {
+      $lookup: {
+        from: 'messages',
+        let: { chatId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$chatId', '$$chatId'],
+              },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+          {
+            $project: {
+              body: 1,
+            },
+          },
+        ],
+        as: 'lastMessage',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$lastMessage',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
       $project: {
         users: 1,
+        lastMessage: 1,
+        upToDateUsers: 1,
       },
     },
   ]);
