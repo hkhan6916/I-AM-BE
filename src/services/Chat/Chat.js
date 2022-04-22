@@ -5,7 +5,7 @@ const User = require('../../models/user/User');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
-const getChatMessages = async (chatId, offset) => {
+const getChatMessages = async (chatId, offset, userId) => {
   const messages = await Messages.aggregate([
     {
       $match: {
@@ -59,6 +59,14 @@ const getChatMessages = async (chatId, offset) => {
       message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
     }
   });
+
+  // mark user as having read latest messages in the chat
+  if (!offset) {
+    const chat = await Chat.findById(chatId);
+    const userIsAlreadyUptoDate = chat.upToDateUsers.find((id) => id === userId);
+    chat.upToDateUsers = userIsAlreadyUptoDate ? chat.upToDateUsers : [...chat.upToDateUsers, userId];
+    chat.save();
+  }
 
   return messages;
 };
@@ -134,13 +142,6 @@ const checkChatExists = async (participants) => {
   return exists || null;
 };
 
-const updateChatUpToDateUsers = async (userId, chatId) => {
-  const chat = await Chat.findById(chatId);
-  chat.upToDateUsers = [...chat.upToDateUsers, userId];
-  chat.save();
-  return 'updated chat';
-};
-
 module.exports = {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers,
+  getChatMessages, createChat, checkChatExists,
 };

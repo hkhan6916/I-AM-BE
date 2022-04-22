@@ -4,7 +4,7 @@ const router = express.Router();
 const verifyAuth = require('../middleware/auth');
 
 const {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers,
+  getChatMessages, createChat, checkChatExists,
 } = require('../services/Chat/Chat');
 
 router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
@@ -13,7 +13,7 @@ router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
   let data = {};
   const { chatId, offset } = req.params;
   try {
-    data = await getChatMessages(chatId, parseInt(offset, 10));
+    data = await getChatMessages(chatId, parseInt(offset, 10), req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
@@ -52,25 +52,6 @@ router.post('/chat/exists', verifyAuth, async (req, res) => {
   const { participants } = req.body;
   try {
     data = await checkChatExists([...participants, req.user.id]);
-  } catch (e) {
-    success = false;
-    message = e.message;
-  }
-
-  res.status(200).json({
-    success,
-    message,
-    data,
-  });
-});
-
-router.get('/chat/update/viewed/:chatId', verifyAuth, async (req, res) => {
-  let success = true;
-  let message = 'Chat updated as viewed.';
-  let data = {};
-  const { chatId } = req.params;
-  try {
-    data = await updateChatUpToDateUsers(req.user.id, chatId);
   } catch (e) {
     success = false;
     message = e.message;
