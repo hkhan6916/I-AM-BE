@@ -142,6 +142,22 @@ const checkChatExists = async (participants) => {
   return exists || null;
 };
 
+const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
+  if (!userId || !chatId) return false;
+  const chat = await Chat.findById(chatId);
+  if (userIsOnline) {
+    const shouldUpdate = chat.upToDateUsers.find((id) => id !== userId.toString());
+    chat.upToDateUsers = shouldUpdate ? [...chat.upToDateUsers, userId] : chat.upToDateUsers;
+  } else {
+    const index = chat.upToDateUsers.indexOf(userId);
+    if (index > -1) {
+      chat.upToDateUsers.splice(index, 1); // 2nd parameter means remove one item only
+    }
+  }
+  chat.save();
+  return true;
+};
+
 module.exports = {
-  getChatMessages, createChat, checkChatExists,
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers,
 };

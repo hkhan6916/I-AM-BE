@@ -5,13 +5,14 @@ const {
   getNameDate, get12HourTime, createChatSession, deleteChatSession,
 } = require('../helpers');
 const { sendNotificationToRecipiants } = require('../services/Notifications/Notifications');
-const { notify } = require('./User');
+const { updateChatUpToDateUsers } = require('../services/Chat/Chat');
 
 module.exports = (io, pid) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
+      console.log('disconnect');
       deleteChatSession(socket.user._id, socket.chatId);
-      socket.emit('userLeftRoom', { userId: socket.user._id });
+      socket.to(socket.chatId).emit('userLeftRoom', { userId: socket.user._id });
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
@@ -26,9 +27,9 @@ module.exports = (io, pid) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, mediaUrl, mediaType, mediaHeaders, notifyUser,
+      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline,
     }) => {
-      console.log(pid);
+      console.log(recipientId);
       const message = new Messages({
         body,
         chatId,
@@ -45,10 +46,13 @@ module.exports = (io, pid) => {
 
         socket.user = user;
       }
-      if (notifyUser && typeof socket.userReadStatusUpdated !== 'boolean') {
-        socket.userReadStatusUpdated = notifyUser;
+      if (userIsOnline !== socket.userIsOnline) {
+        socket.userIsOnline = userIsOnline;
+        updateChatUpToDateUsers(recipientId, socket.chatId, userIsOnline);
       }
-      console.log(socket.userReadStatusUpdated);
+
+      console.log({ userReadStatusUpdated: socket.userIsOnline });
+
       const {
         firstName, lastName, username, _id,
       } = socket.user;
