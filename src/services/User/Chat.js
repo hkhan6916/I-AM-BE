@@ -94,10 +94,11 @@ const getUserChats = async (userId, offset) => {
   return chats;
 };
 
-const deleteUserMessage = async (messageId, userId) => {
+const deleteUserMessage = async (messageId, userId) => { // just here, don't need it as won't be allowing users to delete messages
   const message = await Messages.findById(messageId);
   if (message?.userId.toString() !== userId) throw new Error('Message does not belong to user.');
   await Messages.findByIdAndDelete(messageId);
   return 'delete';
 };
+
 module.exports = { getUserChats, deleteUserMessage };
