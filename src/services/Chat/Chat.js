@@ -1,9 +1,11 @@
 const { ObjectId } = require('mongoose').Types;
+const { io } = require('socket.io-client');
 const Messages = require('../../models/chat/Message');
 const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
+const uploadFile = require('../../helpers/uploadFile');
 
 const getChatMessages = async (chatId, offset, userId) => {
   const messages = await Messages.aggregate([
@@ -158,6 +160,27 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
   return true;
 };
 
+const uploadFileAndSendMessage = async (message, file) => {
+  if (!message) throw new Error('No message provided.');
+  const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+  console.log(fileUrl, fileHeaders, signedUrl);
+  const socket = io('ws://192.168.5.101:5000', {
+    auth: {
+      token: message.auth,
+    },
+    withCredentials: true,
+    transports: ['websocket'],
+  });
+
+  socket.emit('sendMessage', {
+    ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: fileUrl,
+  });
+  console.log({ message });
+  return {
+    fileUrl, fileHeaders, signedUrl, ...message,
+  };
+};
+
 module.exports = {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers,
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage,
 };

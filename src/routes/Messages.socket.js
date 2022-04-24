@@ -27,9 +27,14 @@ module.exports = (io, pid) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline,
+      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl,
     }) => {
-      console.log(recipientId);
+      console.log({
+        newmessage: {
+          body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl,
+        },
+      });
+      if (!body && !mediaUrl) return;
       const message = new Messages({
         body,
         chatId,
@@ -51,8 +56,6 @@ module.exports = (io, pid) => {
         updateChatUpToDateUsers(recipientId, socket.chatId, userIsOnline);
       }
 
-      console.log({ userReadStatusUpdated: socket.userIsOnline });
-
       const {
         firstName, lastName, username, _id,
       } = socket.user;
@@ -64,6 +67,7 @@ module.exports = (io, pid) => {
         mediaUrl: mediaUrl || null,
         mediaType: mediaType || null,
         mediaHeaders: mediaHeaders || null,
+        signedMediaUrl: signedUrl || null,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
         user: {

@@ -25,6 +25,7 @@ const {
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
 const { generateGif } = require('../helpers');
+const { testSocket } = require('../services/Chat/Chat');
 
 // Posts
 
@@ -438,15 +439,12 @@ router.get('/posts/searchfeed/:offset', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/test/gif', [verifyAuth, fileUpload({
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-})], async (req, res) => {
+router.post('/test', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Search feed fetched.';
+  let message = 'Test.';
   let data = {};
   try {
-    data = await generateGif(req.files.file?.data);
+    data = await testSocket();
   } catch (e) {
     success = false;
     message = e.message;
