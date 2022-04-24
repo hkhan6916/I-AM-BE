@@ -57,8 +57,12 @@ const getChatMessages = async (chatId, offset, userId) => {
     const mediaKey = arr ? arr[arr.length - 1] : null;
 
     if (mediaKey) {
-      message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
-      message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
+      if (message.mediaType === 'image') {
+        message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
+      }
+      if (message.mediaType === 'video') {
+        message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
+      }
     }
   });
 
@@ -175,7 +179,6 @@ const uploadFileAndSendMessage = async (message, file) => {
   socket.emit('sendMessage', {
     ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: fileUrl,
   });
-  console.log({ message });
   return {
     fileUrl, fileHeaders, signedUrl, ...message,
   };

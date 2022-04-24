@@ -29,11 +29,6 @@ module.exports = (io, pid) => {
     socket.on('sendMessage', async ({
       body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl,
     }) => {
-      console.log({
-        newmessage: {
-          body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl,
-        },
-      });
       if (!body && !mediaUrl) return;
       const message = new Messages({
         body,
