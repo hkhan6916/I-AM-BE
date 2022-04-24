@@ -86,4 +86,5 @@ router.post('/chat/upload', [verifyAuth, fileUpload({
     data,
   });
 });
+
 module.exports = router;

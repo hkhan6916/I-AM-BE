@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongoose').Types;
 const Chat = require('../../models/chat/Chat');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
+const Messages = require('../../models/chat/Message');
 
 const getUserChats = async (userId, offset) => {
   const chats = await Chat.aggregate([
@@ -11,7 +12,6 @@ const getUserChats = async (userId, offset) => {
         },
       },
     },
-    { $sort: { createdAt: -1 } },
     { $skip: offset || 0 },
     { $limit: 20 },
     {
@@ -62,6 +62,8 @@ const getUserChats = async (userId, offset) => {
           {
             $project: {
               body: 1,
+              mediaType: 1,
+              createdAt: 1,
             },
           },
         ],
@@ -75,6 +77,7 @@ const getUserChats = async (userId, offset) => {
          preserveNullAndEmptyArrays: true,
        },
     },
+    { $sort: { 'lastMessage.createdAt': -1 } },
     {
       $project: {
         users: 1,
@@ -91,4 +94,10 @@ const getUserChats = async (userId, offset) => {
   return chats;
 };
 
-module.exports = { getUserChats };
+const deleteUserMessage = async (messageId, userId) => {
+  const message = await Messages.findById(messageId);
+  if (message?.userId.toString() !== userId) throw new Error('Message does not belong to user.');
+  await Messages.findByIdAndDelete(messageId);
+  return 'delete';
+};
+module.exports = { getUserChats, deleteUserMessage };

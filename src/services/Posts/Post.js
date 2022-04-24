@@ -16,8 +16,10 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const createPost = async ({ // expects form data
   userId, file, body, mediaIsSelfie, postId, gif,
 }) => {
+  const mediaType = file?.mimetype?.split('/')[0];
+  if (file && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
   // if posting video after the thumbnail and body have been posted.
-  if (file && postId && file.mimetype.split('/')[0] === 'video') {
+  if (file && postId && mediaType === 'video') {
     const post = await Posts.findById(postId);
     if (!post) {
       throw new Error('Post does not exist.');
@@ -38,7 +40,7 @@ const createPost = async ({ // expects form data
     await Posts.findByIdAndUpdate(postId, {
       mediaUrl,
       mediaMimeType: file.mimetype.split('/')[1] || file.mimetype,
-      mediaType: file.mimetype.split('/')[0],
+      mediaType,
       mediaKey: fileObj.key,
       private: false,
       ready: true,
@@ -73,7 +75,7 @@ const createPost = async ({ // expects form data
     } else {
       post.mediaUrl = mediaUrl;
       post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
-      post.mediaType = file.mimetype.split('/')[0];
+      post.mediaType = mediaType;
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaKey = fileObj.key;
       post.ready = true;
