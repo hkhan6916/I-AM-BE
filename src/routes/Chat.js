@@ -65,7 +65,50 @@ router.post('/chat/exists', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/chat/upload', [verifyAuth, fileUpload({
+router.post('/chat/message/upload', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
+  let success = true;
+  let message = 'File uploaded and sent message.';
+  let data = {};
+
+  try {
+    data = await uploadFileAndSendMessage(req.body, req.files?.file);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/chat/message/fail', [verifyAuth, fileUpload({
+  abortOnLimit: true,
+  limits: { fileSize: 50 * 1024 * 1024 },
+})], async (req, res) => {
+  let success = true;
+  let message = 'File uploaded and sent message.';
+  let data = {};
+
+  try {
+    data = await uploadFileAndSendMessage(req.body, req.files?.file);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.post('/chat/message/cancel', [verifyAuth, fileUpload({
   abortOnLimit: true,
   limits: { fileSize: 50 * 1024 * 1024 },
 })], async (req, res) => {

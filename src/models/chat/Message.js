@@ -18,6 +18,10 @@ const MessagesSchema = new Schema({
   thumbnailUrl: {
     type: String,
   },
+  ready: {
+    type: Boolean,
+  },
+  cancelled: { type: Boolean },
   mediaType: {
     type: String,
   },

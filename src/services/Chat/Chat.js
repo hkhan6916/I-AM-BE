@@ -167,7 +167,6 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
 const uploadFileAndSendMessage = async (message, file) => {
   if (!message) throw new Error('No message provided.');
   const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
-  console.log(fileUrl, fileHeaders, signedUrl);
   const socket = io('ws://192.168.5.101:5000', {
     auth: {
       token: message.auth,
@@ -177,7 +176,7 @@ const uploadFileAndSendMessage = async (message, file) => {
   });
 
   socket.emit('sendMessage', {
-    ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: fileUrl,
+    ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: fileUrl, online: message.online === 'true', // can only send string via background upload
   });
   return {
     fileUrl, fileHeaders, signedUrl, ...message,
