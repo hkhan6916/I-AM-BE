@@ -87,7 +87,7 @@ router.post('/chat/message/upload', [verifyAuth, fileUpload({
   });
 });
 
-router.post('/chat/message/fail', [verifyAuth, fileUpload({
+router.post('/chat/message/fail', [verifyAuth, fileUpload({ // TODO
   abortOnLimit: true,
   limits: { fileSize: 50 * 1024 * 1024 },
 })], async (req, res) => {
@@ -108,7 +108,7 @@ router.post('/chat/message/fail', [verifyAuth, fileUpload({
     data,
   });
 });
-router.post('/chat/message/cancel', [verifyAuth, fileUpload({
+router.post('/chat/message/cancel', [verifyAuth, fileUpload({ // TODO
   abortOnLimit: true,
   limits: { fileSize: 50 * 1024 * 1024 },
 })], async (req, res) => {

@@ -27,18 +27,21 @@ module.exports = (io, pid) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl,
+      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl, thumbnailUrl, thumbnailHeaders,
     }) => {
+      console.log({ test: { thumbnailUrl, thumbnailHeaders } });
       if (!body && !mediaUrl) return;
       const message = new Messages({
         body,
         chatId,
         senderId,
         mediaUrl: mediaUrl || null,
+        thumbnailUrl: thumbnailUrl || null,
         mediaType: mediaType || null,
         mediaHeaders: mediaHeaders || null,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
+        ready: true,
       });
       message.save();
       if (!socket.user) {
@@ -63,6 +66,8 @@ module.exports = (io, pid) => {
         mediaType: mediaType || null,
         mediaHeaders: mediaHeaders || null,
         signedMediaUrl: signedUrl || null,
+        thumbnailUrl,
+        thumbnailHeaders,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
         user: {

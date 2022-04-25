@@ -165,22 +165,39 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
 };
 
 const uploadFileAndSendMessage = async (message, file) => {
-  if (!message) throw new Error('No message provided.');
-  const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+  if (!message) throw new Error('No message provided');
+  if (!file) throw new Error('No file provided');
   const socket = io('ws://192.168.5.101:5000', {
     auth: {
-      token: message.auth,
+      token: message?.auth,
     },
     withCredentials: true,
     transports: ['websocket'],
   });
+  console.log({ message });
+  if (file.name.includes('mediaThumbnail')) {
+    const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+    console.log({ fileUrl, fileHeaders, signedUrl });
+    // We don't send message is not ready yet
 
-  socket.emit('sendMessage', {
-    ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: fileUrl, online: message.online === 'true', // can only send string via background upload
-  });
-  return {
-    fileUrl, fileHeaders, signedUrl, ...message,
-  };
+    // socket.emit('sendMessage', {
+    //   // can only send string via background upload so had to do message.online === 'true'
+    //   ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: '', online: message.online === 'true', thumbnailUrl: fileUrl, thumbnailHeaders: fileHeaders,
+    // });
+    return {
+      fileUrl, fileHeaders, signedUrl, ...message,
+    };
+  }
+  if (message._id) { // mark as ready as media now uploaded.
+    const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+    console.log({ fileUrl, fileHeaders, signedUrl }); // can only send string via background upload so had to do message.online === 'true'
+    socket.emit('sendMessage', {
+      ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: '', online: message.online === 'true', thumbnailUrl: fileUrl, thumbnailHeaders: fileHeaders,
+    });
+    return {
+      fileUrl, fileHeaders, signedUrl, ...message,
+    };
+  }
 };
 
 module.exports = {

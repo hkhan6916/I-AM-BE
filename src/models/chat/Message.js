@@ -21,7 +21,12 @@ const MessagesSchema = new Schema({
   ready: {
     type: Boolean,
   },
-  cancelled: { type: Boolean },
+  failed: {
+    type: Boolean,
+  },
+  cancelled: {
+    type: Boolean,
+  },
   mediaType: {
     type: String,
   },
