@@ -6,6 +6,8 @@ const User = require('../../models/user/User');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const uploadFile = require('../../helpers/uploadFile');
+const getNameDate = require('../../helpers/getNameDate');
+const get12HourTime = require('../../helpers/get12HourTime');
 
 const getChatMessages = async (chatId, offset, userId) => {
   const messages = await Messages.aggregate([
@@ -167,33 +169,63 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
 const uploadFileAndSendMessage = async (message, file) => {
   if (!message) throw new Error('No message provided');
   if (!file) throw new Error('No file provided');
-  const socket = io('ws://192.168.5.101:5000', {
+  const socket = io('ws://192.168.5.101:5000', { // Todo: change to secret from env
     auth: {
       token: message?.auth,
     },
     withCredentials: true,
     transports: ['websocket'],
   });
-  console.log({ message });
+
   if (file.name.includes('mediaThumbnail')) {
     const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
-    console.log({ fileUrl, fileHeaders, signedUrl });
-    // We don't send message is not ready yet
 
-    // socket.emit('sendMessage', {
-    //   // can only send string via background upload so had to do message.online === 'true'
-    //   ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: '', online: message.online === 'true', thumbnailUrl: fileUrl, thumbnailHeaders: fileHeaders,
-    // });
+    const newMessage = new Messages({
+      thumbnailUrl: fileUrl,
+      stringDate: getNameDate(new Date()),
+      stringTime: get12HourTime(new Date()),
+      chatId: message.chatId,
+      senderId: message.senderId,
+      mediaType: 'video',
+      body: message.body,
+      ready: false,
+    });
+    newMessage.save();
     return {
-      fileUrl, fileHeaders, signedUrl, ...message,
+      fileUrl,
+      fileHeaders,
+      signedUrl,
+      ...message,
+      ...newMessage.toObject(),
     };
   }
   if (message._id) { // mark as ready as media now uploaded.
     const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
-    console.log({ fileUrl, fileHeaders, signedUrl }); // can only send string via background upload so had to do message.online === 'true'
-    socket.emit('sendMessage', {
-      ...message, mediaHeaders: fileHeaders, signedUrl, mediaUrl: '', online: message.online === 'true', thumbnailUrl: fileUrl, thumbnailHeaders: fileHeaders,
+    const existingMessage = await Messages.findById(message._id);
+    existingMessage.mediaUrl = fileUrl;
+    existingMessage.ready = true;
+    existingMessage.save();
+    const existingMessageObj = existingMessage.toObject();
+    const user = await User.findById(existingMessage.senderId);
+    socket.emit('forwardServerSideMessage', {
+      chatId: existingMessageObj.chatId.toString(),
+      message: {
+        ...existingMessageObj,
+        mediaUrl: fileUrl,
+        mediaHeaders: fileHeaders,
+        online: message.online === 'true', // can only send string via background upload
+        thumbnailUrl: fileUrl,
+        thumbnailHeaders: fileHeaders,
+        signedMediaUrl: signedUrl,
+        user: {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          username: user.username,
+          _id: user._id,
+        },
+      },
     });
+
     return {
       fileUrl, fileHeaders, signedUrl, ...message,
     };

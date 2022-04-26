@@ -26,11 +26,34 @@ module.exports = (io, pid) => {
       socket.chatId = chatId;
     });
 
+    socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
+      socket.to(chatId).emit('receiveMessage', message);
+      // await sendNotificationToRecipiants(senderId, chatId, body);
+    });
+
     socket.on('sendMessage', async ({
-      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl, thumbnailUrl, thumbnailHeaders,
+      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl, thumbnailUrl, thumbnailHeaders, messageOverride,
     }) => {
-      console.log({ test: { thumbnailUrl, thumbnailHeaders } });
-      if (!body && !mediaUrl) return;
+      // const messageInfo = {
+      //   body,
+      //   chatId,
+      //   senderId,
+      //   mediaUrl: mediaUrl || null,
+      //   thumbnailUrl: thumbnailUrl || null,
+      //   mediaType: mediaType || null,
+      //   mediaHeaders: mediaHeaders || null,
+      //   stringDate: getNameDate(new Date()),
+      //   stringTime: get12HourTime(new Date()),
+      //   ready: true,
+      // };
+      // console.log({ test: { thumbnailUrl, thumbnailHeaders } });
+      // if (!body && !mediaUrl) return;
+      // if (messageOverride) {
+      //   Object.keys(messageInfo).forEach((key) => {
+      //     messageOverride[key] = messageInfo[key];
+      //   });
+      // }
+      // const message = messageOverride || new Messages(messageInfo);
       const message = new Messages({
         body,
         chatId,
@@ -55,7 +78,7 @@ module.exports = (io, pid) => {
       }
 
       const {
-        firstName, lastName, username, _id,
+        firstName, lastName, username, _id: userId,
       } = socket.user;
 
       socket.to(chatId).emit('receiveMessage', {
@@ -70,11 +93,13 @@ module.exports = (io, pid) => {
         thumbnailHeaders,
         stringDate: getNameDate(new Date()),
         stringTime: get12HourTime(new Date()),
+        ready: true,
+        _id: message.toObject()._id,
         user: {
           firstName,
           lastName,
           username,
-          _id,
+          _id: userId,
         },
       });
       await sendNotificationToRecipiants(senderId, chatId, body);

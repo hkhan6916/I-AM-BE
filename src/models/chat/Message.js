@@ -20,6 +20,7 @@ const MessagesSchema = new Schema({
   },
   ready: {
     type: Boolean,
+    default: false,
   },
   failed: {
     type: Boolean,
