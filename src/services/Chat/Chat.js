@@ -213,6 +213,7 @@ const uploadFileAndSendMessage = async (message, file) => {
       chatId: existingMessageObj.chatId.toString(),
       message: {
         ...existingMessageObj,
+        thumbnailHeaders: getFileSignedHeaders(existingMessageObj.thumbnailUrl),
         mediaUrl: signedUrl,
         mediaHeaders: fileHeaders,
         online: message.online === 'true', // can only send string via background upload
@@ -233,7 +234,6 @@ const uploadFileAndSendMessage = async (message, file) => {
   const {
     fileUrl, fileHeaders, signedUrl, fileType,
   } = await uploadFile(file);
-
   const newMessage = new Messages({
     mediaUrl: fileUrl,
     stringDate: getNameDate(new Date()),
@@ -245,6 +245,23 @@ const uploadFileAndSendMessage = async (message, file) => {
     ready: true,
   });
   newMessage.save();
+  const user = await User.findById(message.senderId);
+
+  socket.emit('forwardServerSideMessage', {
+    chatId: newMessage.toObject().chatId.toString(),
+    message: {
+      ...message,
+      ...newMessage.toObject(),
+      mediaUrl: fileUrl,
+      mediaHeaders: fileHeaders,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        _id: user._id,
+      },
+    },
+  });
   return {
     mediaUrl: fileUrl,
     mediaHeaders: fileHeaders,

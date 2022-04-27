@@ -27,13 +27,13 @@ module.exports = async (file, preventCleanup) => {
     ACL: 'private',
   };
 
-  // await awsConnection.putObject(fileParams, async (err, pres) => {
-  //   if (err) {
-  //     console.log(err);
-  //     await tmpCleanup();
-  //     awsConnection.deleteObject(fileParams);
-  //   }
-  // }).promise();
+  await awsConnection.putObject(fileParams, async (err, pres) => {
+    if (err) {
+      console.log(err);
+      await tmpCleanup();
+      awsConnection.deleteObject(fileParams);
+    }
+  }).promise();
   const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key.replace(/ /g, '')}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = fileType !== 'video' ? getFileSignedHeaders(fileUrl) : null;
 
