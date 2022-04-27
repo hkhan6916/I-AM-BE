@@ -64,6 +64,7 @@ const getChatMessages = async (chatId, offset, userId) => {
       }
       if (message.mediaType === 'video') {
         message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
+        message.thumbnailHeaders = getFileSignedHeaders(message.thumbnailUrl);
       }
     }
   });
@@ -169,6 +170,7 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
 const uploadFileAndSendMessage = async (message, file) => {
   if (!message) throw new Error('No message provided');
   if (!file) throw new Error('No file provided');
+
   const socket = io('ws://192.168.5.101:5000', { // Todo: change to secret from env
     auth: {
       token: message?.auth,
@@ -211,12 +213,9 @@ const uploadFileAndSendMessage = async (message, file) => {
       chatId: existingMessageObj.chatId.toString(),
       message: {
         ...existingMessageObj,
-        mediaUrl: fileUrl,
+        mediaUrl: signedUrl,
         mediaHeaders: fileHeaders,
         online: message.online === 'true', // can only send string via background upload
-        thumbnailUrl: fileUrl,
-        thumbnailHeaders: fileHeaders,
-        signedMediaUrl: signedUrl,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,
@@ -230,8 +229,41 @@ const uploadFileAndSendMessage = async (message, file) => {
       fileUrl, fileHeaders, signedUrl, ...message,
     };
   }
+
+  const {
+    fileUrl, fileHeaders, signedUrl, fileType,
+  } = await uploadFile(file);
+
+  const newMessage = new Messages({
+    mediaUrl: fileUrl,
+    stringDate: getNameDate(new Date()),
+    stringTime: get12HourTime(new Date()),
+    chatId: message.chatId,
+    senderId: message.senderId,
+    mediaType: fileType,
+    body: message.body,
+    ready: true,
+  });
+  newMessage.save();
+  return {
+    mediaUrl: fileUrl,
+    mediaHeaders: fileHeaders,
+    signedUrl,
+    ...message,
+    ...newMessage.toObject(),
+  };
+};
+
+const cancelMessageUpload = async (messageId, userId) => {
+  if (!messageId || !userId) throw new Error('messageId or userId missing');
+  const message = await Messages.findById(messageId);
+  if (message.senderId.toString() !== userId) {
+    throw new Error('Message does not belong to this user.');
+  }
+  await Messages.findByIdAndDelete(messageId);
+  return 'deleted';
 };
 
 module.exports = {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage,
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage, cancelMessageUpload,
 };

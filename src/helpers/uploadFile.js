@@ -4,6 +4,8 @@ const getFileSignedHeaders = require('./getFileSignedHeaders');
 const tmpCleanup = require('./tmpCleanup');
 
 module.exports = async (file, preventCleanup) => {
+  const fileType = file.mimetype?.split('/')[0];
+  if (fileType !== 'image' && fileType !== 'video') throw new Error('File must be image or video');
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
   const credentials = {
@@ -32,7 +34,6 @@ module.exports = async (file, preventCleanup) => {
   //     awsConnection.deleteObject(fileParams);
   //   }
   // }).promise();
-  const fileType = file.mimetype?.split('/')[0];
   const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key.replace(/ /g, '')}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = fileType !== 'video' ? getFileSignedHeaders(fileUrl) : null;
 
@@ -41,6 +42,6 @@ module.exports = async (file, preventCleanup) => {
     await tmpCleanup();
   }
   return {
-    fileUrl, fileHeaders, key: fileParams.Key, signedUrl: fileType === 'video' ? getCloudfrontSignedUrl(fileParams.Key) : null,
+    fileUrl, fileHeaders, key: fileParams.Key, signedUrl: fileType === 'video' ? getCloudfrontSignedUrl(fileParams.Key) : null, fileType,
   };
 };

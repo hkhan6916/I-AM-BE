@@ -5,7 +5,7 @@ const fileUpload = require('express-fileupload');
 const verifyAuth = require('../middleware/auth');
 
 const {
-  getChatMessages, createChat, checkChatExists, uploadFileAndSendMessage,
+  getChatMessages, createChat, checkChatExists, uploadFileAndSendMessage, cancelMessageUpload,
 } = require('../services/Chat/Chat');
 
 router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
@@ -108,16 +108,14 @@ router.post('/chat/message/fail', [verifyAuth, fileUpload({ // TODO
     data,
   });
 });
-router.post('/chat/message/cancel', [verifyAuth, fileUpload({ // TODO
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-})], async (req, res) => {
-  let success = true;
-  let message = 'File uploaded and sent message.';
-  let data = {};
 
+router.get('/chat/message/cancel/:messageId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Message file upload cancelled.';
+  let data = {};
+  const { messageId } = req.params;
   try {
-    data = await uploadFileAndSendMessage(req.body, req.files?.file);
+    data = await cancelMessageUpload(messageId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
