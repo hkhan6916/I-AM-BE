@@ -137,6 +137,7 @@ const createChat = async (participants, hostId) => {
 
   const chat = new Chat({
     participants: sortedParticpants,
+    upToDateUsers: [hostId],
   });
 
   chat.save();
@@ -156,12 +157,14 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
   const chat = await Chat.findById(chatId);
   if (userIsOnline) {
     const shouldUpdate = chat.upToDateUsers.find((id) => id !== userId.toString());
+    console.log({ shouldUpdate });
     chat.upToDateUsers = shouldUpdate ? [...chat.upToDateUsers, userId] : chat.upToDateUsers;
   } else {
-    const index = chat.upToDateUsers.indexOf(userId);
-    if (index > -1) {
-      chat.upToDateUsers.splice(index, 1); // 2nd parameter means remove one item only
-    }
+    chat.upToDateUsers = chat.upToDateUsers.filter((id) => id !== userId);
+    // const index = chat.upToDateUsers.indexOf(userId);
+    // if (index > -1) {
+    //   chat.upToDateUsers.splice(index, 1); // 2nd parameter means remove one item only
+    // }
   }
   chat.save();
   return true;
@@ -181,7 +184,7 @@ const uploadFileAndSendMessage = async (message, file) => {
 
   if (file.name.includes('mediaThumbnail')) {
     const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
-
+    console.log(message.senderId);
     const newMessage = new Messages({
       thumbnailUrl: fileUrl,
       stringDate: getNameDate(new Date()),

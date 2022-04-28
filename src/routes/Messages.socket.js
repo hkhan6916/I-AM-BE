@@ -27,7 +27,6 @@ module.exports = (io, pid) => {
     });
 
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
-      console.log(message);
       socket.to(chatId).emit('receiveMessage', message);
       // await sendNotificationToRecipiants(senderId, chatId, body);
     });

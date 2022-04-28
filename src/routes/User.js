@@ -29,7 +29,7 @@ const {
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
-const { getUserChats, deleteUserMessage } = require('../services/User/Chat');
+const { getUserChats, deleteUserMessage, getUserChat } = require('../services/User/Chat');
 const { updateNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
 const { tmpCleanup } = require('../helpers');
@@ -419,6 +419,25 @@ router.get('/user/chats/:offset', verifyAuth, async (req, res) => {
   const { offset } = req.params;
   try {
     data = await getUserChats(req.user.id, parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/chat/:chatId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User chats fetched.';
+  let data = {};
+  const { chatId } = req.params;
+  try {
+    data = await getUserChat(chatId, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

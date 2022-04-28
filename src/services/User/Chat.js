@@ -2,6 +2,7 @@ const { ObjectId } = require('mongoose').Types;
 const Chat = require('../../models/chat/Chat');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const Messages = require('../../models/chat/Message');
+const User = require('../../models/user/User');
 
 const getUserChats = async (userId, offset) => {
   const chats = await Chat.aggregate([
@@ -94,6 +95,17 @@ const getUserChats = async (userId, offset) => {
   return chats;
 };
 
+const getUserChat = async (chatId, userId) => {
+  const chat = await Chat.findById(chatId);
+  if (!chat) {
+    throw new Error('Chat does not exist');
+  }
+  if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
+  const users = await User.find({ _id: { $in: chat.participants } });
+
+  return { ...chat, users };
+};
+
 const deleteUserMessage = async (messageId, userId) => { // just here, don't need it as won't be allowing users to delete messages
   const message = await Messages.findById(messageId);
   if (message?.userId.toString() !== userId) throw new Error('Message does not belong to user.');
@@ -101,4 +113,4 @@ const deleteUserMessage = async (messageId, userId) => { // just here, don't nee
   return 'delete';
 };
 
-module.exports = { getUserChats, deleteUserMessage };
+module.exports = { getUserChats, deleteUserMessage, getUserChat };
