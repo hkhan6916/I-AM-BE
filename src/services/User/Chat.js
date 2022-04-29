@@ -101,9 +101,9 @@ const getUserChat = async (chatId, userId) => {
     throw new Error('Chat does not exist');
   }
   if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
-  const users = await User.find({ _id: { $in: chat.participants } });
+  const users = await User.find({ _id: { $in: chat.participants } }, { firstName: 1, lastName: 1, username: 1 });
 
-  return { ...chat, users };
+  return { ...chat.toObject(), users };
 };
 
 const deleteUserMessage = async (messageId, userId) => { // just here, don't need it as won't be allowing users to delete messages

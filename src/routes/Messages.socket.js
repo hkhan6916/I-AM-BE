@@ -28,7 +28,9 @@ module.exports = (io, pid) => {
 
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
       socket.to(chatId).emit('receiveMessage', message);
-      // await sendNotificationToRecipiants(senderId, chatId, body);
+      if (!message.online) {
+        await sendNotificationToRecipiants(message.senderId, chatId, message.body || (message.mediaType ? `sent ${message.mediaType}` : null) || '');
+      }
     });
 
     socket.on('sendMessage', async ({
@@ -102,7 +104,9 @@ module.exports = (io, pid) => {
           _id: userId,
         },
       });
-      await sendNotificationToRecipiants(senderId, chatId, body);
+      if (!userIsOnline) {
+        await sendNotificationToRecipiants(senderId, chatId, body);
+      }
     });
   });
 };
