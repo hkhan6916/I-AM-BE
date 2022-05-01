@@ -10,13 +10,16 @@ const { updateChatUpToDateUsers } = require('../services/Chat/Chat');
 module.exports = (io, pid) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
     socket.on('disconnect', () => {
-      console.log('disconnect');
-      deleteChatSession(socket.user._id, socket.chatId);
+      // deleteChatSession(socket.user._id, socket.chatId);
+      socket.userIsOnline = false;
+
       socket.to(socket.chatId).emit('userLeftRoom', { userId: socket.user._id });
     });
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
-      createChatSession(userId, chatId);
+      socket.userIsOnline = true;
+
+      // createChatSession(userId, chatId);
       socket.join(chatId);
       socket.emit('joinRoomSuccess', { chatId, userId });
       socket.to(chatId).emit('userJoinedRoom', { userId });
@@ -27,7 +30,7 @@ module.exports = (io, pid) => {
     });
 
     socket.on('sendUserOnlineStatus', async ({ chatId, userId }) => {
-      socket.to(chatId).emit('receiveUserOnlineStatus', { userId }); // braod cast?
+      socket.to(chatId).emit('receiveUserOnlineStatus', { userId });
     });
 
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
@@ -38,28 +41,8 @@ module.exports = (io, pid) => {
     });
 
     socket.on('sendMessage', async ({
-      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl, thumbnailUrl, thumbnailHeaders, messageOverride,
+      body, chatId, senderId, recipientId, mediaUrl, mediaType, mediaHeaders, online: userIsOnline, signedUrl, thumbnailUrl, thumbnailHeaders,
     }) => {
-      // const messageInfo = {
-      //   body,
-      //   chatId,
-      //   senderId,
-      //   mediaUrl: mediaUrl || null,
-      //   thumbnailUrl: thumbnailUrl || null,
-      //   mediaType: mediaType || null,
-      //   mediaHeaders: mediaHeaders || null,
-      //   stringDate: getNameDate(new Date()),
-      //   stringTime: get12HourTime(new Date()),
-      //   ready: true,
-      // };
-      // console.log({ test: { thumbnailUrl, thumbnailHeaders } });
-      // if (!body && !mediaUrl) return;
-      // if (messageOverride) {
-      //   Object.keys(messageInfo).forEach((key) => {
-      //     messageOverride[key] = messageInfo[key];
-      //   });
-      // }
-      // const message = messageOverride || new Messages(messageInfo);
       const message = new Messages({
         body,
         chatId,
@@ -79,7 +62,6 @@ module.exports = (io, pid) => {
         socket.user = user;
       }
       if (userIsOnline !== socket.userIsOnline) {
-        socket.userIsOnline = userIsOnline;
         updateChatUpToDateUsers(recipientId, socket.chatId, userIsOnline);
       }
 

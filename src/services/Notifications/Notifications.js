@@ -1,7 +1,6 @@
 const { Expo } = require('expo-server-sdk');
 const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
-const ChatSession = require('../../models/chat/ChatSession');
 
 const expo = new Expo();
 

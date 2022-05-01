@@ -73,7 +73,13 @@ const getChatMessages = async (chatId, offset, userId) => {
   if (!offset) {
     const chat = await Chat.findById(chatId);
     const userIsAlreadyUptoDate = chat.upToDateUsers.find((id) => id === userId);
-    chat.upToDateUsers = userIsAlreadyUptoDate ? chat.upToDateUsers : [...chat.upToDateUsers, userId];
+    if (!userIsAlreadyUptoDate) {
+      chat.upToDateUsers = [...chat.upToDateUsers, userId];
+      const user = await User.findById(userId);
+
+      user.unreadChatsCount = user.unreadChatsCount > 0 ? user.unreadChatsCount - 1 : user.unreadChatsCount;
+      user.save();
+    }
     chat.save();
   }
 
@@ -155,17 +161,21 @@ const checkChatExists = async (participants) => {
 const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
   if (!userId || !chatId) return false;
   const chat = await Chat.findById(chatId);
+  const user = await User.findById(userId);
   if (userIsOnline) {
-    const shouldUpdate = chat.upToDateUsers.find((id) => id !== userId.toString());
-    console.log({ shouldUpdate });
-    chat.upToDateUsers = shouldUpdate ? [...chat.upToDateUsers, userId] : chat.upToDateUsers;
+    const userIsUptoDate = chat.upToDateUsers.find((id) => id === userId.toString());
+    if (!userIsUptoDate) {
+      user.unreadChatsCount -= 1;
+      chat.upToDateUsers = [...chat.upToDateUsers, userId];
+    }
   } else {
-    chat.upToDateUsers = chat.upToDateUsers.filter((id) => id !== userId);
-    // const index = chat.upToDateUsers.indexOf(userId);
-    // if (index > -1) {
-    //   chat.upToDateUsers.splice(index, 1); // 2nd parameter means remove one item only
-    // }
+    const userWasPreviouslyUptoDate = chat.upToDateUsers.find((id) => id === userId.toString());
+    if (userWasPreviouslyUptoDate) { // makes sure we don't increment unreadChatsCount on every new message, only once
+      user.unreadChatsCount += 1; // increase number of unread chats for user as they have new messages now
+      chat.upToDateUsers = chat.upToDateUsers.filter((id) => id !== userId); // mark the user as no longer upto date
+    }
   }
+  user.save();
   chat.save();
   return true;
 };
@@ -184,7 +194,6 @@ const uploadFileAndSendMessage = async (message, file) => {
 
   if (file.name.includes('mediaThumbnail')) {
     const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
-    console.log(message.senderId);
     const newMessage = new Messages({
       thumbnailUrl: fileUrl,
       stringDate: getNameDate(new Date()),
