@@ -7,7 +7,7 @@ const ChatSchema = new Schema({
     type: Array,
     validate: [validateArrayLimit, 'Chats must have 2 participants.'],
   },
-  upToDateUsers: { // what if user is offline? Can't send request then. Should be fine. Will show some modal or splashscreen when user is not connected to wifi.
+  upToDateUsers: { // TODO: what if user is offline? Can't send request then. Should be fine. Will show some modal or splashscreen when user is not connected to wifi.
     type: Array,
     default: [],
   },

@@ -18,12 +18,16 @@ module.exports = (io, pid) => {
     socket.on('joinRoom', async ({ chatId, userId }) => {
       createChatSession(userId, chatId);
       socket.join(chatId);
-      socket.emit('joinRoomSuccess', { chatId });
+      socket.emit('joinRoomSuccess', { chatId, userId });
       socket.to(chatId).emit('userJoinedRoom', { userId });
       const user = await User.findById(userId);
 
       socket.user = user;
       socket.chatId = chatId;
+    });
+
+    socket.on('sendUserOnlineStatus', async ({ chatId, userId }) => {
+      socket.to(chatId).emit('receiveUserOnlineStatus', { userId }); // braod cast?
     });
 
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
