@@ -293,6 +293,17 @@ const cancelMessageUpload = async (messageId, userId) => {
   return 'deleted';
 };
 
+const failMessageUpload = async (messageId, userId) => {
+  if (!messageId || !userId) throw new Error('messageId or userId missing');
+  const message = await Messages.findById(messageId);
+  if (message.senderId.toString() !== userId) {
+    throw new Error('Message does not belong to this user.');
+  }
+  message.failed = true;
+  message.save();
+  return 'Marked message as failed';
+};
+
 module.exports = {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage, cancelMessageUpload,
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage, cancelMessageUpload, failMessageUpload,
 };
