@@ -43,7 +43,7 @@ const loginUser = async (identifier, password) => {
 };
 
 const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, file, notificationToken,
+  username, email, plainTextPassword, firstName, lastName, file, notificationToken, jobTitle,
 }) => {
   if (!file) {
     throw new Error('No video profile provided');
@@ -58,10 +58,11 @@ const registerUser = async ({
       .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string().required(),
     notificationToken: string().required(),
+    jobTitle: string().required(),
   });
 
   await schema.validate({
-    username, firstName, lastName, email, password: plainTextPassword, notificationToken,
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle,
   }).catch((err) => {
     if (err.errors?.length) {
       throw new Error(err.errors[0]);
@@ -117,6 +118,7 @@ const registerUser = async ({
     profileVideoUrl,
     profileGifUrl,
     notificationToken,
+    jobTitle,
   });
   return { registered: true, profileVideoUrl };
 };

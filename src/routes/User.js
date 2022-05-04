@@ -60,7 +60,7 @@ router.post('/user/register', fileUpload({
   limits: { fileSize: 50 * 1024 * 1024 },
 }), async (req, res) => {
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle,
   } = req.body;
   let success = true;
   let message = 'User created.';
@@ -69,7 +69,7 @@ router.post('/user/register', fileUpload({
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken,
+      username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken, jobTitle,
     });
   } catch (e) {
     await tmpCleanup();

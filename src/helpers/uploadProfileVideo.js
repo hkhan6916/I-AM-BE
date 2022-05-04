@@ -44,7 +44,6 @@ module.exports = async (file) => {
   if (!profileGifBuffer) {
     throw new Error('Could not generate a profile gif.');
   }
-  console.log(profileGifBuffer);
 
   if (!profileGifBuffer) {
     throw new Error('Unable to get profile gif buffer.');
