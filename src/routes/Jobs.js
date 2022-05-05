@@ -5,7 +5,7 @@ const verifyAuth = require('../middleware/auth');
 
 const { searchJobTitle } = require('../services/Jobs/JobTitle');
 
-router.get('/jobs/search/:searchVal', verifyAuth, async (req, res) => {
+router.get('/jobs/search/:searchVal', async (req, res) => {
   let success = true;
   let message = 'Job titles found.';
   let data = {};
