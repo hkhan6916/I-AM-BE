@@ -10,6 +10,7 @@ const {
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
+const UserReports = require('../../models/user/UserReports');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -805,6 +806,30 @@ const toggleFollowersMode = async (userId) => {
   return { followersMode: user.followersMode };
 };
 
+const reportUser = async (reporterId, userToReportId, reason) => {
+  const userToReport = await User.findById(userToReportId);
+  if (!userToReport) throw new Error('User to report does not exist');
+
+  const reporter = await User.findById(reporterId);
+  if (!reporter) throw new Error('User does not exist');
+
+  // const existingReport = await UserReports.findOne({ reporterId, userId: userToReportId });
+  // if (existingReport) {
+  //   return existingReport;
+  // }
+
+  const report = new UserReports({ reporterId, userId: userToReportId, reason });
+  if (userToReport.reportsCount >= (userToReport.numberOfFriendsAsReceiver / 6)) {
+    userToReport.underWatch = true;
+  }
+  userToReport.reportsCount += 1;
+
+  report.save();
+  userToReport.save();
+
+  return { report, underWatch: userToReport.underWatch };
+};
+
 module.exports = {
   loginUser,
   registerUser,
@@ -817,4 +842,5 @@ module.exports = {
   deleteUser,
   changeAccountVisibility,
   toggleFollowersMode,
+  reportUser,
 };

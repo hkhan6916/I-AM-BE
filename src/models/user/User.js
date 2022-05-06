@@ -97,5 +97,12 @@ const UserSchema = new Schema({
     type: Number,
     default: 0,
   },
+  reportsCount: {
+    type: Number,
+    default: 0,
+  },
+  underWatch: {
+    type: Boolean,
+  },
 });
 module.exports = model('Users', UserSchema);

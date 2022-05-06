@@ -16,7 +16,6 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const createPost = async ({ // expects form data
   userId, file, body, mediaIsSelfie, postId, gif,
 }) => {
-  console.log(file);
   const mediaType = file?.mimetype?.split('/')[0];
   if (file && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
   // if posting video after the thumbnail and body have been posted.
@@ -65,6 +64,7 @@ const createPost = async ({ // expects form data
       throw new Error('File could not be uploaded.');
     }
     const mediaUrl = fileObj.fileUrl;
+    console.log({ file });
     if (file.name.includes('mediaThumbnail')) {
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;

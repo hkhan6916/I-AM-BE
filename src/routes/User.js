@@ -19,6 +19,7 @@ const {
   deleteUser,
   changeAccountVisibility,
   toggleFollowersMode,
+  reportUser,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -575,6 +576,25 @@ router.get('/user/followersmode/toggle', verifyAuth, async (req, res) => {
   let data = {};
   try {
     data = await toggleFollowersMode(req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/user/report', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User reported.';
+  let data = {};
+  const { userToReport, reason } = req.body;
+  try {
+    data = await reportUser(req.user.id, userToReport, reason);
   } catch (e) {
     success = false;
     message = e.message;
