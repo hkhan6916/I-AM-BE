@@ -52,7 +52,7 @@ router.post('/chat/exists', verifyAuth, async (req, res) => {
   let data = {};
   const { participants } = req.body;
   try {
-    data = await checkChatExists([...participants, req.user.id]);
+    data = await checkChatExists([...participants, req.user.id], req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
