@@ -31,7 +31,7 @@ const {
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
 const { getUserChats, deleteUserMessage, getUserChat } = require('../services/User/Chat');
-const { updateNotificationToken } = require('../services/User/Notifications');
+const { updateNotificationToken, deleteNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
 const { tmpCleanup } = require('../helpers');
 
@@ -477,6 +477,24 @@ router.post('/user/notifications/token/update', verifyAuth, async (req, res) => 
   const { notificationToken } = req.body;
   try {
     data = await updateNotificationToken(req.user.id, notificationToken);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/notifications/token/delete', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User notification token deleted.';
+  let data = {};
+  try {
+    data = await deleteNotificationToken(req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

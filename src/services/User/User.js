@@ -813,10 +813,10 @@ const reportUser = async (reporterId, userToReportId, reason) => {
   const reporter = await User.findById(reporterId);
   if (!reporter) throw new Error('User does not exist');
 
-  // const existingReport = await UserReports.findOne({ reporterId, userId: userToReportId });
-  // if (existingReport) {
-  //   return existingReport;
-  // }
+  const existingReport = await UserReports.findOne({ reporterId, userId: userToReportId });
+  if (existingReport) {
+    return existingReport;
+  }
 
   const report = new UserReports({ reporterId, userId: userToReportId, reason });
   if (userToReport.reportsCount >= (userToReport.numberOfFriendsAsReceiver / 6)) {

@@ -7,6 +7,16 @@ const updateNotificationToken = async (userId, notificationToken) => {
   return 'Notification token updated.';
 };
 
+const deleteNotificationToken = async (userId) => {
+  const user = await User.findById(userId);
+  if (user) {
+    user.notificationToken = '';
+    user.save();
+  }
+  return 'Notification token deleted.';
+};
+
 module.exports = {
   updateNotificationToken,
+  deleteNotificationToken,
 };

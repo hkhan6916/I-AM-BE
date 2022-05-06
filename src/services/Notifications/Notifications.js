@@ -12,7 +12,7 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const recipients = await User.find({ _id: { $in: chat.participants } });
   const sender = await User.findById(senderId);
   for (let i = 0; i < recipients.length; i += 1) {
-    if (recipients[i]._id.toString() !== senderId) {
+    if (recipients[i]._id.toString() !== senderId && recipients[i]?.notificationToken) {
       notifications.push({
         to: recipients[i].notificationToken,
         sound: 'default',
