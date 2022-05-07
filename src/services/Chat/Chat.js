@@ -91,9 +91,9 @@ const createChat = async (participants, hostId) => {
     throw new Error(`Chat room must have 2 participants but got ${participants.length}`);
   }
 
-  const sortedParticpants = participants.sort();
+  const sortedParticipants = participants.sort();
 
-  const exists = await Chat.findOne({ participants: sortedParticpants });
+  const exists = await Chat.findOne({ participants: sortedParticipants });
   if (exists) {
     const users = await User.aggregate([
       {
@@ -117,7 +117,7 @@ const createChat = async (participants, hostId) => {
       throw new Error('Participant does not exist.');
     }
 
-    return { _id: exists._id, participants: sortedParticpants, users };
+    return { _id: exists._id, participants: sortedParticipants, users };
   }
   const users = await User.aggregate([
     {
@@ -142,28 +142,28 @@ const createChat = async (participants, hostId) => {
   }
 
   const chat = new Chat({
-    participants: sortedParticpants,
+    participants: sortedParticipants,
     upToDateUsers: [hostId],
   });
 
   chat.save();
-  return { _id: chat._id, participants: sortedParticpants, users };
+  return { _id: chat._id, participants: sortedParticipants, users };
 };
 
 const checkChatExists = async (participants, userId) => {
-  const sortedParticpants = participants.sort();
+  const sortedParticipants = participants.sort();
 
-  const chat = await Chat.findOne({ participants: sortedParticpants });
-  if (chat) {
-    if (!chat) {
-      throw new Error('Chat does not exist');
-    }
-    if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
-    const users = await User.find({ _id: { $in: chat.participants } }, { firstName: 1, lastName: 1, username: 1 });
-
-    return { ...chat.toObject(), users };
+  const chat = await Chat.findOne({ participants: sortedParticipants });
+  if (!chat) {
+    throw new Error('Chat does not exist');
   }
-  return null;
+
+  if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
+  chat.participants = chat.participants.filter((id) => id !== userId);
+
+  const users = await User.find({ _id: { $in: chat.participants } }, { firstName: 1, lastName: 1, username: 1 });
+
+  return { ...chat.toObject(), users };
 };
 
 const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
