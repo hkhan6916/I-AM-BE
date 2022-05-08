@@ -5,7 +5,7 @@ const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 const {
-  uploadFile, deleteFile, tmpCleanup, getFileSignedHeaders,
+  uploadFile, deleteFile, getFileSignedHeaders,
 } = require('../../helpers');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
@@ -195,7 +195,6 @@ const updatePost = async ({ // expects form data
   if (typeof body === 'string') {
     postObj.body = body;
   }
-  await tmpCleanup();
 
   await Posts.findByIdAndUpdate(postId, postObj);
 

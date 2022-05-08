@@ -1,7 +1,6 @@
 const { S3 } = require('aws-sdk');
 const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
 const getFileSignedHeaders = require('./getFileSignedHeaders');
-const tmpCleanup = require('./tmpCleanup');
 
 module.exports = async (file) => {
   const fileType = file.mimetype?.split('/')[0];
@@ -29,7 +28,6 @@ module.exports = async (file) => {
 
   await awsConnection.putObject(fileParams, async (err, pres) => {
     if (err) {
-      await tmpCleanup();
       awsConnection.deleteObject(fileParams);
     }
   }).promise();

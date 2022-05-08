@@ -1,5 +1,4 @@
 const { S3 } = require('aws-sdk');
-const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
 const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
 
@@ -67,6 +66,5 @@ module.exports = async (file) => {
   const profileVideoUrl = `https://${profileVideoParams.Bucket}.s3.${region}.amazonaws.com/${profileVideoParams.Key}`;
   const profileGifUrl = `https://${profileGifParams.Bucket}.s3.${region}.amazonaws.com/${profileGifParams.Key}`;
 
-  await tmpCleanup();
   return { profileVideoUrl, profileGifUrl };
 };

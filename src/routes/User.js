@@ -33,7 +33,6 @@ const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
 const { getUserChats, deleteUserMessage, getUserChat } = require('../services/User/Chat');
 const { updateNotificationToken, deleteNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
-const { tmpCleanup } = require('../helpers');
 
 // const storage = multer.memoryStorage();
 
@@ -73,7 +72,6 @@ router.post('/user/register', fileUpload({
       username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken, jobTitle,
     });
   } catch (e) {
-    await tmpCleanup();
     success = false;
     other = e.validationErrors;
     if (e.exists) {
@@ -114,7 +112,6 @@ router.post('/user/generate', async (req, res) => {
       username, email, plainTextPassword, lastName, firstName, notificationToken,
     });
   } catch (e) {
-    await tmpCleanup();
     success = false;
     other = e.validationErrors;
     if (e.exists) {

@@ -6,7 +6,7 @@ const sgMail = require('@sendgrid/mail');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
 const {
-  uploadProfileVideo, deleteFile, tmpCleanup, getFileSignedHeaders, deleteMultipleFiles,
+  uploadProfileVideo, deleteFile, getFileSignedHeaders, deleteMultipleFiles,
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
@@ -578,7 +578,6 @@ const updateUserDetails = async ({ userId, file, details }) => {
       await Promise.allSettled([
         deleteFile(currentProfileGifKey),
         deleteFile(currentProfileVideoKey),
-        tmpCleanup(currentProfileVideoKey),
       ]);
     }
     return {
