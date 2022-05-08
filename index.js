@@ -6,7 +6,9 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
-const numCPUs = require('os').cpus().length;
+
+// const numCPUs = require('os').cpus().length;
+const numCPUs = process.env.NODE_ENV === 'development' ? require('os').cpus().length : process.env.WEB_CONCURRENCY || 1; // WEB_CONCURRENCY set by heroku when we specify env.WEB_MEMORY in mb. Defaults to 512mb TODO:set WEB_MEMORY in herkoku
 const { createAdapter } = require('@socket.io/redis-adapter');
 // const { setupMaster, setupWorker } = require('@socket.io/sticky');
 const { createAdapter: createClusterAdapter } = require('@socket.io/cluster-adapter');
