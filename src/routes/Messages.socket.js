@@ -64,7 +64,6 @@ module.exports = (io, pid) => {
       if (userIsOnline !== socket.userIsOnline) {
         updateChatUpToDateUsers(recipientId, socket.chatId, userIsOnline);
       }
-      console.log({ user: socket.user });
       const {
         firstName, lastName, username, _id: userId,
       } = socket.user;
