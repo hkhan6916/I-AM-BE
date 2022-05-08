@@ -192,7 +192,9 @@ const uploadFileAndSendMessage = async (message, file) => {
   if (!message) throw new Error('No message provided');
   if (!file) throw new Error('No file provided');
 
-  const socket = io('ws://192.168.5.101:5000', { // Todo: change to secret from env
+  const socket = io(__DEV__
+    ? 'ws://192.168.5.101:5000'
+    : 'wss://magnet-be.herokuapp.com', {
     auth: {
       token: message?.auth,
     },
