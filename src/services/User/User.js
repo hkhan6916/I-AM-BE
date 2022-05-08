@@ -50,6 +50,8 @@ const registerUser = async ({
     throw new Error('No video profile provided');
   }
 
+  if (file.mimetype.split('/')[0] !== 'video') throw new Error('Profile video must be of type video');
+
   const schema = object().shape({
     firstName: string().required(),
     lastName: string().required(),
@@ -84,7 +86,7 @@ const registerUser = async ({
   const usernameExists = await User.findOne({ usernameLowered: username.toLowerCase() });
 
   if (emailExists || usernameExists) {
-    const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'}`;
+    const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'} already exists.`;
     const error = new Error(message);
     error.validationErrors = {
       email: { exists: !!emailExists },

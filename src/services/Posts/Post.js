@@ -64,13 +64,13 @@ const createPost = async ({ // expects form data
       throw new Error('File could not be uploaded.');
     }
     const mediaUrl = fileObj.fileUrl;
-    console.log({ file });
     if (file.name.includes('mediaThumbnail')) {
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;
       post.thumbnailKey = fileObj.key;
       post.thumbnailUrl = mediaUrl;
       post.mediaUrl = null;
+      post.mediaIsSelfie = mediaIsSelfie;
       post.mediaType = 'video';
       post.ready = false;
     } else {
