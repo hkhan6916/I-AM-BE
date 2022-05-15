@@ -57,7 +57,7 @@ router.post('/user/login', async (req, res) => {
 
 router.post('/user/register', fileUpload({
   abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 70 * 1024 * 1024 },
 }), async (req, res) => {
   const {
     username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle,

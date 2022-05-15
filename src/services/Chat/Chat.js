@@ -155,10 +155,12 @@ const checkChatExists = async (participants, userId) => {
 
   const chat = await Chat.findOne({ participants: sortedParticipants });
   if (!chat) {
-    throw new Error('Chat does not exist');
+    // throw new Error('Chat does not exist');
+    return null;
   }
 
-  if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
+  if (!chat.participants.includes(userId)) return null;
+  // throw new Error('User is not a participant in this chat');
   chat.participants = chat.participants.filter((id) => id !== userId);
 
   const users = await User.find({ _id: { $in: chat.participants } }, { firstName: 1, lastName: 1, username: 1 });
