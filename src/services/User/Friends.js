@@ -3,6 +3,7 @@ const User = require('../../models/user/User');
 const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
+const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 
 const searchUser = async (username, offset) => {
   const searchQuery = username.toLowerCase();
@@ -460,6 +461,8 @@ const sendFriendRequest = async (userId, receiverId) => {
 
   user.numberOfFriendsAsRequester += 1;
   receiver.numberOfFriendsAsReceiver += 1;
+
+  await sendNotificationToSingleUser({ userId: receiver._id, title: `${user.firstName} would like to add you`, messageBody: `${user.firstName} would like to add you as a contact` });
 
   receiver.save();
   user.save();
