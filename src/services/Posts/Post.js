@@ -238,6 +238,7 @@ const getPost = async (postId, userId) => {
                     _id: 1,
                     username: 1,
                     profileGifUrl: 1,
+                    flipProfileVideo: 1,
                     firstName: 1,
                     lastName: 1,
                   },

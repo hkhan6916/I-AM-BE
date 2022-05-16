@@ -39,6 +39,7 @@ const getUserChats = async (userId, offset) => {
               firstName: 1,
               lastName: 1,
               profileGifUrl: 1,
+              flipProfileVideo: 1,
               username: 1,
             },
           },

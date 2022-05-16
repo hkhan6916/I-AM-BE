@@ -25,11 +25,9 @@ const UserSchema = new Schema({
   },
   profileVideoUrl: {
     type: String,
-    required: true,
   },
   profileGifUrl: {
     type: String,
-    required: true,
   },
   firstName: {
     type: String,
@@ -103,6 +101,10 @@ const UserSchema = new Schema({
   },
   underWatch: {
     type: Boolean,
+  },
+  flipProfileVideo: {
+    type: Boolean,
+    default: false,
   },
 });
 module.exports = model('Users', UserSchema);

@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { object, string } = require('yup');
+const { object, string, boolean } = require('yup');
 const sgMail = require('@sendgrid/mail');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
@@ -44,13 +44,9 @@ const loginUser = async (identifier, password) => {
 };
 
 const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, file, notificationToken, jobTitle,
+  username, email, plainTextPassword, firstName, lastName, file, notificationToken, jobTitle, flipProfileVideo,
 }) => {
-  if (!file) {
-    throw new Error('No video profile provided');
-  }
-
-  if (file.mimetype.split('/')[0] !== 'video') throw new Error('Profile video must be of type video');
+  if (file && file.mimetype.split('/')[0] !== 'video') throw new Error('Profile video must be of type video');
 
   const schema = object().shape({
     firstName: string().required(),
@@ -65,7 +61,7 @@ const registerUser = async ({
   });
 
   await schema.validate({
-    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle,
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, flipProfileVideo,
   }).catch((err) => {
     if (err.errors?.length) {
       throw new Error(err.errors[0]);
@@ -105,11 +101,12 @@ const registerUser = async ({
 
   const password = await bcrypt.hash(plainTextPassword, 10);
 
-  const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+  const { profileVideoUrl, profileGifUrl } = file ? await uploadProfileVideo(file) : { profileVideoUrl: '', profileGifUrl: '' };
 
-  if (!profileVideoUrl || !profileGifUrl) {
+  if ((!profileVideoUrl || !profileGifUrl) && file) {
     throw new Error('Profile video not uploaded');
   }
+
   await User.create({
     username,
     usernameLowered: username.toLowerCase(),
@@ -122,6 +119,7 @@ const registerUser = async ({
     profileGifUrl,
     notificationToken,
     jobTitle,
+    flipProfileVideo,
   });
   return { registered: true, profileVideoUrl };
 };
@@ -505,6 +503,10 @@ const getUserData = async (userId) => {
 const updateUserDetails = async ({ userId, file, details }) => {
   const user = await User.findById(userId);
 
+  if (details.flipProfileVideo) {
+    details.flipProfileVideo = details.flipProfileVideo === 'true';
+  }
+
   if (!user) {
     throw new Error('User could not be found.');
   }
@@ -528,6 +530,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
     password: string().min(8, 'Password is too short - should be 8 chars minimum.')
       .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string(),
+    flipProfileVideo: string(),
   });
 
   await schema.validate(details).catch((err) => {
@@ -574,7 +577,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
       profileVideoUrl,
       profileGifUrl,
     });
-    if (profileVideoUrl && profileGifUrl) {
+    if (profileVideoUrl && profileGifUrl && currentProfileVideoUrl && currentProfileGifUrl) {
       await Promise.allSettled([
         deleteFile(currentProfileGifKey),
         deleteFile(currentProfileVideoKey),

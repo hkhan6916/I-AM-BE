@@ -56,6 +56,7 @@ const getUserPosts = async (userId, offset) => {
                     profileGifUrl: 1,
                     firstName: 1,
                     lastName: 1,
+                    flipProfileVideo: 1,
                   },
                 },
               ],
@@ -254,6 +255,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
                     profileGifUrl: 1,
                     firstName: 1,
                     lastName: 1,
+                    flipProfileVideo: 1,
                     belongsToUser: {
                       $cond: {
                         if: { $eq: ['$userId', ObjectId(userId)] },
@@ -401,6 +403,7 @@ const getUserSearchFeed = async (offset = 0, userId) => {
               _id: 1,
               username: 1,
               profileGifUrl: 1,
+              flipProfileVideo: 1,
               firstName: 1,
               lastName: 1,
             },

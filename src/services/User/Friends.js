@@ -164,6 +164,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         username: 1,
         email: 1,
         profileVideoUrl: 1,
+        flipProfileVideo: 1,
         profileGifUrl: 1,
       },
     },
@@ -199,6 +200,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         username: 1,
         email: 1,
         profileVideoUrl: 1,
+        flipProfileVideo: 1,
         profileGifUrl: 1,
       },
     },
@@ -259,6 +261,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
         username: 1,
         email: 1,
         profileVideoUrl: 1,
+        flipProfileVideo: 1,
         profileGifUrl: 1,
       },
     },
@@ -294,6 +297,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
         username: 1,
         email: 1,
         profileVideoUrl: 1,
+        flipProfileVideo: 1,
         profileGifUrl: 1,
       },
     },
@@ -423,6 +427,12 @@ const sendFriendRequest = async (userId, receiverId) => {
   const user = await User.findById(userId);
   if (!receiver || !user) {
     throw new Error('User or receiver does not exist.');
+  }
+  if (!user.profileVideoUrl) {
+    throw new Error('User profile is not complete');
+  }
+  if (!receiver.profileVideoUrl) {
+    throw new Error('Receiver profile is not complete');
   }
 
   if (receiver._id === user._id) {
