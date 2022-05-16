@@ -46,10 +46,15 @@ const searchUser = async (username, offset) => {
     { $limit: 10 },
   ]);
 
-  const users = result.map((user) => ({
-    ...user,
-    profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
-  }));
+  const users = result.reduce((usersToReturn, user) => {
+    if (user.profileVideoUrl) {
+      usersToReturn.push({
+        ...user,
+        profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+      });
+    }
+    return usersToReturn;
+  }, []);
 
   return users;
 };
