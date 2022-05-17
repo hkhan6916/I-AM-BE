@@ -459,12 +459,20 @@ const sendFriendRequest = async (userId, receiverId) => {
   if (requestAlreadyReceived) {
     return requestAlreadyReceived;
   }
+
+  user.numberOfFriendsAsRequester += 1;
+  receiver.numberOfFriendsAsReceiver += 1;
+
   if (receiver.private) {
     const newRequest = await Connections.create({
       requesterId: user._id,
       receiverId: receiver._id,
       accepted: false,
     });
+    receiver.save();
+    user.save();
+
+    await sendNotificationToSingleUser({ userId: receiver._id, title: `${user.firstName} would like to add you`, messageBody: `${user.firstName} would like to add you as a contact` });
 
     return newRequest;
   }
@@ -474,10 +482,8 @@ const sendFriendRequest = async (userId, receiverId) => {
     accepted: true,
   });
 
-  user.numberOfFriendsAsRequester += 1;
-  receiver.numberOfFriendsAsReceiver += 1;
-
-  await sendNotificationToSingleUser({ userId: receiver._id, title: `${user.firstName} would like to add you`, messageBody: `${user.firstName} would like to add you as a contact` });
+  // if (receiver.private) {
+  // }
 
   receiver.save();
   user.save();

@@ -10,7 +10,9 @@ const { calculateAge, getFileSignedHeaders } = require('../../helpers');
 const addComment = async ({ postId, userId, body }) => {
   const post = await Posts.findById(postId);
   const user = await User.findById(userId);
-
+  if (!user.profileVideoUrl) {
+    throw new Error('User profile is not complete');
+  }
   if (!body) {
     throw new Error('Comments require a body.');
   }
@@ -50,6 +52,7 @@ const addComment = async ({ postId, userId, body }) => {
 
 const updateComment = async ({ commentId, userId, body }) => {
   const comment = await Comment.findById(commentId);
+
   if (!body) {
     throw new Error('Body is required and must not be empty.');
   }
@@ -220,7 +223,9 @@ const getPostComments = async ({ postId, userId, offset }) => {
 const replyToComment = async ({ commentId, body, userId }) => {
   const comment = await Comment.findById(commentId);
   const user = await User.findById(userId);
-
+  if (!user.profileVideoUrl) {
+    throw new Error('User profile is not complete');
+  }
   if (!body) {
     throw new Error('Reply body is required.');
   }

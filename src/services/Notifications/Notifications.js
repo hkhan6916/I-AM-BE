@@ -57,7 +57,7 @@ const sendNotificationToSingleUser = async ({ userId, title, messageBody }) => {
     categoryIdentifier: 'chat_message',
   }]);
   await expo.sendPushNotificationsAsync(chunk[0]);
-
+  console.log(chunk);
   return { success: true, message: 'sent' };
 };
 
