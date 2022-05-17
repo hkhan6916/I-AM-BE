@@ -56,7 +56,6 @@ if (cluster.isMaster) {
   cluster.on('fork', (worker) => {
     console.log('worker is dead:', worker.isDead());
   });
-  // httpServer.listen(port, () => console.log(`Listening on port ${port}`));// TODO investigate where to listen, worker or master, Socketio docs suggest master
 } else {
   const port = process.env.PORT || 5000;
 

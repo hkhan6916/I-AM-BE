@@ -514,8 +514,6 @@ const acceptFriendRequest = async (userId, requesterId) => {
   user.save();
   request.save();
 
-  // TODO get other user posts and return them
-
   return requester;
 };
 

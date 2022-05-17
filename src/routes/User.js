@@ -1,10 +1,6 @@
 const express = require('express');
 
 const router = express.Router();
-const multer = require('multer');
-const { v4: uuid } = require('uuid');
-// todo delete this once done generating data
-const faker = require('faker');
 const fileUpload = require('express-fileupload');
 
 const {
@@ -70,46 +66,6 @@ router.post('/user/register', fileUpload({
   try {
     data = await registerUser({
       username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken, jobTitle, flipProfileVideo,
-    });
-  } catch (e) {
-    success = false;
-    other = e.validationErrors;
-    if (e.exists) {
-      /* This is used for displaying a custom message on the frontend and
-         should NOT be changed */
-      message = 'exists';
-    } else {
-      message = e.message;
-    }
-  }
-
-  res.status(200).json({
-    success,
-    message,
-    data,
-    other,
-  });
-});
-
-router.post('/user/generate', async (req, res) => {
-  // const {
-  //   username, email, password: plainTextPassword, lastName, firstName, notificationToken,
-  // } = req.body;
-  const firstName = faker.name.firstName();
-  const lastName = faker.name.lastName();
-  const username = faker.internet.userName(firstName, lastName);
-  const notificationToken = 'test';
-  const email = faker.internet.email();
-  const plainTextPassword = 'password';
-
-  let success = true;
-  let message = 'User generated.';
-  let data = {};
-  let other = {};
-
-  try {
-    data = await generateData({
-      username, email, plainTextPassword, lastName, firstName, notificationToken,
     });
   } catch (e) {
     success = false;

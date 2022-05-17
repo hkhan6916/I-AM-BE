@@ -8,7 +8,6 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const notifications = [];
   const chat = await Chat.findById(chatId);
 
-  // TODO remove sessions and implement a navigation listener on the frontend to prevent notifcations is user in chat
   const recipients = await User.find({ _id: { $in: chat.participants } });
   const sender = await User.findById(senderId);
   for (let i = 0; i < recipients.length; i += 1) {

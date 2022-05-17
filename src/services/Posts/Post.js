@@ -165,9 +165,11 @@ const updatePost = async ({ // expects form data
   const post = await Posts.findById(postId);
   // const post = await Posts.findById(postId);
 
-  // TODO: check if post is hidden. If hidden, don't allow update
   if (!post) {
     throw new Error('No post could be found.');
+  }
+  if (post.hidden) {
+    throw new Error('Cannot update hidden post');
   }
   if (!body && removeMedia && !post.repostPostId) {
     throw new Error('Media or post body required.');

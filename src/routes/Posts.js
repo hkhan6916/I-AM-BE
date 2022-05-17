@@ -222,7 +222,7 @@ router.get('/posts/like/remove/:postId', verifyAuth, async (req, res) => {
 });
 
 // Comments
-router.post('/posts/comments/add', verifyAuth, async (req, res) => {
+router.post('/posts/comments/add', verifyAuth, async (req, res) => { // TODO: implement comment count in frontend
   let success = true;
   let message = 'Comment added.';
   let data = {};
