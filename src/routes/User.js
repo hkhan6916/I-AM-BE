@@ -16,6 +16,8 @@ const {
   changeAccountVisibility,
   toggleFollowersMode,
   reportUser,
+  blockUser,
+  unBlockUser,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -566,6 +568,44 @@ router.post('/user/report', verifyAuth, async (req, res) => {
   const { userToReport, reason } = req.body;
   try {
     data = await reportUser(req.user.id, userToReport, reason);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/block/:userToBlockId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User blocked.';
+  let data = {};
+  const { userToBlockId } = req.params;
+  try {
+    data = await blockUser(req.user.id, userToBlockId);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/unblock/:userToUnBlockId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'User unblocked.';
+  let data = {};
+  const { userToUnBlockId } = req.params;
+  try {
+    data = await unBlockUser(req.user.id, userToUnBlockId);
   } catch (e) {
     success = false;
     message = e.message;

@@ -11,6 +11,7 @@ const {
 const Posts = require('../../models/posts/Posts');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
+const BlockedUsers = require('../../models/user/BlockedUsers');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -834,6 +835,28 @@ const reportUser = async (reporterId, userToReportId, reason) => {
   return { report, underWatch: userToReport.underWatch };
 };
 
+const blockUser = async (userId, userToBlockId) => {
+  if (userId === userToBlockId) throw new Error('Cannot block the same user.');
+  const userToBlock = await User.findById(userToBlockId);
+
+  if (!userToBlock) throw new Error('User to block does not exist');
+
+  const alreadyBlocked = await BlockedUsers.findOne({ userId, blockedUserId: userToBlockId });
+
+  if (alreadyBlocked) throw new Error('User is already blocked');
+
+  const newBlockedUser = new BlockedUsers({ userId, blockedUserId: userToBlockId });
+
+  newBlockedUser.save();
+};
+
+const unBlockUser = async (userId, userToUnBlockId) => {
+  if (userId === userToUnBlockId) throw new Error('Cannot block the same user.');
+
+  const blockedUser = await BlockedUsers.findOneAndDelete({ userId, blockedUserId: userToUnBlockId });
+  if (!blockedUser) throw new Error('User is not blocked');
+};
+
 module.exports = {
   loginUser,
   registerUser,
@@ -847,4 +870,6 @@ module.exports = {
   changeAccountVisibility,
   toggleFollowersMode,
   reportUser,
+  blockUser,
+  unBlockUser,
 };

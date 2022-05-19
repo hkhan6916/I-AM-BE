@@ -4,6 +4,7 @@ const Connections = require('../../models/user/Connections');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
+const BlockedUsers = require('../../models/user/BlockedUsers');
 
 const searchUser = async (username, offset) => {
   const searchQuery = username.toLowerCase();
@@ -60,12 +61,66 @@ const searchUser = async (username, offset) => {
 };
 
 const getSingleUser = async (otherUserId, userId) => {
-  const otherUserRecord = await User.findById(otherUserId);
+  const otherUserRecord = (await User.aggregate([{
+    $match: {
+      _id: ObjectId(otherUserId),
+    },
+  },
+  {
+    $lookup: {
+      from: 'blocked_users',
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                {
+                  $eq: ['$userId', ObjectId(userId)],
+                },
+                {
+                  $eq: ['$blockedUserId', ObjectId(otherUserId)],
+                },
+              ],
+            },
+          },
+        },
+        { $limit: 1 },
+      ],
+      as: 'blocked',
+    },
+  },
+  {
+    $unwind:
+     {
+       path: '$blocked',
+       preserveNullAndEmptyArrays: true,
+     },
+  },
+  {
+    $project: {
+      _id: 1,
+      username: 1,
+      email: 1,
+      profileGifUrl: 1,
+      profileVideoUrl: 1,
+      firstName: 1,
+      lastName: 1,
+      jobTitle: 1,
+      flipProfileVideo: 1,
+      followersMode: 1,
+      blocked: {
+        $cond: {
+          if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+          then: false,
+          else: true,
+        },
+      },
+    },
+  }]))[0];
   const user = await User.findById(userId);
+  if (!user) throw new Error('User does not exist');
 
-  if (!otherUserRecord) {
-    throw new Error('no user found');
-  }
+  if (!otherUserRecord) throw new Error('Other user does not exist');
 
   const requestSent = await Connections.findOne({
     requesterId: user._id,
@@ -78,7 +133,7 @@ const getSingleUser = async (otherUserId, userId) => {
   });
 
   const profileVideoKey = otherUserRecord.profileVideoUrl.substring(otherUserRecord.profileVideoUrl.lastIndexOf('profileVideos'));
-  const otherUserObj = otherUserRecord.toObject();
+  const otherUserObj = otherUserRecord;
   const otherUser = {
     ...otherUserObj,
     // profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
@@ -331,7 +386,7 @@ const getUserFriendRequests = async (userId) => {
     throw new Error('No user found.');
   }
 
-  const receivedRecords = await Connections.aggregate([
+  const receivedRecords = (await Connections.aggregate([
     {
       $match: {
         receiverId: ObjectId(userId),
@@ -365,7 +420,58 @@ const getUserFriendRequests = async (userId) => {
     {
       $replaceRoot: { newRoot: '$user' },
     },
-  ]);
+    {
+      $lookup: {
+        from: 'blocked_users',
+        let: { requesterId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ['$userId', ObjectId(userId)],
+                  },
+                  {
+                    $eq: ['$blockedUserId', '$$requesterId'],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: 'blocked',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$blocked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        email: 1,
+        password: 1,
+        profileGifUrl: 1,
+        firstName: 1,
+        lastName: 1,
+        jobTitle: 1,
+        flipProfileVideo: 1,
+        blocked: {
+          $cond: {
+            if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+            then: false,
+            else: true,
+          },
+        },
+      },
+    },
+  ])).filter((request) => !request.blocked);
 
   const sentRecords = await Connections.aggregate([
     {
@@ -444,6 +550,12 @@ const sendFriendRequest = async (userId, receiverId) => {
     throw new Error('Cannot send a request to the same user.');
   }
 
+  const receiverIsBlocked = await BlockedUsers.findOne({ blockedUserId: receiverId, userId });
+  if (receiverIsBlocked) throw new Error('Receiver is blocked'); // TODO: test this
+
+  const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: receiverId });
+  if (userIsBlocked) throw new Error('Receiver has blocked this user'); // TODO: test this
+
   const requestAlreadySent = await Connections.findOne({
     requesterId: user._id,
     receiverId: receiver._id,
@@ -506,6 +618,9 @@ const acceptFriendRequest = async (userId, requesterId) => {
   if (!request) {
     throw new Error('Request does not exist.');
   }
+
+  const requesterIsBlocked = await BlockedUsers.findOne({ blockedUserId: requesterId, userId });
+  if (requesterIsBlocked) throw new Error('Requester is blocked'); // TODO: test this
 
   request.accepted = true;
   requester.numberOfFriendsAsRequester += 1;

@@ -2,10 +2,12 @@ const User = require('../models/user/User');
 const Messages = require('../models/chat/Message');
 const socketAuth = require('../middleware/socketAuth');
 const {
-  getNameDate, get12HourTime, createChatSession, deleteChatSession,
+  getNameDate, get12HourTime,
 } = require('../helpers');
 const { sendNotificationToRecipiants } = require('../services/Notifications/Notifications');
 const { updateChatUpToDateUsers } = require('../services/Chat/Chat');
+const Chat = require('../models/chat/Chat');
+const BlockedUsers = require('../models/user/BlockedUsers');
 
 module.exports = (io, pid) => {
   io.use((socket, next) => socketAuth(socket, next)).on('connection', (socket) => {
@@ -19,14 +21,21 @@ module.exports = (io, pid) => {
     socket.on('joinRoom', async ({ chatId, userId }) => {
       socket.userIsOnline = true;
 
-      // createChatSession(userId, chatId);
-      socket.join(chatId);
-      socket.emit('joinRoomSuccess', { chatId, userId });
-      socket.to(chatId).emit('userJoinedRoom', { userId });
-      const user = await User.findById(userId);
+      const chat = await Chat.findById(chatId);
+      if (chat) {
+        const otherUserId = await chat.users.filter((id) => id !== userId)[0];
+        const chatHasBlockedUsers = await BlockedUsers.findOne({ userId, blockedUserId: otherUserId });
+        console.log({ chatHasBlockedUsers });
+        if (!chatHasBlockedUsers) {
+          socket.join(chatId);
+          socket.emit('joinRoomSuccess', { chatId, userId });
+          socket.to(chatId).emit('userJoinedRoom', { userId });
+          const user = await User.findById(userId);
 
-      socket.user = user;
-      socket.chatId = chatId;
+          socket.user = user;
+          socket.chatId = chatId;
+        }
+      }
     });
 
     socket.on('sendUserOnlineStatus', async ({ chatId, userId }) => {
