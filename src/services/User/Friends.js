@@ -108,6 +108,7 @@ const getSingleUser = async (otherUserId, userId) => {
       jobTitle: 1,
       flipProfileVideo: 1,
       followersMode: 1,
+      private: 1,
       blocked: {
         $cond: {
           if: { $eq: [{ $type: '$blocked' }, 'missing'] },

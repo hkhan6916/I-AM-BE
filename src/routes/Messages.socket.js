@@ -23,9 +23,8 @@ module.exports = (io, pid) => {
 
       const chat = await Chat.findById(chatId);
       if (chat) {
-        const otherUserId = await chat.users.filter((id) => id !== userId)[0];
+        const otherUserId = await chat.participants.filter((id) => id !== userId)[0];
         const chatHasBlockedUsers = await BlockedUsers.findOne({ userId, blockedUserId: otherUserId });
-        console.log({ chatHasBlockedUsers });
         if (!chatHasBlockedUsers) {
           socket.join(chatId);
           socket.emit('joinRoomSuccess', { chatId, userId });
@@ -34,6 +33,9 @@ module.exports = (io, pid) => {
 
           socket.user = user;
           socket.chatId = chatId;
+        } else {
+          socket.to(chatId).emit('blocked');
+          socket.disconnect();
         }
       }
     });

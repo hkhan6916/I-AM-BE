@@ -12,6 +12,7 @@ const Posts = require('../../models/posts/Posts');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
 const BlockedUsers = require('../../models/user/BlockedUsers');
+const Connections = require('../../models/user/Connections');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -847,7 +848,16 @@ const blockUser = async (userId, userToBlockId) => {
 
   const newBlockedUser = new BlockedUsers({ userId, blockedUserId: userToBlockId });
 
+  const isContact = await Connections.findOneAndDelete({
+    requesterId: userId,
+    receiverId: userToBlockId,
+  }) || await Connections.findOneAndDelete({
+    requesterId: userToBlockId,
+    receiverId: userId,
+  });
+
   newBlockedUser.save();
+  return { isContact, blocked: true };
 };
 
 const unBlockUser = async (userId, userToUnBlockId) => {
