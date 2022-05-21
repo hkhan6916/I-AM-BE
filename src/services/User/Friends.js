@@ -86,13 +86,43 @@ const getSingleUser = async (otherUserId, userId) => {
         },
         { $limit: 1 },
       ],
-      as: 'blocked',
+      as: 'blockedByUser',
+    },
+  },
+  {
+    $lookup: {
+      from: 'blocked_users',
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                {
+                  $eq: ['$blockedUserId', ObjectId(userId)],
+                },
+                {
+                  $eq: ['$userId', ObjectId(otherUserId)],
+                },
+              ],
+            },
+          },
+        },
+        { $limit: 1 },
+      ],
+      as: 'blockedByThem',
     },
   },
   {
     $unwind:
      {
-       path: '$blocked',
+       path: '$blockedByUser',
+       preserveNullAndEmptyArrays: true,
+     },
+  },
+  {
+    $unwind:
+     {
+       path: '$blockedByThem',
        preserveNullAndEmptyArrays: true,
      },
   },
@@ -108,10 +138,19 @@ const getSingleUser = async (otherUserId, userId) => {
       jobTitle: 1,
       flipProfileVideo: 1,
       followersMode: 1,
+      numberOfFriendsAsRequester: 1,
+      numberOfFriendsAsReceiver: 1,
       private: 1,
-      blocked: {
+      blockedByUser: {
         $cond: {
-          if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+          if: { $eq: [{ $type: '$blockedByUser' }, 'missing'] },
+          then: false,
+          else: true,
+        },
+      },
+      blockedByThem: {
+        $cond: {
+          if: { $eq: [{ $type: '$blockedByThem' }, 'missing'] },
           then: false,
           else: true,
         },
@@ -212,13 +251,13 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
           },
           { $limit: 1 },
         ],
-        as: 'blocked',
+        as: 'blockedByUser',
       },
     },
     {
       $unwind:
        {
-         path: '$blocked',
+         path: '$blockedByUser',
          preserveNullAndEmptyArrays: true,
        },
     },
@@ -234,16 +273,16 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         lastName: 1,
         jobTitle: 1,
         flipProfileVideo: 1,
-        blocked: {
+        blockedByUser: {
           $cond: {
-            if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+            if: { $eq: [{ $type: '$blockedByUser' }, 'missing'] },
             then: false,
             else: true,
           },
         },
       },
     },
-  ])).filter((request) => !request.blocked);
+  ])).filter((request) => !request.blockedByUser);
 
   const friendsAsSender = await Connections.aggregate([
     {
@@ -493,13 +532,13 @@ const getUserFriendRequests = async (userId) => {
           },
           { $limit: 1 },
         ],
-        as: 'blocked',
+        as: 'blockedByUser',
       },
     },
     {
       $unwind:
        {
-         path: '$blocked',
+         path: '$blockedByUser',
          preserveNullAndEmptyArrays: true,
        },
     },
@@ -514,16 +553,16 @@ const getUserFriendRequests = async (userId) => {
         lastName: 1,
         jobTitle: 1,
         flipProfileVideo: 1,
-        blocked: {
+        blockedByUser: {
           $cond: {
-            if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+            if: { $eq: [{ $type: '$blockedByUser' }, 'missing'] },
             then: false,
             else: true,
           },
         },
       },
     },
-  ])).filter((request) => !request.blocked);
+  ])).filter((request) => !request.blockedByUser);
 
   const sentRecords = await Connections.aggregate([
     {
@@ -742,10 +781,12 @@ const removeConnection = async (userId, friendId, skipNotFoundError) => {
     throw new Error('User does not exist.');
   }
 
+  const accepted = skipNotFoundError ? {} : { accepted: true };
+
   const connectionAsRequester = await Connections.findOneAndDelete({
     requesterId: user._id,
     receiverId: friend._id,
-    accepted: true,
+    ...accepted,
   });
   if (connectionAsRequester) {
     friend.numberOfFriendsAsReceiver -= 1;
@@ -757,15 +798,17 @@ const removeConnection = async (userId, friendId, skipNotFoundError) => {
   const connectionAsReceiver = await Connections.findOneAndDelete({
     receiverId: user._id,
     requesterId: friend._id,
-    accepted: true,
+    ...accepted,
   });
 
   if (!connectionAsReceiver && !skipNotFoundError) {
     throw new Error('User connection does not exist.');
   }
 
-  friend.numberOfFriendsAsRequester -= 1;
-  user.numberOfFriendsAsReceiver -= 1;
+  if (connectionAsReceiver) {
+    friend.numberOfFriendsAsRequester -= 1;
+    user.numberOfFriendsAsReceiver -= 1;
+  }
   friend.save();
   user.save();
 

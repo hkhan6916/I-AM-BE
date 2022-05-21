@@ -11,7 +11,7 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const recipients = await User.find({ _id: { $in: chat.participants } });
   const sender = await User.findById(senderId);
   for (let i = 0; i < recipients.length; i += 1) {
-    if (recipients[i]._id.toString() !== senderId && recipients[i]?.notificationToken) {
+    if (recipients[i]._id.toString() !== senderId && recipients[i]?.notificationToken && Expo.isExpoPushToken(recipients[i].notificationToken)) {
       notifications.push({
         to: recipients[i].notificationToken,
         sound: 'default',
@@ -19,9 +19,6 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
         body: message,
         data: { message, chatId, ...{ pushToken: recipients[i].notificationToken } },
       });
-      if (!Expo.isExpoPushToken(recipients[i].notificationToken)) {
-        console.error(`Push token ${recipients[i].notificationToken} is not a valid Expo push token`);
-      }
     }
   }
 
@@ -45,7 +42,7 @@ const sendNotificationToSingleUser = async ({ userId, title, messageBody }) => {
     throw new Error('User does not exist');
   }
   if (!Expo.isExpoPushToken(user.notificationToken)) {
-    throw new Error(`Push token ${user.notificationToken} is not a valid Expo push token`);
+    return { success: false, message: 'notification token is not valid' };
   }
   const chunk = expo.chunkPushNotifications([{
     to: user.notificationToken,

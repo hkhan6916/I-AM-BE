@@ -8,11 +8,7 @@ const updateNotificationToken = async (userId, notificationToken) => {
 };
 
 const deleteNotificationToken = async (userId) => {
-  const user = await User.findById(userId);
-  if (user) {
-    user.notificationToken = '';
-    user.save();
-  }
+  await User.findByIdAndUpdate(userId, { notificationToken: 'none' });
   return 'Notification token deleted.';
 };
 

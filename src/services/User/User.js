@@ -63,7 +63,7 @@ const registerUser = async ({
   });
 
   await schema.validate({
-    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, flipProfileVideo,
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle,
   }).catch((err) => {
     if (err.errors?.length) {
       throw new Error(err.errors[0]);
@@ -121,7 +121,7 @@ const registerUser = async ({
     profileGifUrl,
     notificationToken,
     jobTitle,
-    flipProfileVideo,
+    flipProfileVideo: flipProfileVideo === 'true',
   });
   return { registered: true, profileVideoUrl };
 };
