@@ -157,7 +157,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
     throw new Error('User does not exist.');
   }
 
-  const receivedFriendRequests = await Connections.aggregate([
+  const receivedFriendRequests = (await Connections.aggregate([
     {
       $match: {
         receiverId: ObjectId(userId),
@@ -191,8 +191,59 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
     {
       $replaceRoot: { newRoot: '$user' },
     },
+    {
+      $lookup: {
+        from: 'blocked_users',
+        let: { requesterId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ['$userId', ObjectId(userId)],
+                  },
+                  {
+                    $eq: ['$blockedUserId', '$$requesterId'],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: 'blocked',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$blocked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
     { $addFields: { accepted: false } },
-  ]);
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        email: 1,
+        password: 1,
+        profileGifUrl: 1,
+        firstName: 1,
+        lastName: 1,
+        jobTitle: 1,
+        flipProfileVideo: 1,
+        blocked: {
+          $cond: {
+            if: { $eq: [{ $type: '$blocked' }, 'missing'] },
+            then: false,
+            else: true,
+          },
+        },
+      },
+    },
+  ])).filter((request) => !request.blocked);
 
   const friendsAsSender = await Connections.aggregate([
     {
@@ -551,12 +602,6 @@ const sendFriendRequest = async (userId, receiverId) => {
     throw new Error('Cannot send a request to the same user.');
   }
 
-  const receiverIsBlocked = await BlockedUsers.findOne({ blockedUserId: receiverId, userId });
-  if (receiverIsBlocked) throw new Error('Receiver is blocked'); // TODO: test this
-
-  const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: receiverId });
-  if (userIsBlocked) throw new Error('Receiver has blocked this user'); // TODO: test this
-
   const requestAlreadySent = await Connections.findOne({
     requesterId: user._id,
     receiverId: receiver._id,
@@ -576,14 +621,28 @@ const sendFriendRequest = async (userId, receiverId) => {
   user.numberOfFriendsAsRequester += 1;
   receiver.numberOfFriendsAsReceiver += 1;
 
+  const receiverIsBlocked = await BlockedUsers.findOne({ blockedUserId: receiverId, userId });
+  // if (receiverIsBlocked) throw new Error('Receiver is blocked'); // TODO: test this
+
+  const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: receiverId });
+  // if (userIsBlocked) throw new Error('Receiver has blocked this user'); // TODO: test this
+
+  if (userIsBlocked || receiverIsBlocked) {
+    const newRequest = await Connections.create({
+      requesterId: user._id,
+      receiverId: receiver._id,
+      accepted: false,
+    });
+
+    return newRequest;
+  }
+
   if (receiver.private) {
     const newRequest = await Connections.create({
       requesterId: user._id,
       receiverId: receiver._id,
       accepted: false,
     });
-    receiver.save();
-    user.save();
 
     await sendNotificationToSingleUser({ userId: receiver._id, title: `${user.firstName} would like to add you`, messageBody: `${user.firstName} would like to add you as a contact` });
 
@@ -622,6 +681,8 @@ const acceptFriendRequest = async (userId, requesterId) => {
 
   const requesterIsBlocked = await BlockedUsers.findOne({ blockedUserId: requesterId, userId });
   if (requesterIsBlocked) throw new Error('Requester is blocked'); // TODO: test this
+  const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: requesterId });
+  if (userIsBlocked) throw new Error('User is blocked'); // TODO: test this
 
   request.accepted = true;
   requester.numberOfFriendsAsRequester += 1;
@@ -673,7 +734,7 @@ const recallFriendRequest = async (userId, receiverId) => {
   return { recalled: true };
 };
 
-const removeConnection = async (userId, friendId) => {
+const removeConnection = async (userId, friendId, skipNotFoundError) => {
   const friend = await User.findById(friendId);
   const user = await User.findById(userId);
 
@@ -699,7 +760,7 @@ const removeConnection = async (userId, friendId) => {
     accepted: true,
   });
 
-  if (!connectionAsReceiver) {
+  if (!connectionAsReceiver && !skipNotFoundError) {
     throw new Error('User connection does not exist.');
   }
 

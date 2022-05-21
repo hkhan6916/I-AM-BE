@@ -20,21 +20,23 @@ module.exports = (io, pid) => {
 
     socket.on('joinRoom', async ({ chatId, userId }) => {
       socket.userIsOnline = true;
-
       const chat = await Chat.findById(chatId);
       if (chat) {
         const otherUserId = await chat.participants.filter((id) => id !== userId)[0];
-        const chatHasBlockedUsers = await BlockedUsers.findOne({ userId, blockedUserId: otherUserId });
-        if (!chatHasBlockedUsers) {
+        const userIsBlocked = await BlockedUsers.findOne({ userId: otherUserId, blockedUserId: userId });
+        const userHasBlocked = await BlockedUsers.findOne({ userId, blockedUserId: otherUserId });
+
+        if (!userIsBlocked && !userHasBlocked) {
           socket.join(chatId);
           socket.emit('joinRoomSuccess', { chatId, userId });
           socket.to(chatId).emit('userJoinedRoom', { userId });
+
           const user = await User.findById(userId);
 
           socket.user = user;
           socket.chatId = chatId;
         } else {
-          socket.to(chatId).emit('blocked');
+          socket.emit(userHasBlocked ? 'userHasBlocked' : 'userIsBlocked');
           socket.disconnect();
         }
       }

@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { object, string, boolean } = require('yup');
+const { object, string } = require('yup');
 const sgMail = require('@sendgrid/mail');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
@@ -12,7 +12,7 @@ const Posts = require('../../models/posts/Posts');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
 const BlockedUsers = require('../../models/user/BlockedUsers');
-const Connections = require('../../models/user/Connections');
+const { removeConnection } = require('./Friends');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -848,16 +848,18 @@ const blockUser = async (userId, userToBlockId) => {
 
   const newBlockedUser = new BlockedUsers({ userId, blockedUserId: userToBlockId });
 
-  const isContact = await Connections.findOneAndDelete({
-    requesterId: userId,
-    receiverId: userToBlockId,
-  }) || await Connections.findOneAndDelete({
-    requesterId: userToBlockId,
-    receiverId: userId,
-  });
+  // const isContact = await Connections.findOneAndDelete({
+  //   requesterId: userId,
+  //   receiverId: userToBlockId,
+  // }) || await Connections.findOneAndDelete({
+  //   requesterId: userToBlockId,
+  //   receiverId: userId,
+  // });
+
+  await removeConnection(userId, userToBlockId, true);
 
   newBlockedUser.save();
-  return { isContact, blocked: true };
+  return { blocked: true };
 };
 
 const unBlockUser = async (userId, userToUnBlockId) => {
