@@ -41,11 +41,9 @@ module.exports = async (file) => {
 
   const profileGifBuffer = await generateGif(profileVideoSignedUrl); // need to generate signed cloudfront url
   if (!profileGifBuffer) {
-    throw new Error('Could not generate a profile gif.');
-  }
+    awsConnection.deleteObject(profileVideoParams);
 
-  if (!profileGifBuffer) {
-    throw new Error('Unable to get profile gif buffer.');
+    throw new Error('Could not generate a profile gif.');
   }
 
   const profileGifName = `${file.md5}${file.name.replace(/\s/g, '')}`.replace(/\.[^/.]+$/, '.gif');
