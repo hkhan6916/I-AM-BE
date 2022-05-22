@@ -29,6 +29,7 @@ module.exports = async (file) => {
   await awsConnection.putObject(fileParams, async (err, pres) => {
     if (err) {
       awsConnection.deleteObject(fileParams);
+      throw err;
     }
   }).promise();
   const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key.replace(/ /g, '')}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;

@@ -719,9 +719,9 @@ const acceptFriendRequest = async (userId, requesterId) => {
   }
 
   const requesterIsBlocked = await BlockedUsers.findOne({ blockedUserId: requesterId, userId });
-  if (requesterIsBlocked) throw new Error('Requester is blocked'); // TODO: test this
+  if (requesterIsBlocked) throw new Error('Requester is blocked');
   const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: requesterId });
-  if (userIsBlocked) throw new Error('User is blocked'); // TODO: test this
+  if (userIsBlocked) throw new Error('User is blocked');
 
   request.accepted = true;
   requester.numberOfFriendsAsRequester += 1;
