@@ -83,8 +83,8 @@ const createPost = async ({ // expects form data
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaKey = fileObj.key;
       post.ready = true;
-      post.height = height;
-      post.width = width;
+      post.height = Number(height);
+      post.width = Number(width);
     }
   } else {
     post.ready = true;
