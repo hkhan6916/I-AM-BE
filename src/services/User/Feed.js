@@ -213,6 +213,8 @@ const aggregateFeed = async ({
         postAuthor: 1,
         edited: 1,
         createdAt: 1,
+        height: 1,
+        width: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },
@@ -481,6 +483,8 @@ const aggregateFeed = async ({
         edited: 1,
         createdAt: 1,
         likedBy: 1,
+        height: 1,
+        width: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },

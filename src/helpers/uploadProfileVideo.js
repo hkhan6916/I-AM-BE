@@ -1,8 +1,18 @@
 const { S3 } = require('aws-sdk');
+const { getVideoDurationInSeconds } = require('get-video-duration');
+const { Readable } = require('stream');
 const generateGif = require('./generateGif');
 const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
 
 module.exports = async (file) => {
+  const stream = Readable.from(file.data);
+
+  const duration = await getVideoDurationInSeconds(stream);
+
+  if (duration && duration > 31) {
+    throw new Error('Profile video is too long.');
+  }
+
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
 

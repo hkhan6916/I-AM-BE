@@ -14,10 +14,11 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, file, body, mediaIsSelfie, postId, gif,
+  userId, file, body, mediaIsSelfie, postId, gif, height, width,
 }) => {
   const mediaType = file?.mimetype?.split('/')[0];
   if (file && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
+  if (!postId && file && (!height || height === 'undefined' || !width || width === 'undefined')) throw new Error('Height and/or Width was not provided alongside media');
   // if posting video after the thumbnail and body have been posted.
   if (file && postId && mediaType === 'video') {
     const post = await Posts.findById(postId);
@@ -73,6 +74,8 @@ const createPost = async ({ // expects form data
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaType = 'video';
       post.ready = false;
+      post.height = Number(height);
+      post.width = Number(width);
     } else {
       post.mediaUrl = mediaUrl;
       post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
@@ -80,6 +83,8 @@ const createPost = async ({ // expects form data
       post.mediaIsSelfie = mediaIsSelfie;
       post.mediaKey = fileObj.key;
       post.ready = true;
+      post.height = height;
+      post.width = width;
     }
   } else {
     post.ready = true;

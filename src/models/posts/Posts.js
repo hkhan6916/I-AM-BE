@@ -27,6 +27,8 @@ const PostsSchema = new Schema({
   mediaType: {
     type: String,
   },
+  height: { type: Number },
+  width: { type: Number },
   mediaIsSelfie: {
     type: Boolean,
   },

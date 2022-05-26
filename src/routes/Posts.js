@@ -37,11 +37,11 @@ router.post('/posts/new', [verifyAuth, fileUpload({
   let message = 'Post created.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, postId, gif,
+    postBody, mediaIsSelfie, postId, gif, height, width,
   } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.files?.file, body: postBody, mediaIsSelfie, postId, gif,
+      userId: req.user.id, file: req.files?.file, body: postBody, mediaIsSelfie, postId, gif, height, width,
     });
   } catch (e) {
     success = false;
