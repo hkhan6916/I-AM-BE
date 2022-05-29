@@ -18,6 +18,7 @@ const {
   reportUser,
   blockUser,
   unBlockUser,
+  verifyRegisterationDetails,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -53,12 +54,34 @@ router.post('/user/login', async (req, res) => {
   });
 });
 
-router.post('/user/register', fileUpload({
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-}), async (req, res) => {
+router.post('/user/verify-registeration-details', async (req, res) => {
+  let success = true;
+  let message = 'User details verified.';
+  let data = {};
+
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, profileVideoFileName,
+  } = req.body;
+
+  try {
+    data = await verifyRegisterationDetails({
+      username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/user/register', async (req, res) => {
+  const {
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
   } = req.body;
   let success = true;
   let message = 'User created.';
@@ -67,7 +90,7 @@ router.post('/user/register', fileUpload({
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, file: req.files?.file, notificationToken, jobTitle, flipProfileVideo,
+      username, email, plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
     });
   } catch (e) {
     success = false;
@@ -462,17 +485,14 @@ router.get('/user/notifications/token/delete', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/user/update/details', [verifyAuth, fileUpload({
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-})], async (req, res) => {
+router.post('/user/update/details', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'User details updated.';
   let data = {};
   let other = {};
   const details = req.body;
   try {
-    data = await updateUserDetails({ userId: req.user.id, file: req.files?.file, details });
+    data = await updateUserDetails({ userId: req.user.id, profileVideoKey: req.body.profileVideoKey, details });
   } catch (e) {
     success = false;
     message = e.message;

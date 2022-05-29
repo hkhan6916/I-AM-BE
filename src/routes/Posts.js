@@ -1,10 +1,10 @@
 const express = require('express');
 
 const router = express.Router();
-const multer = require('multer');
+// const multer = require('multer');
 const { v4: uuid } = require('uuid');
-const multerS3 = require('multer-s3');
-const { S3 } = require('aws-sdk');
+// const multerS3 = require('multer-s3');
+// const { S3 } = require('aws-sdk');
 const fileUpload = require('express-fileupload');
 const {
   createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData,

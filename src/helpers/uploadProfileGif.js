@@ -4,19 +4,11 @@ const { Readable } = require('stream');
 const generateGif = require('./generateGif');
 const getCloudfrontSignedUrl = require('./getCloudfrontSignedUrl');
 
-module.exports = async (file) => {
-  const stream = Readable.from(file.data);
-
-  const duration = await getVideoDurationInSeconds(stream);
-
-  if (duration && duration > 31) {
-    throw new Error('Profile video is too long.');
-  }
-
+module.exports = async (profileVideoKey) => {
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
 
-  if (!file) {
+  if (!profileVideoKey) {
     throw new Error('No video profile provided');
   }
   const credentials = {
@@ -29,34 +21,24 @@ module.exports = async (file) => {
   });
 
   // ########## Upload profile video
-  const profileVideoBuffer = file.data;
-  const fileName = `${file.md5}${file.name.replace(/ /g, '')}`;
   const profileVideoParams = {
-    Bucket,
-    Key: `profileVideos/${fileName}`,
-    Body: profileVideoBuffer,
-    ACL: 'private',
+    Key: `profileVideos/${profileVideoKey}`,
   };
-  await awsConnection.putObject(profileVideoParams, (err, pres) => {
-    if (err) {
-      awsConnection.deleteObject(profileVideoParams);
-    }
-  }).promise();
   // ########## Create and upload the profile gif
-  const profileVideoSignedUrl = await getCloudfrontSignedUrl(`${fileName}`);
+  const profileVideoSignedUrl = await getCloudfrontSignedUrl(profileVideoParams.Key);
 
   if (!profileVideoSignedUrl) {
     throw new Error('Could not fetch the requested profile video.');
   }
 
   const profileGifBuffer = await generateGif(profileVideoSignedUrl); // need to generate signed cloudfront url
-  if (!profileGifBuffer) {
-    awsConnection.deleteObject(profileVideoParams);
+  //   if (!profileGifBuffer) {
+  //     awsConnection.deleteObject(profileVideoParams);
 
-    throw new Error('Could not generate a profile gif.');
-  }
+  //     throw new Error('Could not generate a profile gif.');
+  //   }
 
-  const profileGifName = `${file.md5}${file.name.replace(/\s/g, '')}`.replace(/\.[^/.]+$/, '.gif');
+  const profileGifName = `${profileVideoKey.replace(/\s/g, '')}`.replace(/\.[^/.]+$/, '.gif');
 
   const profileGifParams = {
     Bucket,
@@ -71,8 +53,6 @@ module.exports = async (file) => {
     }
   }).promise();
 
-  const profileVideoUrl = `https://${profileVideoParams.Bucket}.s3.${region}.amazonaws.com/${profileVideoParams.Key}`;
-  const profileGifUrl = `https://${profileGifParams.Bucket}.s3.${region}.amazonaws.com/${profileGifParams.Key}`;
-
-  return { profileVideoUrl, profileGifUrl };
+  const profileGifUrl = `https://${Bucket}.s3.${region}.amazonaws.com/${profileGifParams.Key}`;
+  return profileGifUrl;
 };

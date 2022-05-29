@@ -2,10 +2,12 @@ const express = require('express');
 
 const router = express.Router();
 const fileUpload = require('express-fileupload');
+const { nanoid } = require('nanoid');
 const verifyAuth = require('../middleware/auth');
 const uploadFile = require('../helpers/uploadFile');
 const getFileSignedHeaders = require('../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../helpers/getCloudfrontSignedUrl');
+const { getSignedUploadS3Url } = require('../helpers');
 
 router.post('/files/upload', [verifyAuth, fileUpload({
   abortOnLimit: true,
@@ -37,6 +39,26 @@ router.get('/files/:key', verifyAuth, async (req, res) => {
   try {
     const fileUrl = getFileSignedHeaders(`https://s3-${process.env.AWS_BUCKET_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${req.params.mediaUrl}`);
     data = fileUrl;
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/files/signed-upload-url', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Signed url generated.';
+  let data = {};
+  try {
+    const profileVideoKey = `${req.body.username || 'upload'}_${nanoid()}${req.body.fileKey.replace(/\s/g, '')}`;
+    const signedUrl = await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
+    data = { signedUrl, profileVideoKey };
   } catch (e) {
     success = false;
     message = e.message;

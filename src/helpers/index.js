@@ -5,6 +5,7 @@ const tmpCleanup = require('./tmpCleanup');
 const generateGif = require('./generateGif');
 const calculateAge = require('./calculateAge');
 const getFileSignedHeaders = require('./getFileSignedHeaders');
+const getSignedUploadS3Url = require('./getSignedUploadS3Url');
 const getNameDate = require('./getNameDate');
 const get12HourTime = require('./get12HourTime');
 const createChatSession = require('./createChatSession');
@@ -20,6 +21,7 @@ module.exports = {
   generateGif,
   calculateAge,
   getFileSignedHeaders,
+  getSignedUploadS3Url,
   getNameDate,
   get12HourTime,
   createChatSession,

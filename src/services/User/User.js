@@ -1,8 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { object, string } = require('yup');
+const { object, string, boolean } = require('yup');
 const sgMail = require('@sendgrid/mail');
+const { nanoid } = require('nanoid');
 const User = require('../../models/user/User');
 const { sendFriendRequest } = require('./Friends');
 const {
@@ -13,6 +14,8 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
 const BlockedUsers = require('../../models/user/BlockedUsers');
 const { removeConnection } = require('./Friends');
+const uploadProfileGif = require('../../helpers/uploadProfileGif');
+const getSignedUploadS3Url = require('../../helpers/getSignedUploadS3Url');
 
 const loginUser = async (identifier, password) => {
   const JWT_SECRET = process.env.TOKEN_SECRET;
@@ -45,11 +48,77 @@ const loginUser = async (identifier, password) => {
   throw new Error('Invalid email/password');
 };
 
-const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, file, notificationToken, jobTitle, flipProfileVideo,
+const verifyRegisterationDetails = async ({
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName,
 }) => {
-  if (file && file.mimetype.split('/')[0] !== 'video') throw new Error('Profile video must be of type video');
+  if (!profileVideoFileName.split('.').pop()) {
+    throw new Error('Profile video file name must have an extension');
+  }
 
+  const schema = object().shape({
+    firstName: string().required(),
+    lastName: string().required(),
+    email: string().email().required(),
+    password: string().required('No password provided.')
+      .min(8, 'Password is too short - should be 8 chars minimum.')
+      .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
+    username: string().required(),
+    notificationToken: string().required(),
+    jobTitle: string().required(),
+    profileVideoFileName: string().required(),
+  });
+
+  await schema.validate({
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, profileVideoFileName,
+  }).catch((err) => {
+    if (err.errors?.length) {
+      throw new Error(err.errors[0]);
+    }
+  });
+
+  if (username && username.length < 3) {
+    throw new Error('Username is too short');
+  }
+
+  if (!username || typeof username !== 'string' || username.split(' ').length > 1) {
+    throw new Error('Username is missing or invalid.');
+  }
+
+  // $or is unreliable so need to make two queries
+  const emailExists = await User.findOne({ emailLowered: email.toLowerCase() });
+
+  const usernameExists = await User.findOne({ usernameLowered: username.toLowerCase() });
+
+  if (emailExists || usernameExists) {
+    const message = emailExists && usernameExists ? 'An account with that email and username combination already exists.' : `An account with that ${emailExists ? 'email' : 'username'} already exists.`;
+    const error = new Error(message);
+    error.validationErrors = {
+      email: { exists: !!emailExists },
+      username: { exists: !!usernameExists },
+    };
+    throw error;
+  }
+
+  if (!plainTextPassword || typeof plainTextPassword !== 'string') {
+    throw new Error("'Invalid password'");
+  }
+
+  if (plainTextPassword.length < 8) {
+    throw new Error('Password needs to be longer');
+  }
+  const profileVideoKey = `${username}_${nanoid()}${profileVideoFileName.replace(/\s/g, '')}`;
+  const signedProfileVideoUploadUrl = await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
+
+  if (!signedProfileVideoUploadUrl) {
+    throw new Error('Could not generate signed upload url');
+  }
+
+  return { signedProfileVideoUploadUrl, profileVideoKey };
+};
+
+const registerUser = async ({
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
+}) => {
   const schema = object().shape({
     firstName: string().required(),
     lastName: string().required(),
@@ -103,9 +172,12 @@ const registerUser = async ({
 
   const password = await bcrypt.hash(plainTextPassword, 10);
 
-  const { profileVideoUrl, profileGifUrl } = file ? await uploadProfileVideo(file) : { profileVideoUrl: '', profileGifUrl: '' };
+  const profileVideoUrl = profileVideoKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${profileVideoKey}` : '';
 
-  if ((!profileVideoUrl || !profileGifUrl) && file) {
+  const profileGifUrl = profileVideoKey ? await uploadProfileGif(profileVideoKey) : '';
+
+  // if user want to upload a profile video but failed to upload it
+  if ((!profileVideoUrl || !profileGifUrl) && profileVideoKey) {
     throw new Error('Profile video not uploaded');
   }
 
@@ -502,12 +574,9 @@ const getUserData = async (userId) => {
   };
 };
 
-const updateUserDetails = async ({ userId, file, details }) => {
+const updateUserDetails = async ({ userId, details }) => {
   const user = await User.findById(userId);
-
-  if (details.flipProfileVideo) {
-    details.flipProfileVideo = details.flipProfileVideo === 'true';
-  }
+  console.log(details.flipProfileVideo);
 
   if (!user) {
     throw new Error('User could not be found.');
@@ -518,6 +587,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
   }
 
   Object.keys(details).forEach((key) => {
+    // incase the app tries to send empty data for any field as all the fields need to be populated e.g. if they try to make the firstname empty
     if (details[key] === '') { throw new Error(`${key} is required and cannot be an empty string`); }
   });
 
@@ -532,7 +602,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
     password: string().min(8, 'Password is too short - should be 8 chars minimum.')
       .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string(),
-    flipProfileVideo: string(),
+    flipProfileVideo: boolean(),
   });
 
   await schema.validate(details).catch((err) => {
@@ -564,7 +634,7 @@ const updateUserDetails = async ({ userId, file, details }) => {
     details.emailLowered = details.email.toLowerCase();
   }
 
-  if (file) {
+  if (details.profileVideoKey) {
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
 
@@ -573,7 +643,10 @@ const updateUserDetails = async ({ userId, file, details }) => {
 
     const currentProfileGifKey = currentProfileGifUrl.substring(gifUrlIndex + 1);
     const currentProfileVideoKey = currentProfileVideoUrl.substring(videoUrlIndex + 1);
-    const { profileVideoUrl, profileGifUrl } = await uploadProfileVideo(file);
+
+    const profileVideoUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${details.profileVideoKey}`;
+    const profileGifUrl = await uploadProfileGif(details.profileVideoKey);
+
     await User.findByIdAndUpdate(userId, {
       ...details,
       profileVideoUrl,
@@ -871,6 +944,7 @@ const unBlockUser = async (userId, userToUnBlockId) => {
 
 module.exports = {
   loginUser,
+  verifyRegisterationDetails,
   registerUser,
   resetUserPassword,
   createUserPasswordReset,
