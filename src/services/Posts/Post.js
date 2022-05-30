@@ -14,13 +14,13 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, file, body, mediaIsSelfie, postId, gif, height, width,
+  userId, body, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype,
 }) => {
-  const mediaType = file?.mimetype?.split('/')[0];
-  if (file && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
-  if (!postId && file && (!height || height === 'undefined' || !width || width === 'undefined')) throw new Error('Height and/or Width was not provided alongside media');
+  // const mediaType = file?.mimetype?.split('/')[0];
+  if (mediaKey && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
+  if (!postId && mediaKey && (!height || height === 'undefined' || !width || width === 'undefined')) throw new Error('Height and/or Width was not provided alongside media');
   // if posting video after the thumbnail and body have been posted.
-  if (file && postId && mediaType === 'video') {
+  if (mediaKey && postId && mediaType === 'video') {
     const post = await Posts.findById(postId);
     if (!post) {
       throw new Error('Post does not exist.');
@@ -31,24 +31,25 @@ const createPost = async ({ // expects form data
     if (!post?.thumbnailUrl) {
       throw new Error('This post does not have a thumbnail for the video.');
     }
-    const fileObj = await uploadFile(file);
+    // const fileObj = await uploadFile(file);
 
-    if (!fileObj.fileUrl || !fileObj.key) {
-      throw new Error('File could not be uploaded.');
-    }
+    // if (!fileObj.fileUrl || !fileObj.key) {
+    //   throw new Error('File could not be uploaded.');
+    // }
 
-    const mediaUrl = fileObj.fileUrl;
+    const mediaUrl = mediaType === 'video' ? `${process.env.CF_URL}/${mediaKey}` : `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/${mediaKey}`;
+
     await Posts.findByIdAndUpdate(postId, {
       mediaUrl,
-      mediaMimeType: file.mimetype.split('/')[1] || file.mimetype,
+      mediaMimeType: mimetype, // jpeg, mp4 etc
       mediaType,
-      mediaKey: fileObj.key,
+      mediaKey,
       private: false,
       ready: true,
     });
     return post;
   }
-  if (!body && !file && !gif) {
+  if (!body && !mediaKey && !gif) {
     throw new Error('Media or post body required.');
   }
   const user = await User.findById(userId);
@@ -59,16 +60,16 @@ const createPost = async ({ // expects form data
     body: body || '',
     userId,
   });
-  if (file) {
-    const fileObj = await uploadFile(file);
-    if (!fileObj.fileUrl) {
-      throw new Error('File could not be uploaded.');
-    }
-    const mediaUrl = fileObj.fileUrl;
-    if (file.name.includes('mediaThumbnail')) {
+  if (mediaKey) {
+    // const fileObj = await uploadFile(file);
+    // if (!fileObj.fileUrl) {
+    //   throw new Error('File could not be uploaded.');
+    // }
+    const mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/${mediaKey}`;
+    if (mediaKey.includes('mediaThumbnail')) {
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;
-      post.thumbnailKey = fileObj.key;
+      post.thumbnailKey = mediaKey;
       post.thumbnailUrl = mediaUrl;
       post.mediaUrl = null;
       post.mediaIsSelfie = mediaIsSelfie;
@@ -78,10 +79,10 @@ const createPost = async ({ // expects form data
       post.width = Number(width);
     } else {
       post.mediaUrl = mediaUrl;
-      post.mediaMimeType = file.mimetype.split('/')[1] || file.mimetype;
+      post.mediaMimeType = mimetype; // jpeg, mp4 etc
       post.mediaType = mediaType;
       post.mediaIsSelfie = mediaIsSelfie;
-      post.mediaKey = fileObj.key;
+      post.mediaKey = mediaKey;
       post.ready = true;
       post.height = Number(height);
       post.width = Number(width);

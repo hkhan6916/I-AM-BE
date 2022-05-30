@@ -29,19 +29,16 @@ const { testSocket } = require('../services/Chat/Chat');
 
 // Posts
 
-router.post('/posts/new', [verifyAuth, fileUpload({
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-})], async (req, res) => {
+router.post('/posts/new', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Post created.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, postId, gif, height, width,
+    postBody, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype,
   } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, file: req.files?.file, body: postBody, mediaIsSelfie, postId, gif, height, width,
+      userId: req.user.id, body: postBody, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype,
     });
   } catch (e) {
     success = false;

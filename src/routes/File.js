@@ -56,7 +56,27 @@ router.post('/files/signed-upload-url', verifyAuth, async (req, res) => {
   let message = 'Signed url generated.';
   let data = {};
   try {
-    const profileVideoKey = `${req.body.username || 'upload'}_${nanoid()}${req.body.fileKey.replace(/\s/g, '')}`;
+    const fileKey = `upload_${nanoid()}${req.body.filename.replace(/\s/g, '')}`;
+    const signedUrl = await getSignedUploadS3Url(`${fileKey}`);
+    data = { signedUrl, fileKey };
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/files/signed-video-profile-upload-url', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Signed url generated.';
+  let data = {};
+  try {
+    const profileVideoKey = `${req.body.username || 'upload'}_${nanoid()}${req.body.filename.replace(/\s/g, '')}`;
     const signedUrl = await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
     data = { signedUrl, profileVideoKey };
   } catch (e) {
