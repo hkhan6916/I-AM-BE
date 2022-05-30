@@ -434,6 +434,8 @@ const getUserSearchFeed = async (offset = 0, userId) => {
         private: 1,
         postAuthor: 1,
         createdAt: 1,
+        height: 1,
+        width: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },
