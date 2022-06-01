@@ -193,7 +193,7 @@ const registerUser = async ({
     profileGifUrl,
     notificationToken,
     jobTitle,
-    flipProfileVideo: flipProfileVideo === 'true',
+    flipProfileVideo,
   });
   return { registered: true, profileVideoUrl };
 };
