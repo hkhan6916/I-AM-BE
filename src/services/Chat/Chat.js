@@ -147,6 +147,10 @@ const createChat = async (participants, hostId) => {
   });
 
   chat.save();
+  const receiver = await User.findById(users[0]._id);
+  receiver.unreadChatsCount += 1;
+
+  receiver.save();
   return { _id: chat._id, participants: sortedParticipants, users };
 };
 

@@ -173,6 +173,7 @@ const aggregateFeed = async ({
             $project: {
               _id: 1,
               likedBy: 1,
+              postId: 1,
             },
           },
         ],
@@ -373,12 +374,13 @@ const aggregateFeed = async ({
               from: 'postlikes',
               let: { likedBy: ObjectId(userId) },
               pipeline: [
-                { $match: { $expr: { $eq: ['$likedBy', '$$likedBy'] } } },
+                { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', '$$postId'] }] } } },
                 { $limit: 1 },
                 {
                   $project: {
                     _id: 1,
                     likedBy: 1,
+                    postId: 1,
                   },
                 },
               ],

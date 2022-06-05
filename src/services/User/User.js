@@ -573,10 +573,8 @@ const getUserData = async (userId) => {
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
   };
 };
-
 const updateUserDetails = async ({ userId, details }) => {
   const user = await User.findById(userId);
-  console.log(details.flipProfileVideo);
 
   if (!user) {
     throw new Error('User could not be found.');
