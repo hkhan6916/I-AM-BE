@@ -97,34 +97,6 @@ const aggregateFeed = async ({
               as: 'postAuthor',
             },
           },
-          // {
-          //   $lookup: { // check if the user has liked the post already
-          //     from: 'postlikes',
-          //     let: { likedBy: ObjectId(userId), postId: '$_id' },
-          //     pipeline: [
-          //       { $match: { $expr: { $and: [{ $eq: ['$likedBy', '$$likedBy'] }, { $eq: ['$postId', '$$postId'] }] } } },
-          //       { $limit: 1 },
-          //       {
-          //         $project: {
-          //           _id: 1,
-          //           likedBy: 1,
-          //         },
-          //       },
-          //     ],
-          //     as: 'liked',
-          //   },
-          // },
-          // {
-          //   $addFields: {
-          //     liked: {
-          //       $cond: {
-          //         if: { $ne: [{ $type: '$liked' }, 'missing'] },
-          //         then: true,
-          //         else: false,
-          //       },
-          //     },
-          //   },
-          // },
           {
             $addFields: {
               belongsToUser: {
@@ -257,6 +229,8 @@ const aggregateFeed = async ({
       },
     },
     { $sort: { createdAt: -1 } },
+    { $skip: friendsInterestsOffset || 0 },
+    { $limit: 7 },
     {
       $lookup: { // get the posts for each like
         from: 'posts',
@@ -441,8 +415,6 @@ const aggregateFeed = async ({
                preserveNullAndEmptyArrays: true,
              },
           },
-          { $skip: friendsInterestsOffset || 0 },
-          { $limit: 7 },
         ],
         as: 'friendsInterestsBasedPost',
       },
