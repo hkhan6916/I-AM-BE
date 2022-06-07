@@ -170,7 +170,7 @@ router.post('/user/search/:offset', verifyAuth, async (req, res) => {
   const { searchTerm } = req.body;
   const { offset } = req.params;
   try {
-    data = await searchUser(searchTerm, parseInt(offset, 5));
+    data = await searchUser(searchTerm, parseInt(offset, 10));
   } catch (e) {
     success = false;
     message = e.message;
