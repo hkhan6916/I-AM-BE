@@ -42,7 +42,17 @@ const loginUser = async (identifier, password) => {
       JWT_SECRET,
     );
 
-    return { token, userId: user._id, apiKeys: { tenorApiKey: process.env.TENOR_API_KEY } };
+    const profileVideoKey = user.profileVideoUrl?.substring(user.profileVideoUrl.lastIndexOf('profileVideos'));
+    const userData = {
+      ...user.toObject(),
+      numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
+      password: '',
+      profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
+    };
+    const response = {
+      token, userId: user._id, apiKeys: { tenorApiKey: process.env.TENOR_API_KEY }, userData,
+    };
+    return response;
   }
 
   throw new Error('Invalid email/password');
