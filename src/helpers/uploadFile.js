@@ -34,8 +34,8 @@ module.exports = async (file) => {
   }).promise();
   const fileUrl = fileType === 'video' ? `${process.env.CF_URL}/${fileParams.Key.replace(/ /g, '')}` : `https://${fileParams.Bucket}.s3.${region}.amazonaws.com/${fileParams.Key}`;
   const fileHeaders = fileType !== 'video' ? getFileSignedHeaders(fileUrl) : null;
-
+  const signedUrl = fileType === 'video' ? getCloudfrontSignedUrl(fileParams.Key) : null;
   return {
-    fileUrl, fileHeaders, key: fileParams.Key, signedUrl: fileType === 'video' ? getCloudfrontSignedUrl(fileParams.Key) : null, fileType,
+    fileUrl, fileHeaders, key: fileParams.Key, signedUrl, fileType,
   };
 };

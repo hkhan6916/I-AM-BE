@@ -65,16 +65,13 @@ router.post('/chat/exists', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/chat/message/upload', [verifyAuth, fileUpload({
-  abortOnLimit: true,
-  limits: { fileSize: 50 * 1024 * 1024 },
-})], async (req, res) => {
+router.post('/chat/message/upload', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'File uploaded and sent message.';
   let data = {};
 
   try {
-    data = await uploadFileAndSendMessage(req.body, req.files?.file);
+    data = await uploadFileAndSendMessage(req.body);
   } catch (e) {
     success = false;
     message = e.message;

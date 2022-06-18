@@ -194,10 +194,14 @@ const updateChatUpToDateUsers = async (userId, chatId, userIsOnline) => {
   return true;
 };
 
-const uploadFileAndSendMessage = async (message, file) => {
+const uploadFileAndSendMessage = async (message) => {
   if (!message) throw new Error('No message provided');
-  if (!file) throw new Error('No file provided');
+  if (!message.mediaKey && !message.thumbnailKey) throw new Error('No file key provided');
 
+  console.log(message);
+
+  const Bucket = process.env.AWS_BUCKET_NAME;
+  const region = process.env.AWS_BUCKET_REGION;
   const socket = io(process.env.NODE_ENV === 'development'
     ? 'ws://192.168.5.101:5000'
     : 'wss://magnet-be.herokuapp.com', {
@@ -208,10 +212,12 @@ const uploadFileAndSendMessage = async (message, file) => {
     transports: ['websocket'],
   });
 
-  if (file.name.includes('mediaThumbnail')) {
-    const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+  // for videos only
+  if (message.thumbnailKey) {
+    const thumbnailUrl = `https://${Bucket}.s3.${region}.amazonaws.com/${message.thumbnailKey}`;
+    const fileHeaders = getFileSignedHeaders(thumbnailUrl);
     const newMessage = new Messages({
-      thumbnailUrl: fileUrl,
+      thumbnailUrl,
       stringDate: getNameDate(new Date()),
       stringTime: get12HourTime(new Date()),
       chatId: message.chatId,
@@ -222,17 +228,21 @@ const uploadFileAndSendMessage = async (message, file) => {
     });
     newMessage.save();
     return {
-      fileUrl,
+      fileUrl: thumbnailUrl,
       fileHeaders,
-      signedUrl,
       ...message,
       ...newMessage.toObject(),
     };
   }
+  // for videos only
   if (message._id) { // mark as ready as media now uploaded.
-    const { fileUrl, fileHeaders, signedUrl } = await uploadFile(file);
+    const mediaUrl = `${process.env.CF_URL}/${message.mediaKey.replace(/ /g, '')}`;
+    const mediaHeaders = getFileSignedHeaders(mediaUrl);
+    const signedUrl = getCloudfrontSignedUrl(message.mediaKey);
+
     const existingMessage = await Messages.findById(message._id);
-    existingMessage.mediaUrl = fileUrl;
+    if (!existingMessage) throw new Error('Message does not exist');
+    existingMessage.mediaUrl = mediaUrl;
     existingMessage.ready = true;
     existingMessage.save();
     const existingMessageObj = existingMessage.toObject();
@@ -243,7 +253,7 @@ const uploadFileAndSendMessage = async (message, file) => {
         ...existingMessageObj,
         thumbnailHeaders: getFileSignedHeaders(existingMessageObj.thumbnailUrl),
         mediaUrl: signedUrl,
-        mediaHeaders: fileHeaders,
+        mediaHeaders,
         online: message.online === 'true', // can only send string via background upload
         user: {
           firstName: user.firstName,
@@ -255,20 +265,21 @@ const uploadFileAndSendMessage = async (message, file) => {
     });
 
     return {
-      fileUrl, fileHeaders, signedUrl, ...message,
+      mediaUrl, mediaHeaders, signedUrl, ...message,
     };
   }
 
-  const {
-    fileUrl, fileHeaders, signedUrl, fileType,
-  } = await uploadFile(file);
+  // for images
+  const mediaUrl = `https://${Bucket}.s3.${region}.amazonaws.com/${message.mediaKey.replace(/ /g, '')}`;
+  const mediaHeaders = getFileSignedHeaders(mediaUrl);
+
   const newMessage = new Messages({
-    mediaUrl: fileUrl,
+    mediaUrl,
     stringDate: getNameDate(new Date()),
     stringTime: get12HourTime(new Date()),
     chatId: message.chatId,
     senderId: message.senderId,
-    mediaType: fileType,
+    mediaType: 'image',
     body: message.body,
     ready: true,
   });
@@ -280,8 +291,8 @@ const uploadFileAndSendMessage = async (message, file) => {
     message: {
       ...message,
       ...newMessage.toObject(),
-      mediaUrl: fileUrl,
-      mediaHeaders: fileHeaders,
+      mediaUrl,
+      mediaHeaders,
       user: {
         firstName: user.firstName,
         lastName: user.lastName,
@@ -291,9 +302,8 @@ const uploadFileAndSendMessage = async (message, file) => {
     },
   });
   return {
-    mediaUrl: fileUrl,
-    mediaHeaders: fileHeaders,
-    signedUrl,
+    mediaUrl,
+    mediaHeaders,
     ...message,
     ...newMessage.toObject(),
   };
