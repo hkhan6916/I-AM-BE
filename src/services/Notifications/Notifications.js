@@ -7,7 +7,6 @@ const expo = new Expo();
 const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   const notifications = [];
   const chat = await Chat.findById(chatId);
-
   const recipients = await User.find({ _id: { $in: chat.participants } });
   const sender = await User.findById(senderId);
   for (let i = 0; i < recipients.length; i += 1) {

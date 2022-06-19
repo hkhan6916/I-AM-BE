@@ -198,8 +198,6 @@ const uploadFileAndSendMessage = async (message) => {
   if (!message) throw new Error('No message provided');
   if (!message.mediaKey && !message.thumbnailKey) throw new Error('No file key provided');
 
-  console.log(message);
-
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
   const socket = io(process.env.NODE_ENV === 'development'
@@ -254,7 +252,7 @@ const uploadFileAndSendMessage = async (message) => {
         thumbnailHeaders: getFileSignedHeaders(existingMessageObj.thumbnailUrl),
         mediaUrl: signedUrl,
         mediaHeaders,
-        online: message.online === 'true', // can only send string via background upload
+        online: message.online,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,

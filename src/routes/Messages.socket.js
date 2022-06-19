@@ -49,7 +49,7 @@ module.exports = (io, pid) => {
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
       socket.to(chatId).emit('receiveMessage', message);
       if (!message.online) {
-        await sendNotificationToRecipiants(message.senderId, chatId, message.body || (message.mediaType ? `sent ${message.mediaType}` : null) || '');
+        await sendNotificationToRecipiants(message.senderId, chatId, message.body || (message.mediaType ? `sent ${message.mediaType === 'video' ? 'a video' : 'an image'}` : null) || '');
       }
     });
 
@@ -75,7 +75,7 @@ module.exports = (io, pid) => {
         socket.user = user;
       }
       if (userIsOnline !== socket.userIsOnline) {
-        updateChatUpToDateUsers(recipientId, socket.chatId, userIsOnline);
+        await updateChatUpToDateUsers(recipientId, chatId, userIsOnline);
       }
       if (!socket.user) return;
       const {

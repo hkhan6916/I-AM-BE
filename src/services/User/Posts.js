@@ -216,6 +216,31 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
       },
     },
     {
+      $lookup: { // check if the user has liked the post already
+        from: 'postlikes',
+        let: { parentPostId: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $and: [{ $eq: ['$likedBy', ObjectId(authUserId)] }, { $eq: ['$postId', '$$parentPostId'] }] } } },
+          { $limit: 1 },
+          {
+            $project: {
+              _id: 1,
+              likedBy: 1,
+              postId: 1,
+            },
+          },
+        ],
+        as: 'liked',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$liked',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    {
       $lookup: {
         from: 'posts',
         let: { id: '$repostPostId' },
