@@ -544,6 +544,11 @@ const changeAccountVisibility = async (userId) => {
   const oldVisibility = user.private;
   user.private = !oldVisibility;
   user.save();
+  const userDataObj = user.toObject();
+
+  delete userDataObj.password;
+
+  return { userData: userDataObj };
 };
 
 const toggleFollowersMode = async (userId) => {
