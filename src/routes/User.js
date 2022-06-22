@@ -11,7 +11,6 @@ const {
   getUserData,
   updateUserDetails,
   checkUserExists,
-  generateData,
   deleteUser,
   changeAccountVisibility,
   toggleFollowersMode,
@@ -19,6 +18,8 @@ const {
   blockUser,
   unBlockUser,
   verifyRegisterationDetails,
+  createEmailVerification,
+  verifyUserEmail,
 } = require('../services/User/User');
 const {
   sendFriendRequest, recallFriendRequest, acceptFriendRequest,
@@ -102,6 +103,51 @@ router.post('/user/register', async (req, res) => {
     } else {
       message = e.message;
     }
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+    other,
+  });
+});
+
+router.get('/user/email/verify/:verificationCode', verifyAuth, async (req, res) => {
+  const { verificationCode } = req.params;
+  let success = true;
+  let message = 'User email verified.';
+  let data = {};
+  let other = {};
+
+  try {
+    data = await verifyUserEmail(req.user.id, verificationCode);
+  } catch (e) {
+    success = false;
+    other = e.validationErrors;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+    other,
+  });
+});
+
+router.get('/user/email/create-email-verification', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Email verification created.';
+  let data = {};
+  let other = {};
+
+  try {
+    data = await createEmailVerification(req.user.id);
+  } catch (e) {
+    success = false;
+    other = e.validationErrors;
+    message = e.message;
   }
 
   res.status(200).json({

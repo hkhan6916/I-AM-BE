@@ -58,6 +58,9 @@ const UserSchema = new Schema({
   verifiedDate: {
     type: Date,
   },
+  verificationCode: {
+    type: String,
+  },
   suspended: {
     type: Boolean,
     default: false,
