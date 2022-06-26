@@ -60,6 +60,106 @@ const searchUser = async (username, offset) => {
   return users;
 };
 
+const searchUserContacts = async (username, userId, offset) => {
+  const searchQuery = username.toLowerCase();
+  const result = await User.aggregate([
+    {
+      $search: {
+        index: 'user_search',
+        compound: {
+          should: [
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'firstName',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'lastName',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'username',
+              },
+            },
+            {
+              autocomplete: {
+                query: searchQuery,
+                path: 'jobTitle',
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: 'connections',
+        let: { searchedUserId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $or: [
+                  {
+                    $and: [{
+                      $eq: ['$requesterId', ObjectId(userId)],
+                    },
+                    {
+                      $eq: ['$receiverId', '$$searchedUserId'],
+                    },
+                    {
+                      $eq: ['$accepted', true],
+                    },
+                    ],
+                  },
+                  {
+                    $and: [{
+                      $eq: ['$requesterId', '$$searchedUserId'],
+                    },
+                    {
+                      $eq: ['$receiverId', ObjectId(userId)],
+                    }, {
+                      $eq: ['$accepted', true],
+                    }],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: 'connected',
+      },
+    },
+    {
+      $unwind:
+       {
+         path: '$connected',
+         preserveNullAndEmptyArrays: true,
+       },
+    },
+    { $skip: offset || 0 },
+    { $limit: 20 },
+  ]);
+
+  const users = result.reduce((usersToReturn, user) => {
+    if (user.profileVideoUrl && user.connected) {
+      usersToReturn.push({
+        ...user,
+        profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+      });
+    }
+    return usersToReturn;
+  }, []);
+
+  return { users, nextOffset: (offset || 0) + 20 };
+};
+
 const getSingleUser = async (otherUserId, userId) => {
   const otherUserRecord = (await User.aggregate([{
     $match: {
@@ -471,7 +571,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
   return friends;
 };
 
-const getUserFriendRequests = async (userId) => {
+const getUserFriendRequests = async (userId, sentOffset, receivedOffset) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error('No user found.');
@@ -484,6 +584,8 @@ const getUserFriendRequests = async (userId) => {
         accepted: false,
       },
     },
+    { $limit: 10 },
+    { $skip: Number(receivedOffset) },
     {
       $lookup: {
         from: 'users',
@@ -500,7 +602,6 @@ const getUserFriendRequests = async (userId) => {
         as: 'user',
       },
     },
-    { $limit: 10 },
     {
       $unwind:
        {
@@ -571,6 +672,8 @@ const getUserFriendRequests = async (userId) => {
         accepted: false,
       },
     },
+    { $limit: 10 },
+    { $skip: Number(sentOffset) },
     {
       $lookup: {
         from: 'users',
@@ -587,7 +690,6 @@ const getUserFriendRequests = async (userId) => {
         as: 'user',
       },
     },
-    { $limit: 10 },
     {
       $unwind:
        {
@@ -826,4 +928,5 @@ module.exports = {
   acceptFriendRequest,
   rejectFriendRequest,
   removeConnection,
+  searchUserContacts,
 };

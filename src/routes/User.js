@@ -27,6 +27,7 @@ const {
   getSingleUser,
   getUserFriendRequests,
   getOtherUserFriends,
+  searchUserContacts,
 } = require('../services/User/Friends');
 const { getUserFeed } = require('../services/User/Feed');
 const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
@@ -229,6 +230,26 @@ router.post('/user/search/:offset', verifyAuth, async (req, res) => {
   });
 });
 
+router.post('/user/friends/search/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Users found.';
+  let data = {};
+  const { searchTerm, userId } = req.body;
+  const { offset } = req.params;
+  try {
+    data = await searchUserContacts(searchTerm, (userId || req.user.id), parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
 router.post('/user/friend/fetch/all', verifyAuth, async (req, res) => {
   let success = true;
   // this message looks sad :(
@@ -364,12 +385,13 @@ router.get('/user/friend/request/accept/:requesterId', verifyAuth, async (req, r
   });
 });
 
-router.get('/user/friend/requests', verifyAuth, async (req, res) => {
+router.post('/user/friend/requests', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Friend Requests fetched.';
   let data = {};
   try {
-    data = await getUserFriendRequests(req.user.id);
+    const { sentOffset, receivedOffset } = req.body;
+    data = await getUserFriendRequests(req.user.id, sentOffset, receivedOffset);
   } catch (e) {
     success = false;
     message = e.message;
