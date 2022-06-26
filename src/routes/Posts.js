@@ -24,7 +24,6 @@ const {
 
 const verifyAuth = require('../middleware/auth');
 const { getUserSearchFeed } = require('../services/User/Posts');
-const { generateGif } = require('../helpers');
 const { testSocket } = require('../services/Chat/Chat');
 
 // Posts
