@@ -110,6 +110,7 @@ const getUserPosts = async (userId, offset) => {
         createdAt: 1,
         height: 1,
         width: 1,
+        numberOfComments: 1,
         liked: {
           $cond: {
             if: { $ne: [{ $type: '$liked' }, 'missing'] },
@@ -341,6 +342,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         createdAt: 1,
         height: 1,
         width: 1,
+        numberOfComments: 1,
         belongsToUser: {
           $cond: {
             if: { $eq: ['$userId', ObjectId(userId)] },

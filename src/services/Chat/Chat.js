@@ -53,19 +53,21 @@ const getChatMessages = async (chatId, offset, userId) => {
     { $limit: 15 },
     // { $sort: { createdAt: 1 } },
   ]);
+  const filteredMessages = messages.filter((message) => {
+    if (message?.ready || (message.senderId.toString() === userId && !message.ready)) {
+      const arr = message.mediaUrl ? message.mediaUrl.split('/') : null;
+      const mediaKey = arr ? arr[arr.length - 1] : null;
 
-  messages.forEach((message) => {
-    const arr = message.mediaUrl ? message.mediaUrl.split('/') : null;
-    const mediaKey = arr ? arr[arr.length - 1] : null;
-
-    if (mediaKey) {
-      if (message.mediaType === 'image') {
-        message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
+      if (mediaKey) {
+        if (message.mediaType === 'image') {
+          message.mediaHeaders = getFileSignedHeaders(message.mediaUrl);
+        }
+        if (message.mediaType === 'video') {
+          message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
+          message.thumbnailHeaders = getFileSignedHeaders(message.thumbnailUrl);
+        }
       }
-      if (message.mediaType === 'video') {
-        message.mediaUrl = getCloudfrontSignedUrl(mediaKey);
-        message.thumbnailHeaders = getFileSignedHeaders(message.thumbnailUrl);
-      }
+      return message;
     }
   });
 
@@ -83,7 +85,7 @@ const getChatMessages = async (chatId, offset, userId) => {
     chat.save();
   }
 
-  return messages;
+  return filteredMessages;
 };
 
 const createChat = async (participants, hostId) => {
@@ -200,9 +202,7 @@ const uploadFileAndSendMessage = async (message) => {
 
   const Bucket = process.env.AWS_BUCKET_NAME;
   const region = process.env.AWS_BUCKET_REGION;
-  const socket = io(process.env.NODE_ENV === 'development'
-    ? 'ws://192.168.5.101:5000'
-    : 'wss://magnet-be.herokuapp.com', {
+  const socket = io(process.env.API_WEBSOCKET_URL, {
     auth: {
       token: message?.auth,
     },
