@@ -6,7 +6,9 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 const BlockedUsers = require('../../models/user/BlockedUsers');
 
-const searchUser = async (username, offset) => {
+const searchUser = async ({
+  username, publicUsers, avoidSameUser, userId, offset,
+}) => {
   const searchQuery = username.toLowerCase();
 
   const result = await User.aggregate([
@@ -48,7 +50,10 @@ const searchUser = async (username, offset) => {
   ]);
 
   const users = result.reduce((usersToReturn, user) => {
-    if (user.profileVideoUrl) {
+    if (user.profileVideoUrl && (!publicUsers || (publicUsers && !user.private))
+    && (!avoidSameUser
+      || (avoidSameUser && userId !== user._id?.toString()))
+    ) {
       usersToReturn.push({
         ...user,
         profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
@@ -146,7 +151,7 @@ const searchUserContacts = async (username, userId, offset) => {
     { $skip: offset || 0 },
     { $limit: 20 },
   ]);
-
+  // have to do this as no way to check if user is added as contacts in the search pipeline
   const users = result.reduce((usersToReturn, user) => {
     if (user.profileVideoUrl && user.connected) {
       usersToReturn.push({

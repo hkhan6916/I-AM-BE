@@ -214,10 +214,12 @@ router.post('/user/search/:offset', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Users found.';
   let data = {};
-  const { searchTerm } = req.body;
+  const { searchTerm, publicUsers, avoidSameUser } = req.body;
   const { offset } = req.params;
   try {
-    data = await searchUser(searchTerm, parseInt(offset, 10));
+    data = await searchUser({
+      username: searchTerm, publicUsers, avoidSameUser, userId: req.user.id, offset: parseInt(offset, 10),
+    });
   } catch (e) {
     success = false;
     message = e.message;
