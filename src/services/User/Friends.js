@@ -10,7 +10,7 @@ const searchUser = async ({
   username, publicUsers, avoidSameUser, userId, offset,
 }) => {
   const searchQuery = username.toLowerCase();
-
+  if (!searchQuery) return [];
   const result = await User.aggregate([
     {
       $search: {
@@ -49,10 +49,44 @@ const searchUser = async ({
     { $limit: 10 },
   ]);
 
+  // create array of user ids from above result of users found
+  // get users contacts where receiver or requestor id in list of ids created
+  // Check if user is in contact list and return even if private
+
+  const userIds = result.map((user) => (user?._id));
+
+  const userContactsIds = (await Connections.aggregate([
+    {
+      $match: {
+        $expr: {
+          $or: [{
+            $and: [
+              {
+                $in: ['$receiverId', userIds],
+              },
+              {
+                $eq: ['$requesterId', ObjectId(userId)],
+              },
+            ],
+          }, {
+            $and: [
+              {
+                $eq: ['$receiverId', ObjectId(userId)],
+              },
+              {
+                $in: ['$requesterId', userIds],
+              },
+            ],
+          }],
+        },
+      },
+    },
+    { $limit: 10 },
+  ])).map((connection) => (connection.receiverId.toString() === userId ? connection.requesterId?.toString() : connection.receiverId?.toString()));
   const users = result.reduce((usersToReturn, user) => {
-    if (user.profileVideoUrl && (!publicUsers || (publicUsers && !user.private))
+    if (user.profileVideoUrl && (!publicUsers || !user.private || (userContactsIds.find((id) => id === user._id.toString())))
     && (!avoidSameUser
-      || (avoidSameUser && userId !== user._id?.toString()))
+      || userId !== user._id?.toString())
     ) {
       usersToReturn.push({
         ...user,
@@ -67,6 +101,8 @@ const searchUser = async ({
 
 const searchUserContacts = async (username, userId, offset) => {
   const searchQuery = username.toLowerCase();
+  if (!searchQuery) return { users: [], nextOffset: (offset || 0) + 20 };
+
   const result = await User.aggregate([
     {
       $search: {
