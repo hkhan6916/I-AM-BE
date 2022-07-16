@@ -91,25 +91,4 @@ router.post('/files/signed-video-profile-upload-url', verifyAuth, async (req, re
   });
 });
 
-// just for testing delete later
-router.post('/files/cloudfront', verifyAuth, async (req, res) => {
-  let success = true;
-  let message = 'File uploaded.';
-  let data = {};
-  const { mediaKey } = req.body;
-  try {
-    const fileUrl = getCloudfrontSignedUrl(mediaKey);
-    data = fileUrl;
-  } catch (e) {
-    success = false;
-    message = e.message;
-  }
-
-  res.status(200).json({
-    success,
-    message,
-    data,
-  });
-});
-
 module.exports = router;

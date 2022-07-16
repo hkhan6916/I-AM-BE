@@ -459,8 +459,10 @@ const removeLikeFromComment = async (commentId, userId) => {
     throw new Error('User has not liked this post yet.');
   }
 
-  comment.likes -= 1;
-  comment.save();
+  if (comment.likes > 0) {
+    comment.likes -= 1;
+    comment.save();
+  }
   return 'Comment like has been removed';
 };
 

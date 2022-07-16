@@ -42,8 +42,10 @@ const removeLikeFromPost = async (postId, userId) => {
     throw new Error('User has not liked this post yet.');
   }
 
-  post.likes -= 1;
-  post.save();
+  if (post.likes > 0) {
+    post.likes -= 1;
+    post.save();
+  }
   return 'Post like has been removed';
 };
 
