@@ -68,6 +68,7 @@ const updateComment = async ({ commentId, userId, body }) => {
 };
 
 const removeComment = async (commentId, userId) => {
+  // should probably also delete replies if a comment is deleted. Fine for now though
   const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new Error('Comment does not exist.');
@@ -79,11 +80,12 @@ const removeComment = async (commentId, userId) => {
   const post = await Posts.findById(comment.postId);
 
   const parentComment = comment.parentCommentId && await Comment.findById(comment.parentCommentId);
-  post.numberOfComments -= 1;
-
+  if (!comment.parentCommentId && post.numberOfComments > 0) { // if reply and has parentCommentId, don't remove 1 from post like count as not standalone comment
+    post.numberOfComments -= 1;
+    post.save();
+  }
   await Comment.findByIdAndDelete(commentId);
 
-  post.save();
   if (parentComment) {
     parentComment.replyCount -= 1;
     parentComment.save();
