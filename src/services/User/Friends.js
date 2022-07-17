@@ -764,6 +764,12 @@ const getUserFriendRequests = async (userId, sentOffset, receivedOffset) => {
   return { sent, received };
 };
 
+/*  NOTE: Could use mongodb .collection(query).count() to correct user contact count if needed e.g.
+  const count = await Connections.find({
+    requesterId: userId,
+  }).count();
+*/
+
 const sendFriendRequest = async (userId, receiverId) => {
   if (userId === receiverId) {
     throw new Error('Cannot send a request to the same user.');
@@ -804,10 +810,8 @@ const sendFriendRequest = async (userId, receiverId) => {
   receiver.numberOfFriendsAsReceiver += 1;
 
   const receiverIsBlocked = await BlockedUsers.findOne({ blockedUserId: receiverId, userId });
-  // if (receiverIsBlocked) throw new Error('Receiver is blocked'); // TODO: test this
 
   const userIsBlocked = await BlockedUsers.findOne({ blockedUserId: userId, userId: receiverId });
-  // if (userIsBlocked) throw new Error('Receiver has blocked this user'); // TODO: test this
 
   if (userIsBlocked || receiverIsBlocked) {
     const newRequest = await Connections.create({
@@ -845,6 +849,7 @@ const sendFriendRequest = async (userId, receiverId) => {
   return newRequest;
 };
 
+// NOTE: Could use mongodb .collection(query).count() to correct user contact count if needed example above sendfriendrequest
 const acceptFriendRequest = async (userId, requesterId) => {
   const requester = await User.findById(requesterId);
   const user = await User.findById(userId);
@@ -876,6 +881,7 @@ const acceptFriendRequest = async (userId, requesterId) => {
   return requester;
 };
 
+// NOTE: Could use mongodb .collection(query).count() to correct user contact count if needed example above sendfriendrequest
 const rejectFriendRequest = async (userId, requesterId) => {
   const user = await User.findById(userId);
 
@@ -898,6 +904,7 @@ const rejectFriendRequest = async (userId, requesterId) => {
   return { rejected: true };
 };
 
+// NOTE: Could use mongodb .collection(query).count() to correct user contact count if needed example above sendfriendrequest
 const recallFriendRequest = async (userId, receiverId) => {
   const user = await User.findById(userId);
 
@@ -916,6 +923,7 @@ const recallFriendRequest = async (userId, receiverId) => {
   return { recalled: true };
 };
 
+// NOTE: Could use mongodb .collection(query).count() to correct user contact count if needed example above sendfriendrequest
 const removeConnection = async (userId, friendId, skipNotFoundError) => {
   const friend = await User.findById(friendId);
   const user = await User.findById(userId);
