@@ -35,6 +35,7 @@ const getChatMessages = async (chatId, offset, userId) => {
               firstName: 1,
               lastName: 1,
               username: 1,
+              jobTitle: 1,
             },
           },
         ],
