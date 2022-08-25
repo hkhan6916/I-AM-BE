@@ -98,11 +98,21 @@ const getUserChats = async (userId, offset) => {
 
 const getUserChat = async (chatId, userId) => {
   const chat = await Chat.findById(chatId);
+  const user = await User.findOne({ _id: userId }, {
+    firstName: 1, lastName: 1, username: 1, _id: 1,
+  });
   if (!chat) {
     throw new Error('Chat does not exist');
   }
   if (!chat.participants.includes(userId)) throw new Error('User is not a participant in this chat');
-  const users = await User.find({ _id: { $in: chat.participants } }, { firstName: 1, lastName: 1, username: 1 });
+  const users = await User.find({ _id: { $in: chat.participants } }, {
+    firstName: 1, lastName: 1, username: 1, _id: 1,
+  });
+
+  // In case the user who is sending the request is actually the first user in the list.
+  if (users?.[0]?._id.toString() === userId) {
+    return { ...chat.toObject(), users: [...users.filter((u) => u._id.toString() !== userId), user] };
+  }
 
   return { ...chat.toObject(), users };
 };

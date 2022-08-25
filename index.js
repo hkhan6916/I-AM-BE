@@ -12,7 +12,6 @@ const numCPUs = process.env.NODE_ENV === 'development' ? require('os').cpus().le
 const { createAdapter } = require('@socket.io/redis-adapter');
 // const { setupMaster, setupWorker } = require('@socket.io/sticky');
 const { createAdapter: createClusterAdapter } = require('@socket.io/cluster-adapter');
-const fileUpload = require('express-fileupload');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -23,8 +22,6 @@ const messagesIo = require('./src/routes/Messages.socket');
 
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
-  const port = process.env.PORT || 5000;
-  const httpServer = http.createServer();
 
   // setup sticky sessions
   // setupMaster(httpServer, {
@@ -87,11 +84,6 @@ if (cluster.isMaster) {
   });
 
   app.use(express.urlencoded({ extended: true }));
-  // app.use(fileUpload({
-  //   abortOnLimit: true,
-  //   limits: { fileSize: 50 * 1024 * 1024 },
-
-  // }));
 
   app.use(express.json());
 
@@ -100,5 +92,3 @@ if (cluster.isMaster) {
   app.use(user, posts, jobs, file, chat, notifications);
   server.listen(port, () => console.log(`Listening on port ${port}`));
 }
-
-// server.listen(port, () => console.log(`Listening on port ${port}`));
