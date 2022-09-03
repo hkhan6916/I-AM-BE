@@ -284,7 +284,7 @@ const getPost = async (postId, userId) => {
     throw new Error('Post is private or hidden and does not belong to this user.');
   }
   post[0].mediaUrl = getCloudfrontSignedUrl(post[0].mediaKey);
-  post[0].thumbnailHeaders = getFileSignedHeaders(post[0].mediaUrl);
+  post[0].thumbnailHeaders = getFileSignedHeaders(post[0].thumbnailUrl);
   return post[0];
 };
 const deletePost = async (postId, userId) => {
