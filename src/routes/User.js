@@ -62,12 +62,12 @@ router.post('/user/verify-registeration-details', async (req, res) => {
   let data = {};
 
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, profileVideoFileName,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
   } = req.body;
 
   try {
     data = await verifyRegisterationDetails({
-      username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName,
+      username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
     });
   } catch (e) {
     success = false;
@@ -83,7 +83,7 @@ router.post('/user/verify-registeration-details', async (req, res) => {
 
 router.post('/user/register', async (req, res) => {
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
   } = req.body;
   let success = true;
   let message = 'User created.';
@@ -92,7 +92,7 @@ router.post('/user/register', async (req, res) => {
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
+      username, email, plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
     });
   } catch (e) {
     success = false;

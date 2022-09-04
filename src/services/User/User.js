@@ -50,6 +50,7 @@ const loginUser = async (identifier, password) => {
       numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
       password: '',
       profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
+      profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
     };
     const response = {
       token, userId: user._id, apiKeys: { tenorApiKey: process.env.TENOR_API_KEY }, userData,
@@ -61,11 +62,19 @@ const loginUser = async (identifier, password) => {
 };
 
 const verifyRegisterationDetails = async ({
-  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName,
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
 }) => {
-  if (!profileVideoFileName.split('.').pop()) {
+  const profileVideoExtension = profileVideoFileName?.split('.').pop();
+  const profileImageExtension = profileImageFileName?.split('.').pop();
+
+  if (profileVideoFileName && profileVideoFileName === profileVideoExtension) {
     throw new Error('Profile video file name must have an extension');
   }
+  if (profileImageFileName && profileImageFileName === profileImageExtension) {
+    throw new Error('Profile image file name must have an extension');
+  }
+
+  if (!profileImageFileName && !profileVideoFileName) throw new Error('A profile media file is required');
 
   const schema = object().shape({
     firstName: string().required(),
@@ -77,11 +86,12 @@ const verifyRegisterationDetails = async ({
     username: string().required(),
     notificationToken: string().required(),
     jobTitle: string().required(),
-    profileVideoFileName: string().required(),
+    profileVideoFileName: string(),
+    profileImageFileName: string(),
   });
 
   await schema.validate({
-    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, profileVideoFileName,
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
   }).catch((err) => {
     if (err.errors?.length) {
       throw new Error(err.errors[0]);
@@ -118,18 +128,25 @@ const verifyRegisterationDetails = async ({
   if (plainTextPassword.length < 8) {
     throw new Error('Password needs to be longer');
   }
-  const profileVideoKey = `${username}_${nanoid()}${profileVideoFileName.replace(/\s/g, '')}`;
-  const signedProfileVideoUploadUrl = await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
+  const profileVideoKey = profileVideoFileName && `${username}_${nanoid()}${profileVideoFileName.replace(/\s/g, '')}`;
+  const profileImageKey = profileImageFileName && `${username}_${nanoid()}${profileImageFileName.replace(/\s/g, '')}`;
+  const signedProfileVideoUploadUrl = profileVideoFileName && await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
+  const signedProfileImageUploadUrl = profileImageFileName && await getSignedUploadS3Url(`profileImages/${profileImageKey}`);
 
-  if (!signedProfileVideoUploadUrl) {
+  if ((profileVideoFileName && !signedProfileVideoUploadUrl) || (profileImageFileName && !signedProfileImageUploadUrl)) {
     throw new Error('Could not generate signed upload url');
   }
 
-  return { signedProfileVideoUploadUrl, profileVideoKey };
+  return {
+    signedProfileVideoUploadUrl,
+    profileVideoKey,
+    signedProfileImageUploadUrl: !profileVideoFileName ? signedProfileImageUploadUrl : null,
+    profileImageKey: !profileVideoFileName ? profileImageKey : null,
+  };
 };
 
 const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey,
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
 }) => {
   const schema = object().shape({
     firstName: string().required(),
@@ -187,6 +204,7 @@ const registerUser = async ({
   const profileVideoUrl = profileVideoKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${profileVideoKey}` : '';
 
   const profileGifUrl = profileVideoKey ? await uploadProfileGif(profileVideoKey) : '';
+  const profileImageUrl = profileImageKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileImages/${profileImageKey}` : '';
 
   // if user want to upload a profile video but failed to upload it
   if ((!profileVideoUrl || !profileGifUrl) && profileVideoKey) {
@@ -203,12 +221,13 @@ const registerUser = async ({
     lastName,
     profileVideoUrl,
     profileGifUrl,
+    profileImageUrl,
     notificationToken,
     jobTitle,
     flipProfileVideo,
     verificationCode: Math.floor(100000 + Math.random() * 900000),
   });
-  return { registered: true, profileVideoUrl };
+  return { registered: true, profileVideoUrl, profileImageUrl };
 };
 
 const createEmailVerification = async (userId) => {
@@ -360,6 +379,7 @@ const getUserData = async (userId) => {
     numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
     password: '',
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
+    profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
   };
 };
 const updateUserDetails = async ({ userId, details }) => {
@@ -424,12 +444,14 @@ const updateUserDetails = async ({ userId, details }) => {
   if (details.profileVideoKey) {
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
+    const currentProfileImageUrl = user.profileImageUrl;
 
-    const gifUrlIndex = currentProfileGifUrl.lastIndexOf('/');
-    const videoUrlIndex = currentProfileVideoUrl.lastIndexOf('/');
+    const gifUrlIndex = currentProfileGifUrl?.lastIndexOf('/');
+    const videoUrlIndex = currentProfileVideoUrl?.lastIndexOf('/');
 
-    const currentProfileGifKey = currentProfileGifUrl.substring(gifUrlIndex + 1);
-    const currentProfileVideoKey = currentProfileVideoUrl.substring(videoUrlIndex + 1);
+    const currentProfileGifKey = currentProfileGifUrl?.substring(gifUrlIndex + 1);
+    const currentProfileVideoKey = currentProfileVideoUrl?.substring(videoUrlIndex + 1);
+    const currentProfileImageKey = currentProfileImageUrl?.substring(videoUrlIndex + 1);
 
     const profileVideoUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${details.profileVideoKey}`;
     const profileGifUrl = await uploadProfileGif(details.profileVideoKey);
@@ -438,11 +460,13 @@ const updateUserDetails = async ({ userId, details }) => {
       ...details,
       profileVideoUrl,
       profileGifUrl,
+      profileImageUrl: '',
     });
-    if (profileVideoUrl && profileGifUrl && currentProfileVideoUrl && currentProfileGifUrl) {
+    if (profileVideoUrl && profileGifUrl && (currentProfileVideoUrl || currentProfileGifUrl || currentProfileImageUrl)) {
       await Promise.allSettled([
         deleteFile(currentProfileGifKey),
         deleteFile(currentProfileVideoKey),
+        deleteFile(currentProfileImageKey),
       ]);
     }
     return {
@@ -453,6 +477,41 @@ const updateUserDetails = async ({ userId, details }) => {
       profileVideoHeaders: getFileSignedHeaders(profileVideoUrl),
     };
   }
+
+  if (details.profileImageKey) {
+    const currentProfileGifUrl = user.profileGifUrl;
+    const currentProfileVideoUrl = user.profileVideoUrl;
+    const currentProfileImageUrl = user.profileImageUrl;
+
+    const gifUrlIndex = currentProfileGifUrl?.lastIndexOf('/');
+    const videoUrlIndex = currentProfileVideoUrl?.lastIndexOf('/');
+
+    const currentProfileGifKey = currentProfileGifUrl?.substring(gifUrlIndex + 1);
+    const currentProfileVideoKey = currentProfileVideoUrl?.substring(videoUrlIndex + 1);
+    const currentProfileImageKey = currentProfileImageUrl?.substring(videoUrlIndex + 1);
+
+    const profileImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${details.profileVideoKey}`;
+
+    await User.findByIdAndUpdate(userId, {
+      ...details,
+      profileVideoUrl: '',
+      profileGifUrl: '',
+      profileImageUrl,
+    });
+    if (profileImageUrl && (currentProfileVideoUrl || currentProfileGifUrl || currentProfileImageUrl)) {
+      await Promise.allSettled([
+        deleteFile(currentProfileGifKey),
+        deleteFile(currentProfileVideoKey),
+        deleteFile(currentProfileImageKey),
+      ]);
+    }
+    return {
+      ...user.toObject(),
+      ...details,
+      profileImageUrl,
+    };
+  }
+
   if (details.password) {
     const password = await bcrypt.hash(details.password, 10);
     await User.findByIdAndUpdate(userId, { ...details, password });

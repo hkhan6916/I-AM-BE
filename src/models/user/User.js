@@ -29,6 +29,9 @@ const UserSchema = new Schema({
   profileGifUrl: {
     type: String,
   },
+  profileImageUrl: {
+    type: String,
+  },
   firstName: {
     type: String,
     required: true,

@@ -16,5 +16,6 @@ module.exports = (mediaUrl) => {
       path: `${url.pathname}${url.search}`,
     };
     return aws4.sign(config, credentials).headers;
-  } return null;
+  }
+  return null;
 };

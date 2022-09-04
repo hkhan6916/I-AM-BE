@@ -15,11 +15,12 @@ module.exports = async (key) => {
     Bucket,
     Key: key,
   };
-
-  await awsConnection.deleteObject(profileGifParams, async (err, pres) => {
-    if (err) {
-      throw err;
-    }
-  }).promise();
+  if (key) {
+    await awsConnection.deleteObject(profileGifParams, async (err, pres) => {
+      if (err) {
+        throw err;
+      }
+    }).promise();
+  }
   return 'deleted';
 };
