@@ -54,6 +54,7 @@ const getUserPosts = async (userId, offset) => {
                     _id: 1,
                     username: 1,
                     profileGifUrl: 1,
+                    profileImageUrl: 1,
                     firstName: 1,
                     lastName: 1,
                     flipProfileVideo: 1,
@@ -155,14 +156,14 @@ const getUserPosts = async (userId, offset) => {
         post.repostPostObj.mediaHeaders = headers;
       }
       if (post.repostPostObj.postAuthor) {
-        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-        post.repostPostObj.postAuthor.profileGifHeaders = headers;
+        post.repostPostObj.postAuthor.profileGifHeaders = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+        post.repostPostObj.postAuthor.profileImageHeaders = getFileSignedHeaders(post.repostPostObj.postAuthor.profileImageUrl);
       }
     }
 
     if (post.postAuthor?.profileGifUrl) {
-      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
-      post.postAuthor.profileGifHeaders = headers;
+      post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);
   });
@@ -281,6 +282,7 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
                     _id: 1,
                     username: 1,
                     profileGifUrl: 1,
+                    profileImageUrl: 1,
                     firstName: 1,
                     lastName: 1,
                     flipProfileVideo: 1,
@@ -383,18 +385,17 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
         post.repostPostObj.mediaUrl = getCloudfrontSignedUrl(post.repostPostObj.mediaKey);
         post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
       } else {
-        const headers = getFileSignedHeaders(post.repostPostObj?.mediaUrl);
-        post.repostPostObj.mediaHeaders = headers;
+        post.repostPostObj.mediaHeaders = getFileSignedHeaders(post.repostPostObj?.mediaUrl);
       }
       if (post.repostPostObj.postAuthor) {
-        const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-        post.repostPostObj.postAuthor.profileGifHeaders = headers;
+        post.repostPostObj.postAuthor.profileGifHeaders = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
+        post.repostPostObj.postAuthor.profileImageHeaders = getFileSignedHeaders(post.repostPostObj.postAuthor.profileImageUrl);
       }
     }
 
     if (post.postAuthor?.profileGifUrl) {
-      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
-      post.postAuthor.profileGifHeaders = headers;
+      post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);
   });
@@ -434,6 +435,7 @@ const getUserSearchFeed = async (offset = 0, userId) => {
               _id: 1,
               username: 1,
               profileGifUrl: 1,
+              profileImageUrl: 1,
               flipProfileVideo: 1,
               firstName: 1,
               lastName: 1,
@@ -487,8 +489,8 @@ const getUserSearchFeed = async (offset = 0, userId) => {
     }
 
     if (post.postAuthor?.profileGifUrl) {
-      const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
-      post.postAuthor.profileGifHeaders = headers;
+      post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+      post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);
   });

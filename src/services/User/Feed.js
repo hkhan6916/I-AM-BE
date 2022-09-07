@@ -88,6 +88,7 @@ const aggregateFeed = async ({
                     _id: 1,
                     username: 1,
                     profileGifUrl: 1,
+                    profileImageUrl: 1,
                     flipProfileVideo: 1,
                     firstName: 1,
                     lastName: 1,
@@ -129,6 +130,7 @@ const aggregateFeed = async ({
           {
             $project: {
               profileGifUrl: 1,
+              profileImageUrl: 1,
               username: 1,
               firstName: 1,
               lastName: 1,
@@ -294,6 +296,7 @@ const aggregateFeed = async ({
                           _id: 1,
                           username: 1,
                           profileGifUrl: 1,
+                          profileImageUrl: 1,
                           flipProfileVideo: 1,
                           firstName: 1,
                           lastName: 1,
@@ -344,6 +347,7 @@ const aggregateFeed = async ({
                     firstName: 1,
                     lastName: 1,
                     profileGifUrl: 1,
+                    profileImageUrl: 1,
                     flipProfileVideo: 1,
                   },
                 },
@@ -386,6 +390,7 @@ const aggregateFeed = async ({
                     _id: 1,
                     username: 1,
                     profileGifUrl: 1,
+                    profileImageUrl: 1,
                     flipProfileVideo: 1,
                     firstName: 1,
                     lastName: 1,
@@ -501,41 +506,6 @@ const aggregateFeed = async ({
     ...friendsInterestsBasedFeed,
   ];
 
-  // const feed = sortByDate(initialFeed);
-
-  // feed.forEach(async (post) => {
-  //   if (post) {
-  //     calculateAge(post);
-
-  //     if (post.repostPostObj?.mediaUrl) {
-  //       if (post.repostPostObj.mediaType === 'video') {
-  //         post.repostPostObj.mediaUrl = getFileSignedUrl(post.repostPostObj.mediaKey);
-  //         post.repostPostObj.thumbnailHeaders = getFileSignedHeaders(post.repostPostObj.thumbnailUrl);
-  //       } else {
-  //         const headers = getFileSignedHeaders(post.repostPostObj.mediaUrl);
-  //         post.repostPostObj.mediaHeaders = headers;
-  //       }
-  //     }
-  //     if (post.repostPostObj?.postAuthor) {
-  //       const headers = getFileSignedHeaders(post.repostPostObj.postAuthor.profileGifUrl);
-  //       post.repostPostObj.postAuthor.profileGifHeaders = headers;
-  //     }
-  //     if (post.postAuthor?.profileGifUrl) {
-  //       const headers = getFileSignedHeaders(post.postAuthor.profileGifUrl);
-  //       post.postAuthor.profileGifHeaders = headers;
-  //     }
-  //     if (post.mediaUrl) {
-  //       if (post.mediaType === 'video') {
-  //         post.thumbnailHeaders = getFileSignedHeaders(post.thumbnailUrl);
-  //         post.mediaUrl = getFileSignedUrl(post.mediaKey);
-  //       } else {
-  //         const headers = getFileSignedHeaders(post.mediaUrl);
-  //         post.mediaHeaders = headers;
-  //       }
-  //     }
-  //   }
-  // });
-
   const sortedFeed = sortByDate(initialFeed);
 
   const nonDuplicatePostIds = [];
@@ -557,12 +527,12 @@ const aggregateFeed = async ({
         }
       }
       if (currentPost.repostPostObj?.postAuthor) {
-        const headers = getFileSignedHeaders(currentPost.repostPostObj.postAuthor.profileGifUrl);
-        currentPost.repostPostObj.postAuthor.profileGifHeaders = headers;
+        currentPost.repostPostObj.postAuthor.profileGifHeaders = getFileSignedHeaders(currentPost.repostPostObj.postAuthor.profileGifUrl);
+        currentPost.repostPostObj.postAuthor.profileImageHeaders = getFileSignedHeaders(currentPost.repostPostObj.postAuthor.profileImageUrl);
       }
       if (currentPost.postAuthor?.profileGifUrl) {
-        const headers = getFileSignedHeaders(currentPost.postAuthor.profileGifUrl);
-        currentPost.postAuthor.profileGifHeaders = headers;
+        currentPost.postAuthor.profileGifHeaders = getFileSignedHeaders(currentPost.postAuthor.profileGifUrl);
+        currentPost.postAuthor.profileImageHeaders = getFileSignedHeaders(currentPost.postAuthor.profileImageUrl);
       }
       if (currentPost.mediaUrl) {
         if (currentPost.mediaType === 'video') {

@@ -273,6 +273,7 @@ const getSingleUser = async (otherUserId, userId) => {
       username: 1,
       email: 1,
       profileGifUrl: 1,
+      profileImageUrl: 1,
       profileVideoUrl: 1,
       firstName: 1,
       lastName: 1,
@@ -319,6 +320,7 @@ const getSingleUser = async (otherUserId, userId) => {
     ...otherUserObj,
     // profileVideoHeaders: getFileSignedHeaders(otherUserRecord.profileVideoUrl),
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
+    profileImageHeaders: getFileSignedHeaders(otherUserObj.profileImageUrl),
     isFriend: !!requestSent?.accepted || !!requestReceived?.accepted,
     requestSent: !!requestSent,
     requestReceived: !!requestReceived,
@@ -410,6 +412,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         email: 1,
         password: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
         firstName: 1,
         lastName: 1,
         jobTitle: 1,
@@ -458,6 +461,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         profileVideoUrl: 1,
         flipProfileVideo: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
       },
     },
   ]);
@@ -494,6 +498,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
         profileVideoUrl: 1,
         flipProfileVideo: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
       },
     },
   ]);
@@ -506,6 +511,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
 
   friends.forEach((friend) => {
     friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
+    friend.profileImageHeaders = getFileSignedHeaders(friend.profileImageUrl);
   });
 
   return {
@@ -555,6 +561,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
         profileVideoUrl: 1,
         flipProfileVideo: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
       },
     },
   ]);
@@ -591,6 +598,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
         profileVideoUrl: 1,
         flipProfileVideo: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
       },
     },
   ]);
@@ -607,6 +615,7 @@ const getOtherUserFriends = async ({ userId, otherUserId, offset }) => {
 
   friends.forEach((friend) => {
     friend.profileGifHeaders = getFileSignedHeaders(friend.profileGifUrl);
+    friend.profileImageHeaders = getFileSignedHeaders(friend.profileImageUrl);
   });
 
   return friends;
@@ -691,6 +700,7 @@ const getUserFriendRequests = async (userId, sentOffset, receivedOffset) => {
         email: 1,
         password: 1,
         profileGifUrl: 1,
+        profileImageUrl: 1,
         firstName: 1,
         lastName: 1,
         jobTitle: 1,
@@ -754,11 +764,13 @@ const getUserFriendRequests = async (userId, sentOffset, receivedOffset) => {
   const received = receivedRecords.map((request) => ({
     ...request,
     profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
+    profileImageHeaders: getFileSignedHeaders(request.profileImageUrl),
   }));
 
   const sent = sentRecords.map((request) => ({
     ...request,
     profileGifHeaders: getFileSignedHeaders(request.profileGifUrl),
+    profileImageHeaders: getFileSignedHeaders(request.profileImageUrl),
   }));
 
   return { sent, received };

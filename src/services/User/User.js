@@ -485,12 +485,13 @@ const updateUserDetails = async ({ userId, details }) => {
 
     const gifUrlIndex = currentProfileGifUrl?.lastIndexOf('/');
     const videoUrlIndex = currentProfileVideoUrl?.lastIndexOf('/');
+    const imageUrlIndex = currentProfileImageUrl?.lastIndexOf('/');
 
     const currentProfileGifKey = currentProfileGifUrl?.substring(gifUrlIndex + 1);
     const currentProfileVideoKey = currentProfileVideoUrl?.substring(videoUrlIndex + 1);
-    const currentProfileImageKey = currentProfileImageUrl?.substring(videoUrlIndex + 1);
+    const currentProfileImageKey = currentProfileImageUrl?.substring(imageUrlIndex + 1);
 
-    const profileImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${details.profileVideoKey}`;
+    const profileImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileImages/${details.profileImageKey}`;
 
     await User.findByIdAndUpdate(userId, {
       ...details,

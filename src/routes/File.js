@@ -90,5 +90,24 @@ router.post('/files/signed-video-profile-upload-url', verifyAuth, async (req, re
     data,
   });
 });
+router.post('/files/signed-image-profile-upload-url', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Signed url generated.';
+  let data = {};
+  try {
+    const profileImageKey = `${req.body.username || 'upload'}_${nanoid()}${req.body.filename.replace(/\s/g, '')}`;
+    const signedUrl = await getSignedUploadS3Url(`profileImages/${profileImageKey}`);
+    data = { signedUrl, profileImageKey };
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 
 module.exports = router;

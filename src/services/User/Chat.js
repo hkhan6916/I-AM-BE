@@ -39,6 +39,7 @@ const getUserChats = async (userId, offset) => {
               firstName: 1,
               lastName: 1,
               profileGifUrl: 1,
+              profileImageUrl: 1,
               flipProfileVideo: 1,
               username: 1,
             },
@@ -91,6 +92,7 @@ const getUserChats = async (userId, offset) => {
   chats.forEach((chat) => {
     if (chat.users.length) {
       chat.users[0].profileGifHeaders = getFileSignedHeaders(chat.users[0].profileGifUrl);
+      chat.users[0].profileImageHeaders = getFileSignedHeaders(chat.users[0].profileImageUrl);
     }
   });
   return chats;

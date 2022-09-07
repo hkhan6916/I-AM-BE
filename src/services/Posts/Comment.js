@@ -207,6 +207,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
           firstName: 1,
           lastName: 1,
           profileGifUrl: 1,
+          profileImageUrl: 1,
           flipProfileVideo: 1,
           jobTitle: 1,
         },
@@ -217,6 +218,9 @@ const getPostComments = async ({ postId, userId, offset }) => {
     calculateAge(comment);
     if (comment.commentAuthor.profileGifUrl) {
       comment.commentAuthor.profileGifHeaders = getFileSignedHeaders(comment.commentAuthor.profileGifUrl);
+    }
+    if (comment.commentAuthor.profileImageUrl) {
+      comment.commentAuthor.profileImageHeaders = getFileSignedHeaders(comment.commentAuthor.profileImageUrl);
     }
   });
   return comments;
@@ -408,6 +412,7 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
           firstName: 1,
           lastName: 1,
           profileGifUrl: 1,
+          profileImageUrl: 1,
           flipProfileVideo: 1,
           jobTitle: 1,
         },
@@ -418,6 +423,9 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
     calculateAge(reply);
     if (reply.replyAuthor.profileGifUrl) {
       reply.replyAuthor.profileGifHeaders = getFileSignedHeaders(reply.replyAuthor.profileGifUrl);
+    }
+    if (reply.replyAuthor.profileImageUrl) {
+      reply.replyAuthor.profileImageHeaders = getFileSignedHeaders(reply.replyAuthor.profileImageUrl);
     }
   });
   return replies;
