@@ -10,7 +10,7 @@ const { calculateAge, getFileSignedHeaders } = require('../../helpers');
 const addComment = async ({ postId, userId, body }) => {
   const post = await Posts.findById(postId);
   const user = await User.findById(userId);
-  if (!user.profileVideoUrl) {
+  if (!user.profileVideoUrl && !user.profileImageUrl) {
     throw new Error('User profile is not complete');
   }
   if (!body) {
@@ -43,9 +43,11 @@ const addComment = async ({ postId, userId, body }) => {
     belongsToUser: true,
     commentAuthor: {
       profileGifUrl: user.profileGifUrl,
+      profileImageUrl: user.profileImageUrl,
       firstName: user.firstName,
       lastName: user.lastName,
       profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+      profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
     },
   };
 };
@@ -229,7 +231,7 @@ const getPostComments = async ({ postId, userId, offset }) => {
 const replyToComment = async ({ commentId, body, userId }) => {
   const comment = await Comment.findById(commentId);
   const user = await User.findById(userId);
-  if (!user.profileVideoUrl) {
+  if (!user.profileVideoUrl && !user.profileImageUrl) {
     throw new Error('User profile is not complete');
   }
   if (!body) {
@@ -265,9 +267,11 @@ const replyToComment = async ({ commentId, body, userId }) => {
       belongsToUser: true,
       replyAuthor: {
         profileGifUrl: user.profileGifUrl,
+        profileImageUrl: user.profileImageUrl,
         firstName: user.firstName,
         lastName: user.lastName,
         profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+        profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
       },
     };
   }

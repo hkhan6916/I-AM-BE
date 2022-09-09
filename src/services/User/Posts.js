@@ -163,6 +163,9 @@ const getUserPosts = async (userId, offset) => {
 
     if (post.postAuthor?.profileGifUrl) {
       post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+    }
+
+    if (post.postAuthor?.profileImageUrl) {
       post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);
@@ -395,6 +398,8 @@ const getOtherUserPosts = async (userId, offset, authUserId) => {
 
     if (post.postAuthor?.profileGifUrl) {
       post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+    }
+    if (post.postAuthor?.profileImageUrl) {
       post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);
@@ -490,6 +495,8 @@ const getUserSearchFeed = async (offset = 0, userId) => {
 
     if (post.postAuthor?.profileGifUrl) {
       post.postAuthor.profileGifHeaders = getFileSignedHeaders(post.postAuthor.profileGifUrl);
+    }
+    if (post.postAuthor?.profileImageUrl) {
       post.postAuthor.profileImageHeaders = getFileSignedHeaders(post.postAuthor.profileImageUrl);
     }
     calculateAge(post);

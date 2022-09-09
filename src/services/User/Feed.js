@@ -532,6 +532,8 @@ const aggregateFeed = async ({
       }
       if (currentPost.postAuthor?.profileGifUrl) {
         currentPost.postAuthor.profileGifHeaders = getFileSignedHeaders(currentPost.postAuthor.profileGifUrl);
+      }
+      if (currentPost.postAuthor?.profileImageUrl) {
         currentPost.postAuthor.profileImageHeaders = getFileSignedHeaders(currentPost.postAuthor.profileImageUrl);
       }
       if (currentPost.mediaUrl) {

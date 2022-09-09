@@ -84,13 +84,14 @@ const searchUser = async ({
     { $limit: 10 },
   ])).map((connection) => (connection.receiverId.toString() === userId ? connection.requesterId?.toString() : connection.receiverId?.toString()));
   const users = result.reduce((usersToReturn, user) => {
-    if (user.profileVideoUrl && (!publicUsers || !user.private || (userContactsIds.find((id) => id === user._id.toString())))
+    if ((user.profileVideoUrl || user.profileImageUrl) && (!publicUsers || !user.private || (userContactsIds.find((id) => id === user._id.toString())))
     && (!avoidSameUser
       || userId !== user._id?.toString())
     ) {
       usersToReturn.push({
         ...user,
         profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+        profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
       });
     }
     return usersToReturn;
@@ -189,10 +190,11 @@ const searchUserContacts = async (username, userId, offset) => {
   ]);
   // have to do this as no way to check if user is added as contacts in the search pipeline
   const users = result.reduce((usersToReturn, user) => {
-    if (user.profileVideoUrl && user.connected) {
+    if ((user.profileVideoUrl || user.profileImageUrl) && user.connected) {
       usersToReturn.push({
         ...user,
         profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+        profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
       });
     }
     return usersToReturn;
@@ -791,10 +793,10 @@ const sendFriendRequest = async (userId, receiverId) => {
   if (!receiver || !user) {
     throw new Error('User or receiver does not exist.');
   }
-  if (!user.profileVideoUrl) {
+  if (!user.profileVideoUrl && !user.profileImageUrl) {
     throw new Error('User profile is not complete');
   }
-  if (!receiver.profileVideoUrl) {
+  if (!receiver.profileVideoUrl && !receiver.profileImageUrl) {
     throw new Error('Receiver profile is not complete');
   }
 
