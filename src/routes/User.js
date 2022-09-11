@@ -563,7 +563,7 @@ router.post('/user/update/details', verifyAuth, async (req, res) => {
   const details = req.body;
   try {
     data = await updateUserDetails({
-      userId: req.user.id, profileVideoKey: req.body.profileVideoKey, profileImageKey: req.body.profileImageKey, details,
+      userId: req.user.id, details,
     });
   } catch (e) {
     success = false;

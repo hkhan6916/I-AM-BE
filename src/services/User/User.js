@@ -442,6 +442,7 @@ const updateUserDetails = async ({ userId, details }) => {
   }
 
   if (details.profileVideoKey) {
+    if (!details.profileGifKey) throw new Error('No profile gif provided.');
     const currentProfileGifUrl = user.profileGifUrl;
     const currentProfileVideoUrl = user.profileVideoUrl;
     const currentProfileImageUrl = user.profileImageUrl;
@@ -454,8 +455,7 @@ const updateUserDetails = async ({ userId, details }) => {
     const currentProfileImageKey = currentProfileImageUrl?.substring(videoUrlIndex + 1);
 
     const profileVideoUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${details.profileVideoKey}`;
-    const profileGifUrl = await uploadProfileGif(details.profileVideoKey);
-
+    const profileGifUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileGifs/${details.profileGifKey}`;
     await User.findByIdAndUpdate(userId, {
       ...details,
       profileVideoUrl,

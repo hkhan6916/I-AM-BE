@@ -77,8 +77,13 @@ router.post('/files/signed-video-profile-upload-url', verifyAuth, async (req, re
   let data = {};
   try {
     const profileVideoKey = `${req.body.username || 'upload'}_${nanoid()}${req.body.filename.replace(/\s/g, '')}`;
+    const profileGifKey = `${profileVideoKey.substring(0, profileVideoKey.lastIndexOf('.'))}.gif`;
+
     const signedUrl = await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
-    data = { signedUrl, profileVideoKey };
+    const signedGifUrl = await getSignedUploadS3Url(`profileGifs/${profileGifKey}`);
+    data = {
+      signedUrl, signedGifUrl, profileVideoKey, profileGifKey,
+    };
   } catch (e) {
     success = false;
     message = e.message;
