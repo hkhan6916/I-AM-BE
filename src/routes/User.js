@@ -62,12 +62,12 @@ router.post('/user/verify-registeration-details', async (req, res) => {
   let data = {};
 
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, profileVideoFileName, profileGifFileName, profileImageFileName,
   } = req.body;
 
   try {
     data = await verifyRegisterationDetails({
-      username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
+      username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileGifFileName, profileImageFileName,
     });
   } catch (e) {
     success = false;
@@ -83,7 +83,7 @@ router.post('/user/verify-registeration-details', async (req, res) => {
 
 router.post('/user/register', async (req, res) => {
   const {
-    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
+    username, email, password: plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileGifKey, profileImageKey,
   } = req.body;
   let success = true;
   let message = 'User created.';
@@ -92,7 +92,7 @@ router.post('/user/register', async (req, res) => {
 
   try {
     data = await registerUser({
-      username, email, plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
+      username, email, plainTextPassword, lastName, firstName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileGifKey, profileImageKey,
     });
   } catch (e) {
     success = false;

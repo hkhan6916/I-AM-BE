@@ -62,19 +62,30 @@ const loginUser = async (identifier, password) => {
 };
 
 const verifyRegisterationDetails = async ({
-  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, profileVideoFileName, profileGifFileName, profileImageFileName,
 }) => {
   const profileVideoExtension = profileVideoFileName?.split('.').pop();
   const profileImageExtension = profileImageFileName?.split('.').pop();
+  const profileGifExtension = profileGifFileName?.split('.').pop();
 
+  // if file has not extension e.g. nothing after '.'
   if (profileVideoFileName && profileVideoFileName === profileVideoExtension) {
     throw new Error('Profile video file name must have an extension');
+  }
+  if (profileGifFileName && profileGifExtension !== 'gif') {
+    throw new Error(`Profile gif must have the correct file extension. Actual extension was ${profileGifExtension}`);
   }
   if (profileImageFileName && profileImageFileName === profileImageExtension) {
     throw new Error('Profile image file name must have an extension');
   }
 
-  if (!profileImageFileName && !profileVideoFileName) throw new Error('A profile media file is required');
+  if (profileVideoFileName && !profileGifFileName) {
+    throw new Error('A profile gif file name is required when uploading a profile video');
+  }
+
+  if (!profileImageFileName && !profileVideoFileName) {
+    throw new Error('A profile media file is required');
+  }
 
   const schema = object().shape({
     firstName: string().required(),
@@ -88,10 +99,11 @@ const verifyRegisterationDetails = async ({
     jobTitle: string().required(),
     profileVideoFileName: string(),
     profileImageFileName: string(),
+    profileGifFileName: string(),
   });
 
   await schema.validate({
-    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, profileVideoFileName, profileImageFileName,
+    username, firstName, lastName, email, password: plainTextPassword, notificationToken, jobTitle, profileVideoFileName, profileImageFileName, profileGifFileName,
   }).catch((err) => {
     if (err.errors?.length) {
       throw new Error(err.errors[0]);
@@ -130,7 +142,9 @@ const verifyRegisterationDetails = async ({
   }
   const profileVideoKey = profileVideoFileName && `${username}_${nanoid()}${profileVideoFileName.replace(/\s/g, '')}`;
   const profileImageKey = profileImageFileName && `${username}_${nanoid()}${profileImageFileName.replace(/\s/g, '')}`;
+  const profileGifKey = profileGifFileName && `${username}_${nanoid()}${profileGifFileName.replace(/\s/g, '')}`;
   const signedProfileVideoUploadUrl = profileVideoFileName && await getSignedUploadS3Url(`profileVideos/${profileVideoKey}`);
+  const signedProfileGifUploadUrl = profileGifFileName && await getSignedUploadS3Url(`profileGifs/${profileGifKey}`);
   const signedProfileImageUploadUrl = profileImageFileName && await getSignedUploadS3Url(`profileImages/${profileImageKey}`);
 
   if ((profileVideoFileName && !signedProfileVideoUploadUrl) || (profileImageFileName && !signedProfileImageUploadUrl)) {
@@ -140,13 +154,15 @@ const verifyRegisterationDetails = async ({
   return {
     signedProfileVideoUploadUrl,
     profileVideoKey,
+    signedProfileGifUploadUrl: profileGifFileName ? signedProfileGifUploadUrl : null,
+    profileGifKey: profileGifFileName ? profileGifKey : null,
     signedProfileImageUploadUrl: !profileVideoFileName ? signedProfileImageUploadUrl : null,
     profileImageKey: !profileVideoFileName ? profileImageKey : null,
   };
 };
 
 const registerUser = async ({
-  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileImageKey,
+  username, email, plainTextPassword, firstName, lastName, notificationToken, jobTitle, flipProfileVideo, profileVideoKey, profileGifKey, profileImageKey,
 }) => {
   const schema = object().shape({
     firstName: string().required(),
@@ -176,6 +192,10 @@ const registerUser = async ({
     throw new Error('Username is missing or invalid.');
   }
 
+  if (profileVideoKey && !profileGifKey) {
+    throw new Error('No profile gif provided.');
+  }
+
   // $or is unreliable so need to make two queries
   const emailExists = await User.findOne({ emailLowered: email.toLowerCase() });
 
@@ -203,13 +223,8 @@ const registerUser = async ({
 
   const profileVideoUrl = profileVideoKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileVideos/${profileVideoKey}` : '';
 
-  const profileGifUrl = profileVideoKey ? await uploadProfileGif(profileVideoKey) : '';
+  const profileGifUrl = profileGifKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileGifs/${profileGifKey}` : '';
   const profileImageUrl = profileImageKey ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/profileImages/${profileImageKey}` : '';
-
-  // if user want to upload a profile video but failed to upload it
-  if ((!profileVideoUrl || !profileGifUrl) && profileVideoKey) {
-    throw new Error('Profile video not uploaded');
-  }
 
   await User.create({
     username,
