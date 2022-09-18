@@ -3,29 +3,37 @@ const { Schema, model } = require('mongoose');
 const PostsSchema = new Schema({
   body: {
     type: String,
+    maxLength: 2000,
   },
   mediaUrl: {
     type: String,
+    maxLength: 200,
   },
   thumbnailUrl: {
     type: String,
+    maxLength: 200,
   },
   mediaKey: {
     type: String,
     default: '',
+    maxLength: 200,
   },
   gif: {
     type: String,
+    maxLength: 200,
   },
   thumbnailKey: {
     type: String,
     default: '',
+    maxLength: 200,
   },
   mediaMimeType: {
     type: String,
+    maxLength: 20,
   },
   mediaType: {
     type: String,
+    maxLength: 20,
   },
   height: { type: Number },
   width: { type: Number },

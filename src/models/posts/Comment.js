@@ -15,6 +15,7 @@ const CommentSchema = new Schema({
   body: {
     type: String,
     required: true,
+    maxLength: 2000,
   },
   likes: {
     type: Number,

@@ -11,12 +11,15 @@ const MessagesSchema = new Schema({
   },
   body: {
     type: String,
+    maxLength: 2000,
   },
   mediaUrl: {
     type: String,
+    maxLength: 200,
   },
   thumbnailUrl: {
     type: String,
+    maxLength: 200,
   },
   ready: {
     type: Boolean,
@@ -30,14 +33,17 @@ const MessagesSchema = new Schema({
   },
   mediaType: {
     type: String,
+    maxLength: 100,
   },
   stringTime: {
     type: String,
     required: true,
+    maxLength: 100,
   },
   stringDate: {
     type: String,
     require: true,
+    maxLength: 100,
   },
 },
 { timestamps: true });

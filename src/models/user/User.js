@@ -4,47 +4,58 @@ const UserSchema = new Schema({
   username: {
     type: String,
     required: true,
+    maxLength: 30,
   },
   email: {
     type: String,
     required: true,
+    maxLength: 200,
   },
   usernameLowered: {
     type: String,
     required: true,
     unique: true,
+    maxLength: 200,
   },
   emailLowered: {
     type: String,
     required: true,
     unique: true,
+    maxLength: 200,
   },
   password: {
     type: String,
     required: true,
+    maxLength: 200,
   },
   profileVideoUrl: {
     type: String,
+    maxLength: 200,
   },
   profileGifUrl: {
     type: String,
+    maxLength: 200,
   },
   profileImageUrl: {
     type: String,
+    maxLength: 200,
   },
   firstName: {
     type: String,
     required: true,
     text: true,
+    maxLength: 40,
   },
   lastName: {
     type: String,
     required: true,
     text: true,
+    maxLength: 40,
   },
   jobTitle: {
     type: String,
     text: true,
+    maxLength: 40,
   },
   numberOfFriendsAsRequester: {
     type: Number,
@@ -63,6 +74,7 @@ const UserSchema = new Schema({
   },
   verificationCode: {
     type: String,
+    maxLength: 6,
   },
   suspended: {
     type: Boolean,
@@ -74,6 +86,7 @@ const UserSchema = new Schema({
   notificationToken: {
     type: String,
     required: true,
+    maxLength: 200,
   },
   terminated: {
     type: Boolean,
@@ -88,6 +101,7 @@ const UserSchema = new Schema({
   },
   resetToken: {
     type: String,
+    maxLength: 200,
   },
   private: {
     type: Boolean,
