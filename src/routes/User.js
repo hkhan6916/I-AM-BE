@@ -34,6 +34,9 @@ const { getUserPosts, getOtherUserPosts } = require('../services/User/Posts');
 const { getUserChats, deleteUserMessage, getUserChat } = require('../services/User/Chat');
 const { updateNotificationToken, deleteNotificationToken } = require('../services/User/Notifications');
 const verifyAuth = require('../middleware/auth');
+const {
+  addToUserJobHistory, removeFromUserJobHistory, updateUserJobHistoryRecord, getUserJobHistory,
+} = require('../services/User/JobHIstory');
 
 // const storage = multer.memoryStorage();
 
@@ -709,5 +712,93 @@ router.get('/user/unblock/:userToUnBlockId', verifyAuth, async (req, res) => {
     data,
   });
 });
+
+// JobHistory
+router.post('/user/job-history/add', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Added role to user job history.';
+  let data = {};
+  const { roleName, companyName, roleDescription } = req.body;
+  try {
+    data = await addToUserJobHistory({
+      userId: req.user.id, roleName, companyName, roleDescription,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/job-history/fetch/all', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Fetched user job history.';
+  let data = {};
+  try {
+    data = await getUserJobHistory({
+      userId: req.user.id,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/job-history/remove/:roleId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Remove role from user job history.';
+  let data = {};
+  const { roleId } = req.params;
+  try {
+    data = await removeFromUserJobHistory({ userId: req.user.id, id: roleId });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.post('/user/job-history/update/:roleId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Update role in user job history.';
+  let data = {};
+  const {
+    roleName, companyName, roleDescription,
+  } = req.body;
+  const { roleId } = req.params;
+  try {
+    data = await updateUserJobHistoryRecord({
+      userId: req.user.id, roleName, companyName, roleDescription, id: roleId,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+// EducationHistory
+
+// Add bio for users
 
 module.exports = router;
