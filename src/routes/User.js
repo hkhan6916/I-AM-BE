@@ -37,6 +37,9 @@ const verifyAuth = require('../middleware/auth');
 const {
   addToUserJobHistory, removeFromUserJobHistory, updateUserJobHistoryRecord, getUserJobHistory,
 } = require('../services/User/JobHIstory');
+const {
+  addToUserEducationHistory, getUserEducationHistory, updateUserEducationHistoryRecord, removeFromUserEducationHistory,
+} = require('../services/User/EducationHIstory');
 
 // const storage = multer.memoryStorage();
 
@@ -800,6 +803,91 @@ router.post('/user/job-history/update/:roleId', verifyAuth, async (req, res) => 
 });
 
 // EducationHistory
+router.post('/user/education-history/add', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Added role to user education history.';
+  let data = {};
+  const {
+    educationName, institutionName, educationDescription, dateFrom, dateTo, city = '', country = '', remote = false,
+  } = req.body;
+  try {
+    data = await addToUserEducationHistory({
+      userId: req.user.id, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/education-history/fetch/all', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Fetched user education history.';
+  let data = {};
+  try {
+    data = await getUserEducationHistory({
+      userId: req.user.id,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/education-history/remove/:educationId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Remove role from user education history.';
+  let data = {};
+  const { educationId } = req.params;
+  try {
+    data = await removeFromUserEducationHistory({ userId: req.user.id, id: educationId });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/user/education-history/update/:educationId', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Update role in user education history.';
+  let data = {};
+  const {
+    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+  } = req.body;
+  const { educationId } = req.params;
+  try {
+    data = await updateUserEducationHistoryRecord({
+      userId: req.user.id, roleName, companyName, roleDescription, id: educationId, dateFrom, dateTo, city, country, remote,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 
 // Add bio for users
 

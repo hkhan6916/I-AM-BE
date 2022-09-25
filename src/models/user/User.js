@@ -130,5 +130,9 @@ const UserSchema = new Schema({
     type: Number,
     default: 0,
   },
+  numberOfEducationHistoryRecords: {
+    type: Number,
+    default: 0,
+  },
 });
 module.exports = model('Users', UserSchema);

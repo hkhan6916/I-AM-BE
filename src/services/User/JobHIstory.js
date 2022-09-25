@@ -3,7 +3,7 @@ const UserJobHistory = require('../../models/user/JobHIstory');
 const User = require('../../models/user/User');
 
 const addToUserJobHistory = async ({
-  userId, roleName, companyName, roleDescription, dateFrom, dateTo,
+  userId, roleName, companyName, roleDescription, dateFrom, dateTo, city = '', country = '', remote = false,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
@@ -36,7 +36,7 @@ const addToUserJobHistory = async ({
   }
 
   const newJobRole = await UserJobHistory.create({
-    userId, roleName, companyName, roleDescription, dateFrom, dateTo,
+    userId, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
   });
   user.numberOfJobHistoryRecords = userJobHistory?.length + 1;
   user.save();
@@ -54,7 +54,7 @@ const getUserJobHistory = async ({
     userId,
   }).limit(20).sort({ dateFrom: -1 });
 
-  const reducedUserJobHistory = userJobHistory.reduce((prev, record) => {
+  const sortedUserJobHistory = userJobHistory.reduce((prev, record) => {
     if (!record.dateTo) {
       prev.unshift(record);
     } else {
@@ -63,18 +63,18 @@ const getUserJobHistory = async ({
     return prev;
   }, []);
 
-  return reducedUserJobHistory;
+  return sortedUserJobHistory;
 };
 
 const updateUserJobHistoryRecord = async ({
-  userId, roleName, companyName, roleDescription, id, dateFrom, dateTo,
+  userId, roleName, companyName, roleDescription, id, dateFrom, dateTo, city = '', country = '', remote = false,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
   }
 
-  const dateToUpdate = Object.fromEntries(Object.entries({
-    roleName, companyName, roleDescription, dateFrom, dateTo,
+  const dataToUpdate = Object.fromEntries(Object.entries({
+    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
   }).filter(([_, v]) => !!v));
 
   const userJobHistoryRecord = await UserJobHistory.findOneAndUpdate(
@@ -86,7 +86,7 @@ const updateUserJobHistoryRecord = async ({
       }],
     },
     {
-      $set: dateToUpdate,
+      $set: dataToUpdate,
     },
   );
 
@@ -94,7 +94,7 @@ const updateUserJobHistoryRecord = async ({
     throw new Error('User Job History record either not found or it does not belong to this user.');
   }
 
-  return { ...userJobHistoryRecord.toObject(), ...(dateToUpdate || {}) };
+  return { ...userJobHistoryRecord.toObject(), ...(dataToUpdate || {}) };
 };
 
 const removeFromUserJobHistory = async ({
@@ -104,11 +104,20 @@ const removeFromUserJobHistory = async ({
     throw new Error('User id was not provided');
   }
 
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
+
   const userJobHistoryRecord = await UserJobHistory.findOneAndDelete({ _id: id, userId });
 
   if (!userJobHistoryRecord) {
     throw new Error('User Job History record either not found or it does not belong to this user.');
   }
+
+  user.numberOfJobHistoryRecords -= 1;
+  user.save();
 
   return 'Removed from user job history';
 };

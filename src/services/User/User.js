@@ -10,6 +10,7 @@ const {
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
 const UserJobHistory = require('../../models/user/JobHIstory');
+const UserEducationHistory = require('../../models/user/EducationHIstory');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
 const BlockedUsers = require('../../models/user/BlockedUsers');
@@ -394,7 +395,29 @@ const getUserData = async (userId) => {
 
   const userJobHistory = await UserJobHistory.find({
     userId,
-  }).limit(5).sort({ dateTo: -1 });
+  }).limit(5).sort({ dateFrom: -1 });
+
+  const userEducationHistory = await UserEducationHistory.find({
+    userId,
+  }).limit(5).sort({ dateFrom: -1 });
+
+  const sortedUserJobHistory = userJobHistory.reduce((prev, record) => {
+    if (!record.dateTo) {
+      prev.unshift(record);
+    } else {
+      prev.push(record);
+    }
+    return prev;
+  }, []);
+
+  const sortedUserEducationHistory = userEducationHistory.reduce((prev, record) => {
+    if (!record.dateTo) {
+      prev.unshift(record);
+    } else {
+      prev.push(record);
+    }
+    return prev;
+  }, []);
 
   return {
     ...user.toObject(),
@@ -402,7 +425,8 @@ const getUserData = async (userId) => {
     password: '',
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
     profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
-    userJobHistory,
+    userJobHistory: sortedUserJobHistory,
+    userEducationHistory: sortedUserEducationHistory,
   };
 };
 const updateUserDetails = async ({ userId, details }) => {
