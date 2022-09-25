@@ -5,16 +5,15 @@ const { object, string, boolean } = require('yup');
 const sgMail = require('@sendgrid/mail');
 const { nanoid } = require('nanoid');
 const User = require('../../models/user/User');
-const { sendFriendRequest } = require('./Friends');
 const {
-  uploadProfileVideo, deleteFile, getFileSignedHeaders, deleteMultipleFiles,
+  deleteFile, getFileSignedHeaders, deleteMultipleFiles,
 } = require('../../helpers');
 const Posts = require('../../models/posts/Posts');
+const UserJobHistory = require('../../models/user/JobHIstory');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 const UserReports = require('../../models/user/UserReports');
 const BlockedUsers = require('../../models/user/BlockedUsers');
 const { removeConnection } = require('./Friends');
-const uploadProfileGif = require('../../helpers/uploadProfileGif');
 const getSignedUploadS3Url = require('../../helpers/getSignedUploadS3Url');
 const passwordResetTemplate = require('../../emailTemplates/PasswordReset');
 const emailVerificationTemplate = require('../../emailTemplates/EmailVerification');
@@ -389,12 +388,21 @@ const getUserData = async (userId) => {
     throw new Error('User does not exist.');
   }
   const profileVideoKey = user.profileVideoUrl.substring(user.profileVideoUrl.lastIndexOf('profileVideos'));
+  if (!userId) {
+    throw new Error('User id was not provided');
+  }
+
+  const userJobHistory = await UserJobHistory.find({
+    userId,
+  }).limit(5).sort({ dateTo: -1 });
+
   return {
     ...user.toObject(),
     numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
     password: '',
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
     profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
+    userJobHistory,
   };
 };
 const updateUserDetails = async ({ userId, details }) => {

@@ -1,11 +1,26 @@
 const { ObjectId } = require('mongoose').Types;
 const UserJobHistory = require('../../models/user/JobHIstory');
+const User = require('../../models/user/User');
 
 const addToUserJobHistory = async ({
-  userId, roleName, companyName, roleDescription,
+  userId, roleName, companyName, roleDescription, dateFrom, dateTo,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error('User does not exist.');
+  }
+
+  if (dateFrom && dateTo) {
+    const dateToIsInvalid = (new Date(dateTo) - new Date(dateFrom)) < 0;
+
+    if (dateToIsInvalid) {
+      throw new Error('dateTo cannot be before dateFrom.');
+    }
   }
 
   const userJobHistory = await UserJobHistory.find({
@@ -21,9 +36,10 @@ const addToUserJobHistory = async ({
   }
 
   const newJobRole = await UserJobHistory.create({
-    userId, roleName, companyName, roleDescription,
+    userId, roleName, companyName, roleDescription, dateFrom, dateTo,
   });
-
+  user.numberOfJobHistoryRecords = userJobHistory?.length + 1;
+  user.save();
   return newJobRole;
 };
 
@@ -36,19 +52,30 @@ const getUserJobHistory = async ({
 
   const userJobHistory = await UserJobHistory.find({
     userId,
-  }).limit(20);
+  }).limit(20).sort({ dateFrom: -1 });
 
-  return userJobHistory;
+  const reducedUserJobHistory = userJobHistory.reduce((prev, record) => {
+    if (!record.dateTo) {
+      prev.unshift(record);
+    } else {
+      prev.push(record);
+    }
+    return prev;
+  }, []);
+
+  return reducedUserJobHistory;
 };
 
 const updateUserJobHistoryRecord = async ({
-  userId, roleName, companyName, roleDescription, id,
+  userId, roleName, companyName, roleDescription, id, dateFrom, dateTo,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
   }
 
-  const dateToUpdate = Object.fromEntries(Object.entries({ roleName, companyName, roleDescription }).filter(([_, v]) => !!v));
+  const dateToUpdate = Object.fromEntries(Object.entries({
+    roleName, companyName, roleDescription, dateFrom, dateTo,
+  }).filter(([_, v]) => !!v));
 
   const userJobHistoryRecord = await UserJobHistory.findOneAndUpdate(
     {

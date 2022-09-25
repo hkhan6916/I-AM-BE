@@ -19,5 +19,21 @@ const UserJobHistorySchema = new Schema({
     type: String,
     maxLength: 2000,
   },
+  dateFrom: {
+    type: Date,
+    required: true,
+  },
+  dateTo: {
+    type: Date,
+  },
+  city: {
+    type: String,
+  },
+  country: {
+    type: String,
+  },
+  remote: {
+    type: Boolean,
+  },
 });
-module.exports = model('UserJobHistory', UserJobHistorySchema);
+module.exports = model('user_job_history', UserJobHistorySchema);

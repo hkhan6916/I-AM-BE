@@ -126,5 +126,9 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  numberOfJobHistoryRecords: {
+    type: Number,
+    default: 0,
+  },
 });
 module.exports = model('Users', UserSchema);

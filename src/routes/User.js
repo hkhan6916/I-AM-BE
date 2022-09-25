@@ -718,10 +718,12 @@ router.post('/user/job-history/add', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Added role to user job history.';
   let data = {};
-  const { roleName, companyName, roleDescription } = req.body;
+  const {
+    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+  } = req.body;
   try {
     data = await addToUserJobHistory({
-      userId: req.user.id, roleName, companyName, roleDescription,
+      userId: req.user.id, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
@@ -778,12 +780,12 @@ router.post('/user/job-history/update/:roleId', verifyAuth, async (req, res) => 
   let message = 'Update role in user job history.';
   let data = {};
   const {
-    roleName, companyName, roleDescription,
+    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
   } = req.body;
   const { roleId } = req.params;
   try {
     data = await updateUserJobHistoryRecord({
-      userId: req.user.id, roleName, companyName, roleDescription, id: roleId,
+      userId: req.user.id, roleName, companyName, roleDescription, id: roleId, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
