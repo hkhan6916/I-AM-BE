@@ -870,12 +870,12 @@ router.post('/user/education-history/update/:educationId', verifyAuth, async (re
   let message = 'Update role in user education history.';
   let data = {};
   const {
-    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+    educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
   } = req.body;
   const { educationId } = req.params;
   try {
     data = await updateUserEducationHistoryRecord({
-      userId: req.user.id, roleName, companyName, roleDescription, id: educationId, dateFrom, dateTo, city, country, remote,
+      userId: req.user.id, educationName, institutionName, educationDescription, id: educationId, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
