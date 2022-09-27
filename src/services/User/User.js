@@ -395,11 +395,11 @@ const getUserData = async (userId) => {
 
   const userJobHistory = await UserJobHistory.find({
     userId,
-  }).limit(5).sort({ dateFrom: -1 });
+  }).limit(3).sort({ dateFrom: -1 });
 
   const userEducationHistory = await UserEducationHistory.find({
     userId,
-  }).limit(5).sort({ dateFrom: -1 });
+  }).limit(3).sort({ dateFrom: -1 });
 
   const sortedUserJobHistory = userJobHistory.reduce((prev, record) => {
     if (!record.dateTo) {

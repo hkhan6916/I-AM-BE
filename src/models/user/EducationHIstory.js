@@ -36,4 +36,4 @@ const UserEducationHistorySchema = new Schema({
     type: Boolean,
   },
 });
-module.exports = model('UserEducationHistory', UserEducationHistorySchema);
+module.exports = model('user_education_histories', UserEducationHistorySchema);

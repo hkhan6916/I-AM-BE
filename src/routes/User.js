@@ -726,7 +726,7 @@ router.post('/user/job-history/add', verifyAuth, async (req, res) => {
   } = req.body;
   try {
     data = await addToUserJobHistory({
-      userId: req.user.id, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+      userId: req.body.userId || req.user.id, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
@@ -740,13 +740,13 @@ router.post('/user/job-history/add', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/job-history/fetch/all', verifyAuth, async (req, res) => {
+router.post('/user/job-history/fetch/all', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Fetched user job history.';
   let data = {};
   try {
     data = await getUserJobHistory({
-      userId: req.user.id,
+      userId: req.body.userId || req.user.id,
     });
   } catch (e) {
     success = false;
@@ -760,13 +760,13 @@ router.get('/user/job-history/fetch/all', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/job-history/remove/:roleId', verifyAuth, async (req, res) => {
+router.post('/user/job-history/remove/:roleId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Remove role from user job history.';
   let data = {};
   const { roleId } = req.params;
   try {
-    data = await removeFromUserJobHistory({ userId: req.user.id, id: roleId });
+    data = await removeFromUserJobHistory({ userId: req.body.userId || req.user.id, id: roleId });
   } catch (e) {
     success = false;
     message = e.message;
@@ -788,7 +788,7 @@ router.post('/user/job-history/update/:roleId', verifyAuth, async (req, res) => 
   const { roleId } = req.params;
   try {
     data = await updateUserJobHistoryRecord({
-      userId: req.user.id, roleName, companyName, roleDescription, id: roleId, dateFrom, dateTo, city, country, remote,
+      userId: req.body.userId || req.user.id, roleName, companyName, roleDescription, id: roleId, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
@@ -812,7 +812,7 @@ router.post('/user/education-history/add', verifyAuth, async (req, res) => {
   } = req.body;
   try {
     data = await addToUserEducationHistory({
-      userId: req.user.id, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
+      userId: req.body.userId || req.user.id, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;
@@ -826,13 +826,13 @@ router.post('/user/education-history/add', verifyAuth, async (req, res) => {
   });
 });
 
-router.get('/user/education-history/fetch/all', verifyAuth, async (req, res) => {
+router.post('/user/education-history/fetch/all', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Fetched user education history.';
   let data = {};
   try {
     data = await getUserEducationHistory({
-      userId: req.user.id,
+      userId: req.body.userId || req.user.id,
     });
   } catch (e) {
     success = false;
@@ -846,13 +846,13 @@ router.get('/user/education-history/fetch/all', verifyAuth, async (req, res) => 
   });
 });
 
-router.get('/user/education-history/remove/:educationId', verifyAuth, async (req, res) => {
+router.post('/user/education-history/remove/:educationId', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Remove role from user education history.';
   let data = {};
   const { educationId } = req.params;
   try {
-    data = await removeFromUserEducationHistory({ userId: req.user.id, id: educationId });
+    data = await removeFromUserEducationHistory({ userId: req.body.userId || req.user.id, id: educationId });
   } catch (e) {
     success = false;
     message = e.message;
@@ -875,7 +875,7 @@ router.post('/user/education-history/update/:educationId', verifyAuth, async (re
   const { educationId } = req.params;
   try {
     data = await updateUserEducationHistoryRecord({
-      userId: req.user.id, educationName, institutionName, educationDescription, id: educationId, dateFrom, dateTo, city, country, remote,
+      userId: req.body.userId || req.user.id, educationName, institutionName, educationDescription, id: educationId, dateFrom, dateTo, city, country, remote,
     });
   } catch (e) {
     success = false;

@@ -36,4 +36,4 @@ const UserJobHistorySchema = new Schema({
     type: Boolean,
   },
 });
-module.exports = model('user_job_history', UserJobHistorySchema);
+module.exports = model('user_job_histories', UserJobHistorySchema);

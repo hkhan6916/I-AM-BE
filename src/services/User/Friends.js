@@ -234,6 +234,40 @@ const getSingleUser = async (otherUserId, userId) => {
   },
   {
     $lookup: {
+      from: 'user_job_histories',
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ['$userId', ObjectId(otherUserId)],
+            },
+          },
+        },
+        { $sort: { dateFrom: -1 } },
+        { $limit: 3 },
+      ],
+      as: 'userJobHistory',
+    },
+  },
+  {
+    $lookup: {
+      from: 'user_education_histories',
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ['$userId', ObjectId(otherUserId)],
+            },
+          },
+        },
+        { $sort: { dateFrom: -1 } },
+        { $limit: 3 },
+      ],
+      as: 'userEducationHistory',
+    },
+  },
+  {
+    $lookup: {
       from: 'blocked_users',
       pipeline: [
         {
@@ -284,7 +318,11 @@ const getSingleUser = async (otherUserId, userId) => {
       followersMode: 1,
       numberOfFriendsAsRequester: 1,
       numberOfFriendsAsReceiver: 1,
+      numberOfJobHistoryRecords: 1,
+      numberOfEducationHistoryRecords: 1,
       private: 1,
+      userEducationHistory: 1,
+      userJobHistory: 1,
       blockedByUser: {
         $cond: {
           if: { $eq: [{ $type: '$blockedByUser' }, 'missing'] },
@@ -303,6 +341,24 @@ const getSingleUser = async (otherUserId, userId) => {
   }]))[0];
   const user = await User.findById(userId);
   if (!user) throw new Error('User does not exist');
+
+  const sortedUserJobHistory = otherUserRecord?.userJobHistory.reduce((prev, record) => {
+    if (!record.dateTo) {
+      prev.unshift(record);
+    } else {
+      prev.push(record);
+    }
+    return prev;
+  }, []);
+
+  const sortedUserEducationHistory = otherUserRecord?.userEducationHistory.reduce((prev, record) => {
+    if (!record.dateTo) {
+      prev.unshift(record);
+    } else {
+      prev.push(record);
+    }
+    return prev;
+  }, []);
 
   if (!otherUserRecord) throw new Error('Other user does not exist');
 
@@ -328,6 +384,8 @@ const getSingleUser = async (otherUserId, userId) => {
     requestReceived: !!requestReceived,
     numberOfFriends: otherUserObj.numberOfFriendsAsRequester + otherUserObj.numberOfFriendsAsReceiver,
     isSameUser: user._id.toString() === otherUserRecord._id.toString(),
+    userJobHistory: sortedUserJobHistory || [],
+    userEducationHistory: sortedUserEducationHistory || [],
   };
   return {
     otherUser,
