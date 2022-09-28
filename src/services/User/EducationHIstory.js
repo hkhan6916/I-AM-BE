@@ -15,6 +15,13 @@ const addToUserEducationHistory = async ({
     throw new Error('User does not exist.');
   }
 
+  if (new Date(dateFrom) > new Date()) {
+    throw new Error('From date cannot be in the future');
+  }
+  if (new Date(dateTo) > new Date()) {
+    throw new Error('To date cannot be in the future');
+  }
+
   if (dateFrom && dateTo) {
     const dateToIsInvalid = (new Date(dateTo) - new Date(dateFrom)) < 0;
 
