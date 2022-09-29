@@ -3,7 +3,7 @@ const UserJobHistory = require('../../models/user/JobHIstory');
 const User = require('../../models/user/User');
 
 const addToUserJobHistory = async ({
-  userId, roleName, companyName, roleDescription, dateFrom, dateTo, city = '', country = '', remote = false,
+  userId, roleName, companyName, roleDescription, dateFrom, dateTo, city = '', country = '', roleType,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
@@ -43,7 +43,7 @@ const addToUserJobHistory = async ({
   }
 
   const newJobRole = await UserJobHistory.create({
-    userId, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+    userId, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, roleType,
   });
   user.numberOfJobHistoryRecords = userJobHistory?.length + 1;
   user.save();
@@ -74,14 +74,14 @@ const getUserJobHistory = async ({
 };
 
 const updateUserJobHistoryRecord = async ({
-  userId, roleName, companyName, roleDescription, id, dateFrom, dateTo, city = '', country = '', remote = false,
+  userId, roleName, companyName, roleDescription, id, dateFrom, dateTo, city = '', country = '', roleType,
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
   }
 
   const dataToUpdate = Object.fromEntries(Object.entries({
-    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, remote,
+    roleName, companyName, roleDescription, dateFrom, dateTo, city, country, roleType,
   }).filter(([_, v]) => !!v));
 
   const userJobHistoryRecord = await UserJobHistory.findOneAndUpdate(

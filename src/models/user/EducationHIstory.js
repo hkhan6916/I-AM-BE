@@ -32,8 +32,5 @@ const UserEducationHistorySchema = new Schema({
   country: {
     type: String,
   },
-  remote: {
-    type: Boolean,
-  },
 });
 module.exports = model('user_education_histories', UserEducationHistorySchema);

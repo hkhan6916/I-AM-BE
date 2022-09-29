@@ -32,8 +32,8 @@ const UserJobHistorySchema = new Schema({
   country: {
     type: String,
   },
-  remote: {
-    type: Boolean,
+  roleType: {
+    type: String,
   },
 });
 module.exports = model('user_job_histories', UserJobHistorySchema);

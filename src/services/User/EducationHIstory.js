@@ -3,7 +3,7 @@ const UserEducationHistory = require('../../models/user/EducationHIstory');
 const User = require('../../models/user/User');
 
 const addToUserEducationHistory = async ({
-  userId, educationName, institutionName, educationDescription, dateFrom, dateTo, city = '', country = '', remote = false,
+  userId, educationName, institutionName, educationDescription, dateFrom, dateTo, city = '', country = '',
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
@@ -43,7 +43,7 @@ const addToUserEducationHistory = async ({
   }
 
   const newJobRole = await UserEducationHistory.create({
-    userId, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
+    userId, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
   });
   user.numberOfEducationHistoryRecords = userJobHistory?.length + 1;
   user.save();
@@ -74,14 +74,14 @@ const getUserEducationHistory = async ({
 };
 
 const updateUserEducationHistoryRecord = async ({
-  userId, educationName, institutionName, educationDescription, id, dateFrom, dateTo, city = '', country = '', remote = false,
+  userId, educationName, institutionName, educationDescription, id, dateFrom, dateTo, city = '', country = '',
 }) => {
   if (!userId) {
     throw new Error('User id was not provided');
   }
 
   const dataToUpdate = Object.fromEntries(Object.entries({
-    educationName, institutionName, educationDescription, dateFrom, dateTo, city, country, remote,
+    educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
   }).filter(([_, v]) => !!v));
 
   const userJobHistoryRecord = await UserEducationHistory.findOneAndUpdate(
