@@ -57,6 +57,11 @@ const UserSchema = new Schema({
     text: true,
     maxLength: 40,
   },
+  bio: {
+    type: String,
+    text: true,
+    maxLength: 500,
+  },
   numberOfFriendsAsRequester: {
     type: Number,
     default: 0,
