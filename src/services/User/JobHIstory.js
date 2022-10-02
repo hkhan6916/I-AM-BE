@@ -82,7 +82,7 @@ const updateUserJobHistoryRecord = async ({
 
   const dataToUpdate = Object.fromEntries(Object.entries({
     roleName, companyName, roleDescription, dateFrom, dateTo, city, country, roleType,
-  }).filter(([_, v]) => !!v));
+  }).filter(([_, v]) => v !== null && v !== undefined));
 
   const userJobHistoryRecord = await UserJobHistory.findOneAndUpdate(
     {

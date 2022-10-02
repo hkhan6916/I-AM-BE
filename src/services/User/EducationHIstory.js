@@ -82,7 +82,8 @@ const updateUserEducationHistoryRecord = async ({
 
   const dataToUpdate = Object.fromEntries(Object.entries({
     educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
-  }).filter(([_, v]) => !!v));
+    // below we check if value is null. Can be empty string as that is allowed.
+  }).filter(([_, v]) => v !== null && v !== undefined));
 
   const userJobHistoryRecord = await UserEducationHistory.findOneAndUpdate(
     {

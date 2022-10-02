@@ -726,7 +726,7 @@ router.post('/user/job-history/add', verifyAuth, async (req, res) => {
   } = req.body;
   try {
     data = await addToUserJobHistory({
-      userId: req.body.userId || req.user.id, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, roleType,
+      userId: req.user.id, roleName, companyName, roleDescription, dateFrom, dateTo, city, country, roleType,
     });
   } catch (e) {
     success = false;
@@ -766,7 +766,7 @@ router.post('/user/job-history/remove/:roleId', verifyAuth, async (req, res) => 
   let data = {};
   const { roleId } = req.params;
   try {
-    data = await removeFromUserJobHistory({ userId: req.body.userId || req.user.id, id: roleId });
+    data = await removeFromUserJobHistory({ userId: req.user.id, id: roleId });
   } catch (e) {
     success = false;
     message = e.message;
@@ -788,7 +788,7 @@ router.post('/user/job-history/update/:roleId', verifyAuth, async (req, res) => 
   const { roleId } = req.params;
   try {
     data = await updateUserJobHistoryRecord({
-      userId: req.body.userId || req.user.id, roleName, companyName, roleDescription, id: roleId, dateFrom, dateTo, city, country, roleType,
+      userId: req.user.id, roleName, companyName, roleDescription, id: roleId, dateFrom, dateTo, city, country, roleType,
     });
   } catch (e) {
     success = false;
@@ -812,7 +812,7 @@ router.post('/user/education-history/add', verifyAuth, async (req, res) => {
   } = req.body;
   try {
     data = await addToUserEducationHistory({
-      userId: req.body.userId || req.user.id, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
+      userId: req.user.id, educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
     });
   } catch (e) {
     success = false;
@@ -852,7 +852,7 @@ router.post('/user/education-history/remove/:educationId', verifyAuth, async (re
   let data = {};
   const { educationId } = req.params;
   try {
-    data = await removeFromUserEducationHistory({ userId: req.body.userId || req.user.id, id: educationId });
+    data = await removeFromUserEducationHistory({ userId: req.user.id, id: educationId });
   } catch (e) {
     success = false;
     message = e.message;
@@ -875,7 +875,7 @@ router.post('/user/education-history/update/:educationId', verifyAuth, async (re
   const { educationId } = req.params;
   try {
     data = await updateUserEducationHistoryRecord({
-      userId: req.body.userId || req.user.id, educationName, institutionName, educationDescription, id: educationId, dateFrom, dateTo, city, country,
+      userId: req.user.id, educationName, institutionName, educationDescription, id: educationId, dateFrom, dateTo, city, country,
     });
   } catch (e) {
     success = false;
