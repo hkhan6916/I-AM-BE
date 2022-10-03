@@ -323,6 +323,7 @@ const getSingleUser = async (otherUserId, userId) => {
       private: 1,
       userEducationHistory: 1,
       userJobHistory: 1,
+      bio: 1,
       blockedByUser: {
         $cond: {
           if: { $eq: [{ $type: '$blockedByUser' }, 'missing'] },

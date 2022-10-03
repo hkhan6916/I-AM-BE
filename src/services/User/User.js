@@ -457,6 +457,7 @@ const updateUserDetails = async ({ userId, details }) => {
       .matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/, 'Password is not secure enough.'),
     username: string(),
     flipProfileVideo: boolean(),
+    bio: string().nullable(),
   });
 
   await schema.validate(details).catch((err) => {
