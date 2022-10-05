@@ -28,12 +28,15 @@ const UserJobHistorySchema = new Schema({
   },
   city: {
     type: String,
+    maxLength: 40,
   },
   country: {
     type: String,
+    maxLength: 40,
   },
   roleType: {
     type: String,
+    maxLength: 40,
   },
 });
 module.exports = model('user_job_histories', UserJobHistorySchema);
