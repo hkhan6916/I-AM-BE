@@ -85,6 +85,13 @@ const updateUserEducationHistoryRecord = async ({
     // below we check if value is null. Can be empty string as that is allowed.
   }).filter(([_, v]) => v !== null && v !== undefined));
 
+  if (dateFrom && new Date(dateFrom) > new Date()) {
+    throw new Error('From date cannot be in the future');
+  }
+  if (dateTo && new Date(dateTo) > new Date()) {
+    throw new Error('To date cannot be in the future');
+  }
+
   const userJobHistoryRecord = await UserEducationHistory.findOneAndUpdate(
     {
       $and: [{

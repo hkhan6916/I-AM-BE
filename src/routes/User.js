@@ -1,7 +1,6 @@
 const express = require('express');
 
 const router = express.Router();
-const fileUpload = require('express-fileupload');
 
 const {
   registerUser,
@@ -40,6 +39,10 @@ const {
 const {
   addToUserEducationHistory, getUserEducationHistory, updateUserEducationHistoryRecord, removeFromUserEducationHistory,
 } = require('../services/User/EducationHIstory');
+const {
+  getSingleUserFeedback,
+  createUserFeedback, deleteUserFeedback, updateUserFeedback, getUserFeedbacks,
+} = require('../services/User/UserFeedback');
 
 // const storage = multer.memoryStorage();
 
@@ -867,7 +870,7 @@ router.post('/user/education-history/remove/:educationId', verifyAuth, async (re
 
 router.post('/user/education-history/update/:educationId', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'Update role in user education history.';
+  let message = 'Updated role in user education history.';
   let data = {};
   const {
     educationName, institutionName, educationDescription, dateFrom, dateTo, city, country,
@@ -889,6 +892,114 @@ router.post('/user/education-history/update/:educationId', verifyAuth, async (re
   });
 });
 
-// Add bio for users
+router.post('/user/feedback/create', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Created user feedback.';
+  let data = {};
+  const {
+    description, type,
+  } = req.body;
+  try {
+    data = await createUserFeedback({
+      userId: req.user.id, description, type,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.get('/user/feedback/delete/:id', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Deleted user feedback.';
+  let data = {};
+  const {
+    id,
+  } = req.params;
+  try {
+    data = await deleteUserFeedback(id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.post('/user/feedback/update/:id', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Updated user feedback.';
+  let data = {};
+  const {
+    description, type, completed,
+  } = req.body;
+  const {
+    id,
+  } = req.params;
+  try {
+    data = await updateUserFeedback({
+      userId: req.user.id, description, type, completed, id,
+    });
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/feedback/:id', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Fetched user feedback.';
+  let data = {};
+  const {
+    id,
+  } = req.params;
+  try {
+    data = await getSingleUserFeedback(id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.get('/user/feedback/all/:offset', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Fetched user feedbacks.';
+  let data = {};
+  const {
+    offset,
+  } = req.params;
+  try {
+    data = await getUserFeedbacks(parseInt(offset, 10));
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
 
 module.exports = router;
