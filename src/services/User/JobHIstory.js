@@ -15,15 +15,18 @@ const addToUserJobHistory = async ({
     throw new Error('User does not exist.');
   }
 
-  if (new Date(dateFrom) > new Date()) {
+  const dateFromWithoutHours = new Date(dateFrom).setHours(0, 0, 0, 0);
+  const dateToWithoutHours = new Date(dateTo).setHours(0, 0, 0, 0);
+
+  if (dateFromWithoutHours > new Date()) {
     throw new Error('From date cannot be in the future');
   }
-  if (new Date(dateTo) > new Date()) {
+  if (dateToWithoutHours > new Date()) {
     throw new Error('To date cannot be in the future');
   }
 
   if (dateFrom && dateTo) {
-    const dateToIsInvalid = (new Date(dateTo) - new Date(dateFrom)) < 0;
+    const dateToIsInvalid = (dateToWithoutHours - dateToWithoutHours) < 0;
 
     if (dateToIsInvalid) {
       throw new Error('dateTo cannot be before dateFrom.');

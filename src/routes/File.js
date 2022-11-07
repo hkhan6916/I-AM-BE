@@ -32,12 +32,31 @@ router.post('/files/upload', [verifyAuth, fileUpload({
   });
 });
 
+// SHould remove this. Don't think we use it anywhere
 router.get('/files/:key', verifyAuth, async (req, res) => {
   let success = true;
-  let message = 'File uploaded.';
+  let message = '';
   let data = {};
   try {
     const fileUrl = getFileSignedHeaders(`https://s3-${process.env.AWS_BUCKET_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/${req.params.mediaUrl}`);
+    data = fileUrl;
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+router.post('/files/cloudfront', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = '';
+  let data = {};
+  try {
+    const fileUrl = getCloudfrontSignedUrl(req.body.key);
     data = fileUrl;
   } catch (e) {
     success = false;
