@@ -494,7 +494,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
       $match: { requesterId: user._id, accepted: true },
     },
     { $skip: friendsAsSenderOffset || 0 },
-    { $limit: 15 },
+    { $limit: 5 },
     {
       $lookup: {
         from: 'users',
@@ -532,7 +532,7 @@ const getUserFriends = async ({ userId, friendsAsSenderOffset, friendsAsReceiver
       $match: { receiverId: user._id, accepted: true },
     },
     { $skip: friendsAsReceiverOffset || 0 },
-    { $limit: 15 },
+    { $limit: 5 },
     {
       $lookup: {
         from: 'users',
