@@ -22,6 +22,10 @@ const PostsSchema = new Schema({
     type: String,
     maxLength: 200,
   },
+  gifPreview: {
+    type: String,
+    maxLength: 200,
+  },
   thumbnailKey: {
     type: String,
     default: '',
