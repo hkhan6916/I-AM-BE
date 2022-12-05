@@ -48,6 +48,9 @@ module.exports = (io, pid) => {
 
     socket.on('forwardServerSideMessage', async ({ chatId, message }) => {
       socket.to(chatId).emit('receiveMessage', message);
+      if (message.online !== socket.userIsOnline) {
+        await updateChatUpToDateUsers(message.recipientId, chatId, message.online);
+      }
       if (!message.online) {
         await sendNotificationToRecipiants(message.senderId, chatId, message.body || (message.mediaType ? `sent ${message.mediaType === 'video' ? 'a video' : 'an image'}` : null) || '');
       }
