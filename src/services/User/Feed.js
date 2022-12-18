@@ -563,6 +563,9 @@ const getUserFeed = async ({
   let currentConnectionsAsReceiverOffset = connectionsAsReceiverOffset || 0;
   const user = await User.findById(userId);
 
+  if (!user.profileImageUrl && !user.profileVideoUrl) {
+    throw new Error('User profile is not complete.');
+  }
   let aggregateResult = await aggregateFeed({
     userId,
     feedTimelineOffset,
