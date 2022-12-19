@@ -329,6 +329,17 @@ const failMessageUpload = async (messageId, userId) => {
   return 'Marked message as failed';
 };
 
+const bulkFailMessageUpload = async (messageIds, userId) => {
+  if (!messageIds?.length || !userId) throw new Error('messageIds or userId missing');
+
+  const messages = await Messages.updateMany(
+    { _id: { $in: messageIds }, senderId: userId },
+    { $set: { failed: true, ready: false } },
+  );
+
+  return { messages };
+};
+
 module.exports = {
-  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage, cancelMessageUpload, failMessageUpload,
+  getChatMessages, createChat, checkChatExists, updateChatUpToDateUsers, uploadFileAndSendMessage, cancelMessageUpload, failMessageUpload, bulkFailMessageUpload,
 };

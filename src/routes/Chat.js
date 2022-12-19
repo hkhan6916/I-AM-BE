@@ -5,7 +5,7 @@ const fileUpload = require('express-fileupload');
 const verifyAuth = require('../middleware/auth');
 
 const {
-  getChatMessages, createChat, checkChatExists, uploadFileAndSendMessage, cancelMessageUpload, failMessageUpload,
+  getChatMessages, createChat, checkChatExists, uploadFileAndSendMessage, cancelMessageUpload, failMessageUpload, bulkFailMessageUpload,
 } = require('../services/Chat/Chat');
 
 router.get('/chat/:chatId/messages/:offset', verifyAuth, async (req, res) => {
@@ -91,6 +91,25 @@ router.get('/chat/message/fail/:messageId', verifyAuth, async (req, res) => {
   const { messageId } = req.params;
   try {
     data = await failMessageUpload(messageId, req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/chat/message/fail/bulk', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Bulk message file upload cancelled.';
+  let data = {};
+  const { messageIds } = req.body;
+  try {
+    data = await bulkFailMessageUpload(messageIds, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;
