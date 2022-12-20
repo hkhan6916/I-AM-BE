@@ -108,7 +108,9 @@ const createPost = async ({ // expects form data
 };
 
 const markPostAsFailed = async (postId, userId) => {
-  const post = await Posts.findByIdAndUpdate(postId, { cancelled: true });
+  const post = await Posts.updateOne({ _id: postId, userId },
+    { $set: { failed: true, ready: false } });
+
   if (!post) {
     throw new Error('Post does not exist');
   }
@@ -117,6 +119,18 @@ const markPostAsFailed = async (postId, userId) => {
     messageBody: 'Connection was lost when uploading your media files.',
     title: 'Post upload failed.',
   });
+  return post;
+};
+
+const bulkMarkPostsAsFailed = async (postIds, userId) => {
+  if (!postIds?.length || !userId) throw new Error('postIds or userId missing');
+
+  const messages = await Posts.updateMany(
+    { _id: { $in: postIds }, userId },
+    { $set: { failed: true, ready: false } },
+  );
+
+  return { messages };
 };
 
 const reportPost = async ({ postId, userId, reason }) => {
@@ -342,5 +356,6 @@ module.exports = {
   updatePost,
   reportPost,
   markPostAsFailed,
+  bulkMarkPostsAsFailed,
   getAdditionalPostData,
 };

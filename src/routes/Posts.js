@@ -7,7 +7,7 @@ const { v4: uuid } = require('uuid');
 // const { S3 } = require('aws-sdk');
 const fileUpload = require('express-fileupload');
 const {
-  createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData,
+  createPost, repostPost, deletePost, updatePost, getPost, reportPost, markPostAsFailed, getAdditionalPostData, bulkMarkPostsAsFailed,
 } = require('../services/Posts/Post');
 const { addLikeToPost, removeLikeFromPost } = require('../services/Posts/Likes');
 const {
@@ -139,6 +139,25 @@ router.get('/posts/fail/:postId', verifyAuth, async (req, res) => {
   const { postId } = req.params;
   try {
     data = await markPostAsFailed(postId, req.user.id);
+  } catch (e) {
+    success = false;
+    message = e.message;
+  }
+
+  res.status(200).json({
+    success,
+    message,
+    data,
+  });
+});
+
+router.post('/posts/bulk-fail', verifyAuth, async (req, res) => {
+  let success = true;
+  let message = 'Posts marked as failed.';
+  let data = {};
+  const { postIds } = req.body;
+  try {
+    data = await bulkMarkPostsAsFailed(postIds, req.user.id);
   } catch (e) {
     success = false;
     message = e.message;

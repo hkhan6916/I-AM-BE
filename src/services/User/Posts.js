@@ -109,6 +109,7 @@ const getUserPosts = async (userId, offset) => {
         edited: 1,
         ready: 1,
         cancelled: 1,
+        failed: 1,
         createdAt: 1,
         height: 1,
         width: 1,

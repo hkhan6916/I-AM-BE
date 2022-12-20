@@ -72,6 +72,9 @@ const PostsSchema = new Schema({
   cancelled: {
     type: Boolean,
   },
+  failed: {
+    type: Boolean,
+  },
   edited: {
     type: Boolean,
   },

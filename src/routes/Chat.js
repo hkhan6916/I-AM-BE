@@ -103,7 +103,7 @@ router.get('/chat/message/fail/:messageId', verifyAuth, async (req, res) => {
   });
 });
 
-router.post('/chat/message/fail/bulk', verifyAuth, async (req, res) => {
+router.post('/chat/message/bulk-fail', verifyAuth, async (req, res) => {
   let success = true;
   let message = 'Bulk message file upload cancelled.';
   let data = {};
