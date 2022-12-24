@@ -114,11 +114,7 @@ const markPostAsFailed = async (postId, userId) => {
   if (!post) {
     throw new Error('Post does not exist');
   }
-  await sendNotificationToSingleUser({
-    userId,
-    messageBody: 'Connection was lost when uploading your media files.',
-    title: 'Post upload failed.',
-  });
+
   return post;
 };
 
