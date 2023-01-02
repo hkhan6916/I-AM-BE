@@ -35,6 +35,10 @@ const PostsSchema = new Schema({
     type: String,
     maxLength: 20,
   },
+  videoEncoding: {
+    type: String,
+    maxLength: 20,
+  },
   mediaType: {
     type: String,
     maxLength: 20,

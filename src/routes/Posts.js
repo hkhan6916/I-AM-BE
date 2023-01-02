@@ -33,11 +33,11 @@ router.post('/posts/new', verifyAuth, async (req, res) => {
   let message = 'Post created.';
   let data = {};
   const {
-    postBody, mediaIsSelfie, postId, gif, gifPreview, height, width, mediaKey, mediaType, mimetype,
+    postBody, mediaIsSelfie, postId, gif, gifPreview, height, width, mediaKey, mediaType, mimetype, videoEncoding,
   } = req.body;
   try {
     data = await createPost({
-      userId: req.user.id, body: postBody, mediaIsSelfie, postId, gif, gifPreview, height, width, mediaKey, mediaType, mimetype,
+      userId: req.user.id, body: postBody, mediaIsSelfie, postId, gif, gifPreview, height, width, mediaKey, mediaType, mimetype, videoEncoding,
     });
   } catch (e) {
     success = false;

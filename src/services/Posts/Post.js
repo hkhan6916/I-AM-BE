@@ -3,9 +3,8 @@ const Posts = require('../../models/posts/Posts');
 const PostLikes = require('../../models/user/PostLikes');
 const PostReport = require('../../models/posts/PostReports');
 const User = require('../../models/user/User');
-const { sendNotificationToSingleUser } = require('../Notifications/Notifications');
 const {
-  uploadFile, deleteFile, getFileSignedHeaders,
+  deleteFile, getFileSignedHeaders,
 } = require('../../helpers');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
 
@@ -14,9 +13,8 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, body, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype, gifPreview,
+  userId, body, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype, gifPreview, videoEncoding,
 }) => {
-  // const mediaType = file?.mimetype?.split('/')[0];
   if (mediaKey && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
   if (!postId && mediaKey && (!height || height === 'undefined' || !width || width === 'undefined')) throw new Error('Height and/or Width was not provided alongside media');
   // if posting video after the thumbnail and body have been posted.
@@ -31,11 +29,6 @@ const createPost = async ({ // expects form data
     if (!post?.thumbnailUrl) {
       throw new Error('This post does not have a thumbnail for the video.');
     }
-    // const fileObj = await uploadFile(file);
-
-    // if (!fileObj.fileUrl || !fileObj.key) {
-    //   throw new Error('File could not be uploaded.');
-    // }
 
     const mediaUrl = mediaType === 'video' ? `${process.env.CF_URL}/${mediaKey}` : `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/${mediaKey}`;
 
@@ -61,11 +54,8 @@ const createPost = async ({ // expects form data
     userId,
   });
   if (mediaKey) {
-    // const fileObj = await uploadFile(file);
-    // if (!fileObj.fileUrl) {
-    //   throw new Error('File could not be uploaded.');
-    // }
     const mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_BUCKET_REGION}.amazonaws.com/${mediaKey}`;
+    // if mediaKey contains mediaThumbnail, it means it's a video. Else it's an image.
     if (mediaKey.includes('mediaThumbnail')) {
       post.mediaIsSelfie = mediaIsSelfie;
       post.private = true;
@@ -77,6 +67,7 @@ const createPost = async ({ // expects form data
       post.ready = false;
       post.height = Number(height);
       post.width = Number(width);
+      post.videoEncoding = videoEncoding || '';
     } else {
       post.mediaUrl = mediaUrl;
       post.mediaMimeType = mimetype; // jpeg, mp4 etc
@@ -100,6 +91,7 @@ const createPost = async ({ // expects form data
   }
 
   post.save();
+  // increase the the number of posts the user has created.
   user.numberOfPosts += 1;
   user.save();
   return {
