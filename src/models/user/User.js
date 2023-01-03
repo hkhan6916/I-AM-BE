@@ -141,5 +141,8 @@ const UserSchema = new Schema({
     type: Number,
     default: 0,
   },
+  lastPasswordChangedDateTime: {
+    type: Date,
+  },
 });
 module.exports = model('Users', UserSchema);

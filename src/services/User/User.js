@@ -318,6 +318,7 @@ const resetUserPassword = async (req, res) => {
       password: await bcrypt.hash(password, salt),
       expireToken: 0,
       resetToken: '',
+      lastPasswordChangedDateTime: new Date(),
     });
     user.save();
     res.status(200).json({
@@ -418,11 +419,12 @@ const getUserData = async (userId) => {
     }
     return prev;
   }, []);
+  const userObj = user.toObject();
+  delete userObj.password;
 
   return {
-    ...user.toObject(),
+    ...userObj,
     numberOfFriends: user.numberOfFriendsAsRequester + user.numberOfFriendsAsReceiver,
-    password: '',
     profileVideoUrl: getCloudfrontSignedUrl(profileVideoKey),
     profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
     userJobHistory: sortedUserJobHistory,
