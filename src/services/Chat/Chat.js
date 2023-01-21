@@ -254,6 +254,7 @@ const uploadFileAndSendMessage = async (message) => {
         mediaUrl: signedUrl,
         mediaHeaders,
         online: message.online,
+        recipientId: message.recipientId,
         user: {
           firstName: user.firstName,
           lastName: user.lastName,

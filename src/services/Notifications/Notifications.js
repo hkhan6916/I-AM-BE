@@ -26,7 +26,6 @@ const sendNotificationToRecipiants = async (senderId, chatId, message) => {
   chunks.forEach(async (chunk) => {
     try {
       await expo.sendPushNotificationsAsync(chunk);
-      console.log({ chunk });
     } catch (error) {
       console.log(error);
     }
