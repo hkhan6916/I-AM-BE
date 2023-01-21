@@ -216,14 +216,16 @@ const getPostComments = async ({ postId, userId, offset }) => {
       },
     },
   ]);
-  comments.forEach((comment) => {
+  comments.filter((comment) => {
     calculateAge(comment);
-    if (comment.commentAuthor.profileGifUrl) {
+    if (comment?.commentAuthor?.profileGifUrl) {
       comment.commentAuthor.profileGifHeaders = getFileSignedHeaders(comment.commentAuthor.profileGifUrl);
     }
-    if (comment.commentAuthor.profileImageUrl) {
+    if (comment?.commentAuthor?.profileImageUrl) {
       comment.commentAuthor.profileImageHeaders = getFileSignedHeaders(comment.commentAuthor.profileImageUrl);
     }
+    // checks if user exists in which case we return the comment
+    return !!comment?.commentAuthor?._id;
   });
   return comments;
 };
@@ -423,14 +425,16 @@ const getCommentReplies = async ({ commentId, userId, offset }) => {
       },
     },
   ]);
-  replies.forEach((reply) => {
+  replies.filter((reply) => {
     calculateAge(reply);
-    if (reply.replyAuthor.profileGifUrl) {
+    if (reply?.replyAuthor?.profileGifUrl) {
       reply.replyAuthor.profileGifHeaders = getFileSignedHeaders(reply.replyAuthor.profileGifUrl);
     }
-    if (reply.replyAuthor.profileImageUrl) {
+    if (reply?.replyAuthor?.profileImageUrl) {
       reply.replyAuthor.profileImageHeaders = getFileSignedHeaders(reply.replyAuthor.profileImageUrl);
     }
+    // checks if user exists in which case we return the reply
+    return !!reply?.replyAuthor?._id;
   });
   return replies;
 };
