@@ -5,7 +5,6 @@ const Chat = require('../../models/chat/Chat');
 const User = require('../../models/user/User');
 const getFileSignedHeaders = require('../../helpers/getFileSignedHeaders');
 const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
-const uploadFile = require('../../helpers/uploadFile');
 const getNameDate = require('../../helpers/getNameDate');
 const get12HourTime = require('../../helpers/get12HourTime');
 
