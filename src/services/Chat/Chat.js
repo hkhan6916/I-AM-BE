@@ -49,7 +49,7 @@ const getChatMessages = async (chatId, offset, userId) => {
          preserveNullAndEmptyArrays: true,
        },
     },
-    { $sort: { createdAt: -1 } },
+    { $sort: { updatedAt: -1 } },
     { $skip: offset || 0 },
     { $limit: 15 },
     // { $sort: { createdAt: 1 } },
