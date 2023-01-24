@@ -248,7 +248,7 @@ const replyToComment = async ({ commentId, body, userId }) => {
     throw new Error('Could not find user to post this comment reply');
   }
 
-  // if replying to a top level comment, not a reply.
+  // ### if replying to a top level comment and not replying to another reply.
   if (!comment.parentCommentId) {
     const reply = new Comment({
       postId: comment.postId,
@@ -278,6 +278,8 @@ const replyToComment = async ({ commentId, body, userId }) => {
     };
   }
 
+  // ### If replying to another reply
+
   // we need to get the parent id of the reply we are replying to so we can add 1 to the total number of replies under this parent comment
   const parentComment = await Comment.findById(comment.parentCommentId);
 
@@ -302,9 +304,12 @@ const replyToComment = async ({ commentId, body, userId }) => {
     body,
     replyingToId: comment.userId,
     replyAuthor: {
-      profileGifUrl: user.profileGifUrl,
       firstName: user.firstName,
       lastName: user.lastName,
+      profileGifUrl: user.profileGifUrl,
+      profileImageUrl: user.profileImageUrl,
+      profileGifHeaders: getFileSignedHeaders(user.profileGifUrl),
+      profileImageHeaders: getFileSignedHeaders(user.profileImageUrl),
     },
   };
 };
