@@ -74,6 +74,7 @@ const getChatMessages = async (chatId, offset, userId) => {
   // mark user as having read latest messages in the chat
   if (!offset) {
     const chat = await Chat.findById(chatId);
+    if (!chat) throw new Error('Tried to mark new messages as read but the chat does not exist.');
     const userIsAlreadyUptoDate = chat.upToDateUsers.find((id) => id === userId);
     if (!userIsAlreadyUptoDate) {
       chat.upToDateUsers = [...chat.upToDateUsers, userId];
