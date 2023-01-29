@@ -73,17 +73,28 @@ const getChatMessages = async (chatId, offset, userId) => {
 
   // mark user as having read latest messages in the chat
   if (!offset) {
+    console.log('here');
+    console.log({ chatId });
     const chat = await Chat.findById(chatId);
+    console.log('line 79');
     if (!chat) throw new Error('Tried to mark new messages as read but the chat does not exist.');
+    console.log('line 81');
     const userIsAlreadyUptoDate = chat.upToDateUsers.find((id) => id === userId);
+    console.log('line 83');
     if (!userIsAlreadyUptoDate) {
       chat.upToDateUsers = [...chat.upToDateUsers, userId];
+      console.log('line 86');
       const user = await User.findById(userId);
+      console.log('line 88');
 
       user.unreadChatsCount = user.unreadChatsCount > 0 ? user.unreadChatsCount - 1 : user.unreadChatsCount;
+      console.log('line 91');
       user.save();
+      console.log('line 93');
     }
+    console.log({ chat });
     chat.save();
+    console.log('line 97');
   }
 
   return filteredMessages;
