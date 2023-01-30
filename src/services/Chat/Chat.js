@@ -9,6 +9,8 @@ const getNameDate = require('../../helpers/getNameDate');
 const get12HourTime = require('../../helpers/get12HourTime');
 
 const getChatMessages = async (chatId, offset, userId) => {
+  console.log('getting chat messages');
+  console.log({ userId });
   const messages = await Messages.aggregate([
     {
       $match: {
@@ -73,7 +75,7 @@ const getChatMessages = async (chatId, offset, userId) => {
 
   // mark user as having read latest messages in the chat
   if (!offset) {
-    console.log('here');
+    console.log('marking messages as read');
     console.log({ chatId });
     const chat = await Chat.findById(chatId);
     console.log('line 79');
