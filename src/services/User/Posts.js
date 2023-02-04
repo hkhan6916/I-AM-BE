@@ -418,7 +418,6 @@ const getUserSearchFeed = async (offset = 0, userId) => {
         $expr: {
           $and: [
             { $eq: ['$ready', true] },
-            { $ne: ['$userId', ObjectId(userId)] },
             { $ne: ['$mediaKey', ''] },
             { $or: [{ $eq: [{ $type: '$gif' }, 'missing'] }, { $eq: ['$gif', ''] }] },
           ],
