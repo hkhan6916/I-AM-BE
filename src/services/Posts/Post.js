@@ -13,7 +13,7 @@ const getCloudfrontSignedUrl = require('../../helpers/getCloudfrontSignedUrl');
  */
 
 const createPost = async ({ // expects form data
-  userId, body, mediaIsSelfie, postId, gif, height, width, mediaKey, mediaType, mimetype, gifPreview, videoEncoding,
+  userId, body, mediaIsSelfie, postId, gif, generatedImageUrl, height, width, mediaKey, mediaType, mimetype, gifPreview, videoEncoding,
 }) => {
   if (mediaKey && mediaType !== 'video' && mediaType !== 'image') throw new Error('Can only post image or video');
   if (!postId && mediaKey && (!height || height === 'undefined' || !width || width === 'undefined')) throw new Error('Height and/or Width was not provided alongside media');
@@ -42,7 +42,7 @@ const createPost = async ({ // expects form data
     });
     return post;
   }
-  if (!body && !mediaKey && !gif) {
+  if (!body && !mediaKey && !gif && !generatedImageUrl) {
     throw new Error('Media or post body required.');
   }
   const user = await User.findById(userId);
@@ -88,6 +88,9 @@ const createPost = async ({ // expects form data
       throw new Error('No preview provided for gif.');
     }
     post.gifPreview = gifPreview;
+  }
+  if (generatedImageUrl) {
+    post.generatedImageUrl = generatedImageUrl;
   }
 
   post.save();

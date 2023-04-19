@@ -18,6 +18,10 @@ const PostsSchema = new Schema({
     default: '',
     maxLength: 200,
   },
+  generatedImageUrl: {
+    type: String,
+    maxLength: 1000,
+  },
   gif: {
     type: String,
     maxLength: 200,
