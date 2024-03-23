@@ -1,15 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const cluster = require('cluster');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
 const { createClient } = require('redis');
-const numCPUs = require('os').cpus().length;
 const { createAdapter } = require('@socket.io/redis-adapter');
-const { setupMaster, setupWorker } = require('@socket.io/sticky');
-const { createAdapter: createClusterAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
+const { setupWorker } = require('@socket.io/sticky');
+const { createAdapter: createClusterAdapter } = require('@socket.io/cluster-adapter');
 const user = require('./src/routes/User');
 const posts = require('./src/routes/Posts');
 const jobs = require('./src/routes/Jobs');
@@ -40,7 +38,7 @@ module.exports = () => {
   // setup connection with the primary process
   setupWorker(io);
   messagesIo(io);
-  const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+  const redisUrl = `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
   const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
   const pubClient = createClient({ url: redisUrl, ...redisPasswordConfig });

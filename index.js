@@ -23,19 +23,6 @@ const messagesIo = require('./src/routes/Messages.socket');
 if (cluster.isMaster) {
   console.log(`Master ${process.pid} is running`);
 
-  // setup sticky sessions
-  // setupMaster(httpServer, {
-  //   loadBalancingMethod: 'least-connection',
-  // });
-
-  // setup connections between the workers
-  // setupPrimary();
-
-  // needed for packets containing buffers (you can ignore it if you only send plaintext objects)
-  // Node.js < 16.0.0
-  // cluster.setupMaster({
-  //   serialization: 'advanced',
-  // });
   // Node.js > 16.0.0
   cluster.setupPrimary({
     serialization: 'advanced',
@@ -73,7 +60,7 @@ if (cluster.isMaster) {
   io.adapter(createClusterAdapter());
 
   messagesIo(io, process.pid);
-  const redisUrl = `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+  const redisUrl = `${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
   const redisPasswordConfig = process.env.REDIS_KEY ? { password: process.env.REDIS_KEY } : {};
   const pubClient = createClient({ url: redisUrl, ...redisPasswordConfig });
